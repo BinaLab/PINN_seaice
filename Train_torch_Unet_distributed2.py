@@ -56,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-dir',
         type=str,
-        default='', #'D:\\PINN\\data\\',
+        default='../data/', #'D:\\PINN\\data\\',
         metavar='D',
         help='directory to download dataset to',
     )
