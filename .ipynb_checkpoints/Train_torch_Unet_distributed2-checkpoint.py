@@ -19,6 +19,7 @@ import torch.distributed as dist
 from torch.utils import collect_env
 from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
  
 from torch.utils.tensorboard import SummaryWriter
 
@@ -174,21 +175,39 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
-def run(backend):
-    tensor = torch.zeros(1)
+def make_sampler_and_loader(args, train_dataset, val_dataset):
+    """Create sampler and dataloader for train and val datasets."""
+    torch.set_num_threads(4)
+    kwargs: dict[str, Any] = (
+        {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
+    )
+    kwargs['prefetch_factor'] = 8
+    kwargs['persistent_workers'] = True
 
-    # Need to put tensor on a GPU device for nccl backend
-    if backend == 'nccl':
-        device = torch.device("cuda:{}".format(LOCAL_RANK))
-        tensor = tensor.to(device)
+    train_sampler = DistributedSampler(
+        train_dataset,
+        num_replicas=dist.get_world_size(),
+        rank=dist.get_rank(),
+    )
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        sampler=train_sampler,
+        **kwargs,
+    )
+    val_sampler = DistributedSampler(
+        val_dataset,
+        num_replicas=dist.get_world_size(),
+        rank=dist.get_rank(),
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=args.val_batch_size,
+        sampler=val_sampler,
+        **kwargs,
+    )
 
-    if WORLD_RANK == 0:
-        for rank_recv in range(1, WORLD_SIZE):
-            dist.send(tensor=tensor, dst=rank_recv)
-            print('worker_{} sent data to Rank {}\n'.format(0, rank_recv))
-    else:
-        dist.recv(tensor=tensor, src=0)
-        print('worker_{} has received data from rank {}\n'.format(WORLD_RANK, 0))
+    return train_sampler, train_loader, val_sampler, val_loader
 
 def init_processes(backend):
     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
@@ -225,11 +244,14 @@ def train(
     optimizer: torch.optim.Optimizer,
     loss_func: torch.nn.Module,
     train_loader: torch.utils.data.DataLoader,
+    train_sampler: torch.utils.data.distributed.DistributedSampler,
     args,
-) -> None:
+):
     
     """Train model."""
     model.train()
+    train_sampler.set_epoch(epoch)
+    
     mini_step = 0
     step_loss = torch.tensor(0.0).to('cuda' if args.cuda else 'cpu')
     train_loss = Metric('train_loss')
@@ -290,7 +312,7 @@ def test(
     loss_func: torch.nn.Module,
     val_loader: torch.utils.data.DataLoader,
     args
-) -> None:
+):
     """Test the model."""
     model.eval()
     val_loss = Metric('val_loss')
@@ -407,9 +429,9 @@ def main() -> None:
     # test_output = torch.tensor(test_output, dtype=torch.float32)   
     
     train_dataset = TensorDataset(train_input, train_output)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, pin_memory=True)
     val_dataset = TensorDataset(val_input, val_output)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)  
+    
+    train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)
 
     n_samples, row, col, in_channels = train_input.size()
     _, _, _, out_channels = train_output.size()
