@@ -27,12 +27,12 @@ import argparse
 import os    
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-try:
-    from torch.cuda.amp import GradScaler
+# try:
+#     from torch.cuda.amp import GradScaler
 
-    TORCH_FP16 = True
-except ImportError:
-    TORCH_FP16 = False
+#     TORCH_FP16 = True
+# except ImportError:
+#     TORCH_FP16 = False
 
 
 def save_checkpoint(
@@ -221,7 +221,7 @@ def train(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     loss_func: torch.nn.Module,
-    train_loader: torch.utils.data.DataLoader[SampleT],
+    train_loader: torch.utils.data.DataLoader,
     args: argparse.Namespace,
 ) -> None:
     
@@ -285,7 +285,7 @@ def test(
     epoch: int,
     model: torch.nn.Module,
     loss_func: torch.nn.Module,
-    val_loader: torch.utils.data.DataLoader[SampleT],
+    val_loader: torch.utils.data.DataLoader,
     args: argparse.Namespace,
 ) -> None:
     """Test the model."""
