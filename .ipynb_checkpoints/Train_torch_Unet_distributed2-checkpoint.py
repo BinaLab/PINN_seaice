@@ -223,7 +223,7 @@ def train(
     optimizer: torch.optim.Optimizer,
     loss_func: torch.nn.Module,
     train_loader: torch.utils.data.DataLoader,
-    args: argparse.Namespace,
+    args,
 ) -> None:
     
     """Train model."""
@@ -236,7 +236,8 @@ def train(
     with tqdm(
         total=math.ceil(len(train_loader) / args.batches_per_allreduce),
         bar_format='{l_bar}{bar:10}{r_bar}',
-        desc=f'Epoch {epoch:3d}/{args.epochs:3d}'
+        desc=f'Epoch {epoch:3d}/{args.epochs:3d}',
+        disable=not args.verbose,
     ) as t:
         for batch_idx, (data, target) in enumerate(train_loader):
             mini_step += 1
@@ -286,7 +287,7 @@ def test(
     model: torch.nn.Module,
     loss_func: torch.nn.Module,
     val_loader: torch.utils.data.DataLoader,
-    args: argparse.Namespace
+    args
 ) -> None:
     """Test the model."""
     model.eval()
@@ -295,7 +296,8 @@ def test(
     with tqdm(
         total=len(val_loader),
         bar_format='{l_bar}{bar:10}|{postfix}',
-        desc='             '
+        desc='             ',
+        disable=not args.verbose
     ) as t:
         with torch.no_grad():
             for i, (data, target) in enumerate(val_loader):
