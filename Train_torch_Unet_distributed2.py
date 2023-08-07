@@ -340,7 +340,9 @@ def main() -> None:
     # args.base_lr = (
     #     args.base_lr * dist.get_world_size() * args.batches_per_allreduce
     # )
+    
     args.verbose = dist.get_rank() == 0
+    world_size = dist.get_world_size()
 
     if args.verbose:
         print('Collecting env info...')
@@ -437,7 +439,7 @@ def main() -> None:
         device_ids=[args.local_rank],
     )
 
-    model_name = f"torch_unet_lr{lr}_wo{date}_{phy}_{device_name}"
+    model_name = f"torch_unet_lr{lr}_wo{date}_{phy}_{device_name}{world_size}"
 
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
