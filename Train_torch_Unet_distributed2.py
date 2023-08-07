@@ -489,6 +489,7 @@ def main() -> None:
             optimizer,
             loss_fn,
             train_loader,
+            train_sampler,
             args,
         )
         
