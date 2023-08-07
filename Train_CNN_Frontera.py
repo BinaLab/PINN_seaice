@@ -94,16 +94,6 @@ class physics_loss(tf.keras.losses.Loss):
         err_sum += w*err_phy
         return err_sum
     
-class timecallback(tf.keras.callbacks.Callback):
-    def __init__(self):
-        self.times = []
-        self.epochs = []
-        # use this value as reference to calculate cummulative time taken
-        self.timetaken = tf.timestamp()
-    def on_epoch_end(self,epoch,logs = {}):
-        self.times.append(tf.timestamp() - self.timetaken)
-        self.epochs.append(epoch)
-    
 ##########################################################################################3
 
 # years = np.array([])
@@ -111,7 +101,7 @@ class timecallback(tf.keras.callbacks.Callback):
 # days = np.array([])
 # first = True
 
-data_path = "D:\\PINN\\data"
+data_path = ""
 
 # for year in [2019, 2020, 2021]:
     
@@ -151,52 +141,70 @@ print("######## TRAINING DATA IS PREPARED (# of samples: {0}) ########".format(l
 # sess = tf.Session(config=config)
 # set_session(sess)
 ###############################
+
+# Create a TensorFlow Timeline object
+run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+run_metadata = tf.RunMetadata()
+
+# Run your TensorFlow model
+with tf.Session() as sess:
+    # Run your TensorFlow model with profiling enabled
+    sess.run(
+        model,
+        options=run_options,
+        run_metadata=run_metadata)
+
+# Save the Timeline data to a file
+with open('timeline.json', 'w') as f:
+    f.write(
+        timeline.Timeline(
+            run_metadata.step_stats).generate_chrome_trace_format())
                   
-for date in [2021]: #np.arange(10,13):
-    mask1 = (years == date) # Test samples
-    mask2 = (days % 4 == 2) # Validation samples
+date = 2021
+mask1 = (years == date) # Test samples
+mask2 = (days % 4 == 2) # Validation samples
 
-    test_input = cnn_input[mask1, 41:, :-41, :]
-    test_output = cnn_output[mask1, 41:, :-41, :]
-    val_input = cnn_input[(~mask1)&(mask2), 41:, :-41, :]
-    val_output = cnn_output[(~mask1)&(mask2), 41:, :-41, :]
-    train_input = cnn_input[(~mask1)&(~mask2), 41:, :-41, :]
-    train_output = cnn_output[(~mask1)&(~mask2), 41:, :-41, :]
-    
-    del mask1, mask2
+test_input = cnn_input[mask1, 41:, :-41, :]
+test_output = cnn_output[mask1, 41:, :-41, :]
+val_input = cnn_input[(~mask1)&(mask2), 41:, :-41, :]
+val_output = cnn_output[(~mask1)&(mask2), 41:, :-41, :]
+train_input = cnn_input[(~mask1)&(~mask2), 41:, :-41, :]
+train_output = cnn_output[(~mask1)&(~mask2), 41:, :-41, :]
 
-    print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output), np.shape(test_input), np.shape(test_output))
+del mask1, mask2
 
-    ## Design CNN architecture =========================================================
-    model = models.Sequential()
+print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output), np.shape(test_input), np.shape(test_output))
 
-    n_layers = 8
-    n_filters = 16
-    n_epochs = 30
-    win = 5
-    activation = "linear"
+## Design CNN architecture =========================================================
+model = models.Sequential()
 
-    model.add(layers.Conv2D(n_filters, (win, win), padding = "same", activation=activation, input_shape=np.shape(train_input)[1:]))
+n_layers = 8
+n_filters = 16
+n_epochs = 30
+win = 5
+activation = "linear"
 
-    for i in range(0, n_layers-1):
-        model.add(layers.Conv2D(n_filters, (win, win), padding = "same", activation=activation))
+model.add(layers.Conv2D(n_filters, (win, win), padding = "same", activation=activation, input_shape=np.shape(train_input)[1:]))
 
-    model.add(layers.Conv2D(3, (win, win), padding = "same", activation=activation))
-    model.summary()
+for i in range(0, n_layers-1):
+    model.add(layers.Conv2D(n_filters, (win, win), padding = "same", activation=activation))
 
-    ## Normal CNN (without physical loss) ==========================================================
-    # model.compile(optimizer='adam', loss=custom_loss())
-    # history = model.fit(train_input, train_output, epochs=n_epochs, validation_data=(val_input, val_output), verbose = 2, batch_size=4)
-    # model_name = "conv2d_{0}_{1}_{2}_wo{3}_nophy".format(n_layers, n_filters, activation, str(date).zfill(2))
-    # model.save("../model/{0}".format(model_name))
-    # with open('../model/history_{0}.pkl'.format(model_name), 'wb') as file:
-    #     pickle.dump(history.history, file)
-    # print("Done CNN without physical loss: {0}".format(model_name))
+model.add(layers.Conv2D(3, (win, win), padding = "same", activation=activation))
+model.summary()
 
-    # if os.path.exists("../result/{0}".format(model_name)):
-    #     pass
-    # else:
-    #     os.mkdir("../result/{0}".format(model_name))
+## Normal CNN (without physical loss) ==========================================================
+# model.compile(optimizer='adam', loss=custom_loss())
+# history = model.fit(train_input, train_output, epochs=n_epochs, validation_data=(val_input, val_output), verbose = 2, batch_size=16)
+# model_name = "conv2d_{0}_{1}_{2}_wo{3}_nophy".format(n_layers, n_filters, activation, str(date).zfill(2))
+# model.save("../model/{0}".format(model_name))
+# with open('../model/history_{0}.pkl'.format(model_name), 'wb') as file:
+#     pickle.dump(history.history, file)
+# print("Done CNN without physical loss: {0}".format(model_name))
+
+# if os.path.exists("../result/{0}".format(model_name)):
+#     pass
+# else:
+#     os.mkdir("../result/{0}".format(model_name))
 
 #     pred = model.predict(test_input)
 #     n_samples, row, col, channels = np.shape(test_output)
@@ -219,39 +227,12 @@ for date in [2021]: #np.arange(10,13):
 #             del obs, prd
 
 #     df.to_csv("../result/Result_{0}.csv".format(model_name)) 
-    
-    ## Normal CNN (with physical loss) ==========================================================
-    model.compile(optimizer='adam', loss=physics_loss())
-    timetaken = timecallback()
-    history = model.fit(train_input, train_output, epochs=n_epochs, validation_data=(val_input, val_output), verbose = 2, batch_size=4, callbacks = [timecallback()])
-    model_name = "conv2d_{0}_{1}_{2}_wo{3}_phy".format(n_layers, n_filters, activation, str(date).zfill(2))
-    # model.save("../model/{0}".format(model_name))
-    with open('../model/history_{0}.pkl'.format(model_name), 'wb') as file:
-        pickle.dump([history.history], file)
-    print(history)
-    print("Done CNN with physical loss: {0}".format(model_name))
 
-#     pred = model.predict(test_input)
-#     n_samples, row, col, channels = np.shape(test_output)
-#     df = pd.DataFrame({})
-
-#     for k in range(0, n_samples):
-#         sic = (test_output[k, :, :, 2] + test_input[k, :, :, 2])
-#         for c in range(0, channels):
-#             obs = ((test_output[k, :, :, c]) + offset[c]) *scaling[c] 
-#             prd = ((pred[k, :, :, c]) + offset[c]) *scaling[c] 
-
-#             prd[sic == 0] = np.nan
-#             obs[sic == 0] = np.nan        
-
-#             df.loc[k, "MAE{0}".format(c)] = MAE(prd, obs)
-#             df.loc[k, "R{0}".format(c)] = corr(prd, obs)
-#             del obs, prd
-
-#     df.to_csv("../result/Result_{0}.csv".format(model_name)) 
-    tf.keras.backend.clear_session()
-    tf.config.experimental.reset_memory_stats('GPU:0')
-    
-#     tf.keras.backend.clear_session()
-#     sess.close()
-#     tf.reset_default_graph()
+## Normal CNN (with physical loss) ==========================================================
+model.compile(optimizer='adam', loss=physics_loss())
+history = model.fit(train_input, train_output, epochs=n_epochs, validation_data=(val_input, val_output), verbose = 0, batch_size=16)
+model_name = "conv2d_{0}_{1}_{2}_wo{3}_phy".format(n_layers, n_filters, activation, str(date).zfill(2))
+model.save("{0}".format(model_name))
+with open('history_{0}.pkl'.format(model_name), 'wb') as file:
+    pickle.dump(history.history, file)
+print("Done CNN with physical loss: {0}".format(model_name))

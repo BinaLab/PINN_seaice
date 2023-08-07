@@ -25,36 +25,13 @@ from shapely.geometry import Polygon
 import cartopy.crs as ccrs
 
 from scipy.interpolate import griddata
-import metpy.calc as mpcalc
-from metpy.units import units
 
 import cdsapi
 import xarray as xr
 from urllib.request import urlopen
 
 import pickle
-
-###########################################################################################
-
-def make_lstm_input2D(data_input, data_output, days = 7):
-    # Input & output should be entire images for CNN
-    n_samples, row, col, var_ip = np.shape(data_input)
-    _, _, _, var_op = np.shape(data_output)
-    row,col = 320, 320;
-    lstm_input = np.zeros([n_samples-days, days, row, col, var_ip], dtype="int")
-    lstm_output = np.zeros([n_samples-days, row, col, var_op], dtype="int")
-    
-    for n in range(0, n_samples-days):
-        for i in range(0, days):
-            for v in range(0, var_ip):
-                lstm_input[n, i, :, :, v] = (data_input[n+i, 41:, :-41, v]*255).astype(int)
-            for v in range(0, var_op):
-                lstm_output[n, :, :, v] = (data_output[n+days, 41:, :-41, v]*255).astype(int)
-    return lstm_input, lstm_output
-
-def MAE(obs, prd):
-    return np.nanmean(abs(obs-prd))
-
+from functions import *
 
 ###########################################################################################
 
