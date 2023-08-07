@@ -409,12 +409,12 @@ def main() -> None:
     train_dataset = TensorDataset(train_input, train_output)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, pin_memory=True)
     val_dataset = TensorDataset(val_input, val_output)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True) 
-    
-    del train_input, train_output, val_input, val_output, mask1, mask2
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)  
 
     n_samples, row, col, in_channels = train_input.size()
     _, _, _, out_channels = train_output.size()
+    
+    del train_input, train_output, val_input, val_output, mask1, mask2
     
     #############################################################################
     
