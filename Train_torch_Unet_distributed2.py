@@ -337,9 +337,9 @@ def main() -> None:
         # torch.backends.cudnn.benchmark = False
         # torch.backends.cudnn.deterministic = True
 
-    args.base_lr = (
-        args.base_lr * dist.get_world_size() * args.batches_per_allreduce
-    )
+    # args.base_lr = (
+    #     args.base_lr * dist.get_world_size() * args.batches_per_allreduce
+    # )
     args.verbose = dist.get_rank() == 0
 
     if args.verbose:
