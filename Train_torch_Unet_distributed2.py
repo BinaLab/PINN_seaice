@@ -448,8 +448,6 @@ def main() -> None:
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
 
-    batch_start = torch.arange(0, len(train_input), batch_size)
-
     history = {'loss': [], 'val_loss': [], 'time': []}
 
     total_params = sum(p.numel() for p in net.parameters())
