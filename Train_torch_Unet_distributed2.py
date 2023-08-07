@@ -477,12 +477,6 @@ def main() -> None:
             history['loss'].append(train_loss.item())
             history['val_loss'].append(val_loss.item())
             history['time'].append(time.time() - t0)
-
-            print(
-                'Epoch {0} >>> Train loss {1:.3f}, Val loss: {2:.3f}, Training time: {3:.3f}'.format(
-                    epoch, train_loss.item(), val_los.item(), time.time()-t0
-                ),
-            )
     
     torch.save(net.state_dict(), f'{model_dir}/{model_name}.pth')
 
