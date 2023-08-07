@@ -157,8 +157,8 @@ def parse_args() -> argparse.Namespace:
         default='nccl',
         help='backend for distribute training (default: nccl)',
     )
-    parser.add_argument('verbose')
-    parser.add_argument('log_writer')
+    # parser.add_argument('verbose')
+    # parser.add_argument('log_writer')
     # Set automatically by torch distributed launch
     # parser.add_argument(
     #     '--local_rank',
@@ -360,11 +360,6 @@ def main() -> None:
     os.makedirs(args.log_dir, exist_ok=True)
     args.checkpoint_format = os.path.join(args.log_dir, args.checkpoint_format)
     args.log_writer = SummaryWriter(args.log_dir) if args.verbose else None   
-    
-    
-    
-    ## Train parameters ##
-    args = parse_args()
     
     data_path = args.data_dir
     data_file = args.data_file
