@@ -494,18 +494,19 @@ def main() -> None:
         
         val_loss = test(epoch, net, loss_fn, val_loader, args)
         
-        if (epoch > 0 and dist.get_rank() == 0):
+        if dist.get_rank() == 0:
             if epoch % args.checkpoint_freq == 0:
                 save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))
         
             history['loss'].append(train_loss.item())
             history['val_loss'].append(val_loss.item())
             history['time'].append(time.time() - t0)
-    
-    torch.save(net.state_dict(), f'{model_dir}/{model_name}.pth')
+            
+            if epoch == n_epochs-1:
+                torch.save(net.state_dict(), f'{model_dir}/{model_name}.pth')
 
-    with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
-        pickle.dump(history, file)
+                with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
+                    pickle.dump(history, file)
 
 if __name__ == '__main__':
     main()
