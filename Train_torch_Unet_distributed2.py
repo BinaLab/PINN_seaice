@@ -158,8 +158,7 @@ def parse_args() -> argparse.Namespace:
         default='nccl',
         help='backend for distribute training (default: nccl)',
     )
-    # parser.add_argument('verbose')
-    # parser.add_argument('log_writer')
+
     # Set automatically by torch distributed launch
     # parser.add_argument(
     #     '--local_rank',
@@ -209,9 +208,9 @@ def make_sampler_and_loader(args, train_dataset, val_dataset):
 
     return train_sampler, train_loader, val_sampler, val_loader
 
-def init_processes(backend):
-    dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
-    run(backend)
+# def init_processes(backend):
+#     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
+#     run(backend)
     
 class Metric:
     """Metric tracking class."""
@@ -364,7 +363,7 @@ def main() -> None:
     # )
     
     args.verbose = dist.get_rank() == 0
-    world_size = dist.get_world_size()
+    world_size = int(os.environ['WORLD_SIZE'])
 
     if args.verbose:
         print('Collecting env info...')
