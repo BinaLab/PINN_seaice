@@ -431,15 +431,15 @@ def main() -> None:
     val_dataset = TensorDataset(val_input, val_output)
     
     train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)
-
-    n_samples, row, col, in_channels = train_input.size()
-    _, _, _, out_channels = train_output.size()
     
     del train_input, train_output, val_input, val_output, mask1, mask2
     
     #############################################################################
     
-    net = UNet()
+    n_samples, in_channels, row, col = train_input.size()
+    _, out_channels, _, _ = train_output.size()
+    
+    net = UNet(in_channels, out_channels)
 
     # torch.cuda.empty_cache()
     

@@ -130,22 +130,7 @@ def main() -> None:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)
     
     print("######## TRAINING DATA IS PREPARED (# of samples: {0}) ########".format(len(days)))
-
-    net = Net()
-
-    torch.cuda.empty_cache()
     
-    if args.no_cuda:
-        device = torch.device('cpu')
-        device_name = 'cpu'
-    else:
-        device = torch.device('cuda')
-        device_name = 'gpu'
-        net = nn.DataParallel(net)        
-
-    print(device)
-    net.to(device)
-
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
 
@@ -163,8 +148,6 @@ def main() -> None:
 
     del mask1, mask2
 
-    print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output), np.shape(test_input), np.shape(test_output))
-
     train_input = torch.tensor(train_input, dtype=torch.float32)
     train_output = torch.tensor(train_output, dtype=torch.float32)
     val_input = torch.tensor(val_input, dtype=torch.float32)
@@ -172,8 +155,23 @@ def main() -> None:
     test_input = torch.tensor(test_input, dtype=torch.float32)
     test_output = torch.tensor(test_output, dtype=torch.float32)
 
-    n_samples, row, col, in_channels = np.shape(train_input)
-    _, _, _, out_channels = np.shape(train_output)    
+    n_samples, in_channels, row, col = train_input.size()
+    _, out_channels, _, _ = train_output.size()
+    
+    net = Net(in_channels, out_channels)
+
+    torch.cuda.empty_cache()
+    
+    if args.no_cuda:
+        device = torch.device('cpu')
+        device_name = 'cpu'
+    else:
+        device = torch.device('cuda')
+        device_name = 'gpu'
+        net = nn.DataParallel(net)        
+
+    print(device)
+    net.to(device)
 
     model_name = f"torch_cnn_lr{lr}_wo{date}_{phy}_{device_name}"
 
