@@ -417,23 +417,6 @@ def make_cnn_input2D(data_input, data_output, days = 3):
             cnn_output[n, :, :, v] = (data_output[n+days, :, :, v])
     return cnn_input, cnn_output
 
-def convert_cnn_input2D(data_input, data_output, days = 7):
-    # Input & output should be entire images for CNN
-    n_samples, row, col, var_ip = np.shape(data_input)
-    _, _, _, var_op = np.shape(data_output)
-
-    cnn_input = np.zeros([n_samples-days, row, col, var_ip * days])
-    cnn_output = np.zeros([n_samples-days, row, col, var_op * days])
-    
-    for n in range(0, n_samples-days):
-        for v in range(0, var_ip):
-            for i in range(0, days):
-                cnn_input[n, :, :, v+i*day] = (data_input[n+i, :, :, v])
-                cnn_output[n, :, :, v+i*day] = (data_output[n+i, :, :, v])
-                
-    return cnn_input, cnn_output
-
-
 def MAE(obs, prd):
     return np.nanmean(abs(obs-prd))
 

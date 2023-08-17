@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch    
 import torch.nn as nn
 import torch.nn.functional as F
@@ -61,10 +63,11 @@ def convert_cnn_input2D(data_input, data_output, days = 7):
     cnn_output = np.zeros([n_samples-days, row, col, var_op * days])
     
     for n in range(0, n_samples-days):
-        for v in range(0, var_ip):
-            for i in range(0, days):
-                cnn_input[n, :, :, v+i*day] = (data_input[n+i, :, :, v])
-                cnn_output[n, :, :, v+i*day] = (data_output[n+i, :, :, v])
+        for i in range(0, days):
+            for v in range(0, var_ip):            
+                cnn_input[n, :, :, v+i*days] = (data_input[n+i, :, :, v])
+            if v in range(0, var_op):
+                cnn_output[n, :, :, v+i*days] = (data_output[n+i, :, :, v])
                 
     return cnn_input, cnn_output
 
