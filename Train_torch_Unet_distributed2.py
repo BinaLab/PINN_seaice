@@ -81,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--date',
         type=int,
-        default=2019,
+        default=2022,
         help='year to exclude during the training process',
     )
     parser.add_argument(
@@ -403,6 +403,14 @@ def main() -> None:
 
     print("######## TRAINING DATA IS PREPARED (# of samples: {0}) ########".format(len(days)))
     
+    cnn_input, cnn_output = convert_cnn_input2D(cnn_input, cnn_output, days = 7)
+    
+    xx_n = (xx - xx.min())/(xx.max() - xx.min())
+    yy_n = (yy - yy.min())/(yy.max() - yy.min())
+
+    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), len(days), axis = 0)), axis = 3)
+    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), len(days), axis = 0)), axis = 3)
+    
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
 
@@ -411,12 +419,12 @@ def main() -> None:
     mask1 = (years == date) # Test samples
     mask2 = (days % 4 == 2) # Validation samples
 
-    val_input = cnn_input[(~mask1)&(mask2), :, 41:, :-41]
-    val_output = cnn_output[(~mask1)&(mask2), :, 41:, :-41]
-    train_input = cnn_input[(~mask1)&(~mask2), :, 41:, :-41]
-    train_output = cnn_output[(~mask1)&(~mask2), :, 41:, :-41]
-    # test_input = cnn_input[mask1, :, 41:, :-41]
-    # test_output = cnn_output[mask1, :, 41:, :-41]
+    val_input = cnn_input[(~mask1)&(mask2), :, :, :]
+    val_output = cnn_output[(~mask1)&(mask2), :, :, :]
+    train_input = cnn_input[(~mask1)&(~mask2), :, :, :]
+    train_output = cnn_output[(~mask1)&(~mask2), :, :, :]
+    # test_input = cnn_input[mask1, :, :, :]
+    # test_output = cnn_output[mask1, :, :, :]
     
     print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output))
     
@@ -435,7 +443,7 @@ def main() -> None:
     n_samples, in_channels, row, col = train_input.size()
     _, out_channels, _, _ = train_output.size()
     
-    del train_input, train_output, val_input, val_output, mask1, mask2
+    del train_input, train_output, val_input, val_output, mask1, mask2, xx_n, yy_n
     
     #############################################################################   
     

@@ -73,10 +73,28 @@ def get_ice_motion(ncfile, i, sampling_size = 1):
     v[np.isnan(v)] = 0
     
     # Apply Gaussian filter
-    u = gaussian_filter(u, sigma = 3)
-    v = gaussian_filter(v, sigma = 3)
+    # u = gaussian_filter(u, sigma = 3)
+    # v = gaussian_filter(v, sigma = 3)
     
     return xx, yy, lat, lon, u, v
+
+def get_SIT(ncfile, xx, yy):
+# ncfile: input CS2 file (ncfile)
+
+    with netCDF4.Dataset(ncfile, 'r') as nc:
+        lat = np.array(nc.variables['lat'])
+        lon = np.array(nc.variables['lon'])
+        hi = np.array(nc.variables['analysis_sea_ice_thickness'])[0]
+    
+    # EPSG:4326 (WGS84); EPSG:3408 (NSIDC EASE-Grid North - Polar pathfinder sea ice movement)
+    inProj = Proj('epsg:4326')  
+    outProj = Proj('epsg:3408')
+    xx2,yy2 = transform(inProj,outProj,lat,lon)
+
+    grid_sit = griddata((xx2.flatten(), yy2.flatten()), hi.flatten(), (xx, yy), method='linear')
+    grid_sit[grid_sit < 0] = 0
+    
+    return grid_sit
 
 
 def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
@@ -235,109 +253,137 @@ def get_ERA5(ds, i, xx, yy, region = "NH"):
 def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH"):
     # ncfile = glob.glob("F:\\2022_Ross\\ERA5\\icemotion_daily_sh_25km_{0}*.nc".format(year))[0]
     ncfile = data_path + f"/{region}/Sea_ice_drift/icemotion_daily_nh_25km_{year}0101_{year}1231_v4.1.nc"
-    nc = netCDF4.Dataset(ncfile, 'r')
+    with netCDF4.Dataset(ncfile, 'r') as nc:
     ## Adjust the number of training datasets ===========================
-    days = np.array(nc.variables['time']).astype(float)[:]
-    row, col = np.shape(np.array(nc.variables['latitude']))
-    
+        days = np.array(nc.variables['time']).astype(float)[:]
+        row, col = np.shape(np.array(nc.variables['latitude']))
+        
     # Initialize grid input ==========================================
-    grid_input = np.zeros([len(n_samples), row, col, 6])
-    grid_output = np.zeros([len(n_samples), row, col, 3])
+    grid_input = np.zeros([len(n_samples), row, col, 7])
+    grid_output = np.zeros([len(n_samples), row, col, 4])
     
+    valid = []
     first = True
     
     for i, idx in tqdm(enumerate(n_samples)):
         t1 = dt.datetime(1970, 1, 1) + dt.timedelta(days = days[idx])
         t2 = dt.datetime(1970, 1, 1) + dt.timedelta(days = days[idx]+1)  
-
-        ## Read ice motion data ===========================================
-        sampling_size = 1
-        xx, yy, lat, lon, u, v = get_ice_motion(ncfile, idx, sampling_size)
-        grid_u = np.mean(u, axis = 0)
-        grid_v = np.mean(v, axis = 0) 
-
-        ## Read SIC data ==================================================
-        # grid_sic = get_SIC(t1, xx, yy, region = region)
-
-        ## Read ERA5 data =================================================
-        grid_t2m, grid_u10, grid_v10, grid_sic = get_ERA5(ds, idx, xx, yy, region = region)
-
-        grid_input[i, :, :, 0] = grid_u / 50
-        grid_input[i, :, :, 1] = grid_v / 50
-        grid_input[i, :, :, 2] = grid_sic
-        grid_input[i, :, :, 3] = (grid_t2m - 240)/(320 - 240) #Max temp = 320 K, Min temp = 240 K)
-        grid_input[i, :, :, 4] = grid_u10 / 50
-        grid_input[i, :, :, 5] = grid_v10 / 50
-
-        _, _, _, _, u2, v2 = get_ice_motion(ncfile, idx+1, sampling_size)
-        grid_u2 = np.mean(u2, axis = 0)
-        grid_v2 = np.mean(v2, axis = 0) 
-        grid_output[i, :, :, 0] = grid_u2 / 50
-        grid_output[i, :, :, 1] = grid_v2 / 50
-        # grid_sic2 = get_SIC(t2, xx, yy, region = region)
-        _, _, _, grid_sic2 = get_ERA5(ds, idx+1, xx, yy, region = region)
-        grid_output[i, :, :, 2] = grid_sic2
         
-        # Masking ======================================
-        mask1 = (grid_sic == 0) #(np.isnan(grid_u))
-        mask2 = (grid_sic2 == 0) #(np.isnan(grid_u2))
+        sit_t1 = t1 - dt.timedelta(days = 3)
+        sit_y = str(sit_t1.year).zfill(4)
+        sit_m = str(sit_t1.month).zfill(2)
+        sit_d = str(sit_t1.day).zfill(2)
+        sit_file = glob.glob(data_path + f"/{region}/SIT/{sit_y}/{sit_m}/W_XX-ESA,SMOS_CS2,NH_25KM_EASE2_{sit_y + sit_m + sit_d}_*sit.nc")
+        
+        sit_t2 = t2 - dt.timedelta(days = 3)
+        sit_y2 = str(sit_t2.year).zfill(4)
+        sit_m2 = str(sit_t2.month).zfill(2)
+        sit_d2 = str(sit_t2.day).zfill(2)
+        sit_file2 = glob.glob(data_path + f"/{region}/SIT/{sit_y2}/{sit_m2}/W_XX-ESA,SMOS_CS2,NH_25KM_EASE2_{sit_y2 + sit_m2 + sit_d2}_*sit.nc")
+        
+        if (len(sit_file) > 0) and (len(sit_file2) > 0):
+            valid.append(i)
 
-        if datatype == "cell":
-            xx1, yy1 = [], []
-            for m in range(w, row-w):
-                for n in range(w, col-w):
-                    ip = np.array([grid_input[i, m-w:m+w+1, n-w:n+w+1, :]])
-                    if mask1[m,n] == False: #np.prod(ip[0, :, :, 2]) > 0:
-                        op = np.array([grid_output[i, m-w:m+w+1, n-w:n+w+1, :]])
-                        xx1.append(xx[m, n])
-                        yy1.append(yy[m, n])
-                        if first:
-                            conv_input = ip
-                            conv_output = op
-                            first = False
-                        else:
-                            conv_input = np.concatenate((conv_input, ip), axis = 0)
-                            conv_output = np.concatenate((conv_output, op), axis = 0)            
+            ## Read ice motion data ===========================================
+            sampling_size = 1
+            xx, yy, lat, lon, u, v = get_ice_motion(ncfile, idx, sampling_size)
+            grid_u = np.mean(u, axis = 0)
+            grid_v = np.mean(v, axis = 0)
 
-        elif datatype == "entire":
-            var_ip = np.shape(grid_input)[3]
-            var_op = np.shape(grid_output)[3]
+            ## Read SIC data ==================================================
+            grid_sic = get_SIC(t1, xx, yy, region = region)
             
-            conv_input = np.copy(grid_input)
-            conv_output = np.copy(grid_output)
-            
-            for m in range(0, var_ip):
-                subset = grid_input[i, :, :, m]
-                subset[mask1] = 0
-                conv_input[i, :, :, m] = subset
-                
-            for n in range(0, var_op):
-                subset = grid_output[i, :, :, n]
-                subset[mask2] = 0
-                conv_output[i, :, :, n] = subset
-                
-            xx1, yy1 = xx, yy
+            ## Read ice thickness data ========================================
+            grid_sit = get_SIT(sit_file[0], xx, yy)
 
-        elif datatype == "table":
-            
-            xx1, yy1 = [], []
-            for m in range(w, row-w):
-                for n in range(w, col-w):
-                    ip = np.array([grid_input[i, m-w:m+w+1, n-w:n+w+1, :].flatten()])
-                    if np.prod(grid_sic[m-w:m+w+1, n-w:n+w+1]) > 0:
-                        op = np.array([grid_output[i, m-w:m+w+1, n-w:n+w+1, :].flatten()])
-                        xx1.append(xx[m, n])
-                        yy1.append(yy[m, n])
-                        
-                        if first:
-                            conv_input = ip
-                            conv_output = op
-                            first = False
-                        else:
-                            conv_input = np.concatenate((conv_input, ip), axis = 0)
-                            conv_output = np.concatenate((conv_output, op), axis = 0)  
+            ## Read ERA5 data =================================================
+            grid_t2m, grid_u10, grid_v10, _ = get_ERA5(ds, idx, xx, yy, region = region)
 
-    return xx1, yy1, conv_input, conv_output
+            grid_input[i, :, :, 0] = grid_u / 50
+            grid_input[i, :, :, 1] = grid_v / 50
+            grid_input[i, :, :, 2] = grid_sic
+            grid_input[i, :, :, 3] = grid_sit / 8
+            grid_input[i, :, :, 4] = (grid_t2m - 240)/(320 - 240) #Max temp = 320 K, Min temp = 240 K)
+            grid_input[i, :, :, 5] = grid_u10 / 50
+            grid_input[i, :, :, 6] = grid_v10 / 50
+
+            _, _, _, _, u2, v2 = get_ice_motion(ncfile, idx+1, sampling_size)
+            grid_u2 = np.mean(u2, axis = 0)
+            grid_v2 = np.mean(v2, axis = 0) 
+            grid_output[i, :, :, 0] = grid_u2 / 50
+            grid_output[i, :, :, 1] = grid_v2 / 50
+            grid_sic2 = get_SIC(t2, xx, yy, region = region)
+            # _, _, _, grid_sic2 = get_ERA5(ds, idx+1, xx, yy, region = region)
+            grid_output[i, :, :, 2] = grid_sic2
+            
+            grid_sit2 = get_SIT(sit_file2[0], xx, yy)            
+            grid_output[i, :, :, 3] = grid_sit2
+
+            # Masking ======================================
+            mask1 = (grid_sic == 0) #(np.isnan(grid_u))
+            mask2 = (grid_sic2 == 0) #(np.isnan(grid_u2))
+
+            if datatype == "cell":
+                xx1, yy1 = [], []
+                for m in range(w, row-w):
+                    for n in range(w, col-w):
+                        ip = np.array([grid_input[i, m-w:m+w+1, n-w:n+w+1, :]])
+                        if mask1[m,n] == False: #np.prod(ip[0, :, :, 2]) > 0:
+                            op = np.array([grid_output[i, m-w:m+w+1, n-w:n+w+1, :]])
+                            xx1.append(xx[m, n])
+                            yy1.append(yy[m, n])
+                            if first:
+                                conv_input = ip
+                                conv_output = op
+                                first = False
+                            else:
+                                conv_input = np.concatenate((conv_input, ip), axis = 0)
+                                conv_output = np.concatenate((conv_output, op), axis = 0)            
+
+            elif datatype == "entire":
+                var_ip = np.shape(grid_input)[3]
+                var_op = np.shape(grid_output)[3]
+
+                conv_input = np.copy(grid_input)
+                conv_output = np.copy(grid_output)
+
+                for m in range(0, var_ip):
+                    subset = grid_input[i, :, :, m]
+                    subset[mask1] = 0
+                    conv_input[i, :, :, m] = subset
+
+                for n in range(0, var_op):
+                    subset = grid_output[i, :, :, n]
+                    subset[mask2] = 0
+                    conv_output[i, :, :, n] = subset
+
+                xx1, yy1 = xx, yy
+
+            elif datatype == "table":
+
+                xx1, yy1 = [], []
+                for m in range(w, row-w):
+                    for n in range(w, col-w):
+                        ip = np.array([grid_input[i, m-w:m+w+1, n-w:n+w+1, :].flatten()])
+                        if np.prod(grid_sic[m-w:m+w+1, n-w:n+w+1]) > 0:
+                            op = np.array([grid_output[i, m-w:m+w+1, n-w:n+w+1, :].flatten()])
+                            xx1.append(xx[m, n])
+                            yy1.append(yy[m, n])
+
+                            if first:
+                                conv_input = ip
+                                conv_output = op
+                                first = False
+                            else:
+                                conv_input = np.concatenate((conv_input, ip), axis = 0)
+                                conv_output = np.concatenate((conv_output, op), axis = 0)  
+    
+    if datatype == "entire":
+        conv_input = conv_input[np.array(valid), :, :, :]
+        conv_output = conv_output[np.array(valid), :, :, :]
+    
+    return xx1, yy1, conv_input, conv_output, valid
+
 
 def make_lstm_input2D(data_input, data_output, days = 7):
     # Input & output should be entire images for CNN
@@ -369,6 +415,22 @@ def make_cnn_input2D(data_input, data_output, days = 3):
                 cnn_input[n, :, :, v+i] = (data_input[n+i, :, :, v])
         for v in range(0, var_op):
             cnn_output[n, :, :, v] = (data_output[n+days, :, :, v])
+    return cnn_input, cnn_output
+
+def convert_cnn_input2D(data_input, data_output, days = 7):
+    # Input & output should be entire images for CNN
+    n_samples, row, col, var_ip = np.shape(data_input)
+    _, _, _, var_op = np.shape(data_output)
+
+    cnn_input = np.zeros([n_samples-days, row, col, var_ip * days])
+    cnn_output = np.zeros([n_samples-days, row, col, var_op * days])
+    
+    for n in range(0, n_samples-days):
+        for v in range(0, var_ip):
+            for i in range(0, days):
+                cnn_input[n, :, :, v+i*day] = (data_input[n+i, :, :, v])
+                cnn_output[n, :, :, v+i*day] = (data_output[n+i, :, :, v])
+                
     return cnn_input, cnn_output
 
 

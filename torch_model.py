@@ -271,48 +271,48 @@ class UNet(nn.Module):
         # Encoder
         # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
         # input: 320x320x3
-        self.e11 = nn.Conv2d(n_inputs, 32, kernel_size=3, padding="same") # output: 320x320x32
-        self.e12 = nn.Conv2d(32, 32, kernel_size=3, padding="same") # output: 320x320x32
+        self.e11 = nn.Conv2d(n_inputs, 64, kernel_size=3, padding="same") # output: 320x320x32
+        self.e12 = nn.Conv2d(64, 64, kernel_size=3, padding="same") # output: 320x320x32
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x32
 
         # input: 160x160x32
-        self.e21 = nn.Conv2d(32, 64, kernel_size=3, padding="same") # output: 160x160x64
-        self.e22 = nn.Conv2d(64, 64, kernel_size=3, padding="same") # output: 160x160x64
+        self.e21 = nn.Conv2d(64, 128, kernel_size=3, padding="same") # output: 160x160x64
+        self.e22 = nn.Conv2d(128, 128, kernel_size=3, padding="same") # output: 160x160x64
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 80x80x64
 
         # input: 80x80x64
-        self.e31 = nn.Conv2d(64, 128, kernel_size=3, padding="same") # output: 80x80x128
-        self.e32 = nn.Conv2d(128, 128, kernel_size=3, padding="same") # output: 80x80x128
+        self.e31 = nn.Conv2d(128, 256, kernel_size=3, padding="same") # output: 80x80x128
+        self.e32 = nn.Conv2d(256, 256, kernel_size=3, padding="same") # output: 80x80x128
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 40x40x128
 
         # input: 40x40x128
-        self.e41 = nn.Conv2d(128, 256, kernel_size=3, padding="same") # output: 40x40x256
-        self.e42 = nn.Conv2d(256, 256, kernel_size=3, padding="same") # output: 40x40x256
+        self.e41 = nn.Conv2d(256, 512, kernel_size=3, padding="same") # output: 40x40x256
+        self.e42 = nn.Conv2d(512, 512, kernel_size=3, padding="same") # output: 40x40x256
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 20x20x256
 
         # input: 20x20x256
-        self.e51 = nn.Conv2d(256, 512, kernel_size=3, padding="same") # output: 20x20x512
-        self.e52 = nn.Conv2d(512, 512, kernel_size=3, padding="same") # output: 20x20x512
+        self.e51 = nn.Conv2d(512, 1024, kernel_size=3, padding="same") # output: 20x20x512
+        self.e52 = nn.Conv2d(1024, 1024, kernel_size=3, padding="same") # output: 20x20x512
 
         # Decoder
-        self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
-        self.d11 = nn.Conv2d(512, 256, kernel_size=3, padding="same")
-        self.d12 = nn.Conv2d(256, 256, kernel_size=3, padding="same")
+        self.upconv1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
+        self.d11 = nn.Conv2d(1024, 512, kernel_size=3, padding="same")
+        self.d12 = nn.Conv2d(512, 512, kernel_size=3, padding="same")
 
-        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
-        self.d21 = nn.Conv2d(256, 128, kernel_size=3, padding="same")
-        self.d22 = nn.Conv2d(128, 128, kernel_size=3, padding="same")
+        self.upconv2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.d21 = nn.Conv2d(512, 256, kernel_size=3, padding="same")
+        self.d22 = nn.Conv2d(256, 256, kernel_size=3, padding="same")
 
-        self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.d31 = nn.Conv2d(128, 64, kernel_size=3, padding="same")
-        self.d32 = nn.Conv2d(64, 64, kernel_size=3, padding="same")
+        self.upconv3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.d31 = nn.Conv2d(256, 128, kernel_size=3, padding="same")
+        self.d32 = nn.Conv2d(128, 128, kernel_size=3, padding="same")
 
-        self.upconv4 = nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2)
-        self.d41 = nn.Conv2d(64, 32, kernel_size=3, padding="same")
-        self.d42 = nn.Conv2d(32, 32, kernel_size=3, padding="same")
+        self.upconv4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.d41 = nn.Conv2d(128, 64, kernel_size=3, padding="same")
+        self.d42 = nn.Conv2d(64, 64, kernel_size=3, padding="same")
 
         # Output layer
-        self.outconv = nn.Conv2d(32, n_outputs, kernel_size=1)
+        self.outconv = nn.Conv2d(64, n_outputs, kernel_size=1)
         
     def forward(self, x):
         # Encoder
