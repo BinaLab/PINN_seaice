@@ -403,7 +403,7 @@ def main() -> None:
 
     print("######## TRAINING DATA IS PREPARED (# of samples: {0}) ########".format(len(days)))
     
-    # cnn_input, cnn_output = convert_cnn_input2D(cnn_input, cnn_output, days = 7)
+    cnn_input, cnn_output = convert_cnn_input2D(cnn_input, cnn_output, days = 3)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
     yy_n = (yy - yy.min())/(yy.max() - yy.min())
