@@ -408,8 +408,8 @@ def main() -> None:
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
     yy_n = (yy - yy.min())/(yy.max() - yy.min())
 
-    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), len(days), axis = 0)), axis = 3)
-    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), len(days), axis = 0)), axis = 3)
+    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0)), axis = 3)
+    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0)), axis = 3)
     
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
