@@ -419,7 +419,9 @@ def main() -> None:
     seq_days = np.array(seq_days)
     
     dayint = args.day_int
-    cnn_input, cnn_output, seq_days, months, years = convert_cnn_input2D(cnn_input, cnn_output, seq_days, months, years, dayint)
+    
+    if dayint > 1:
+        cnn_input, cnn_output, seq_days, months, years = convert_cnn_input2D(cnn_input, cnn_output, seq_days, months, years, dayint)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
     yy_n = (yy - yy.min())/(yy.max() - yy.min())
