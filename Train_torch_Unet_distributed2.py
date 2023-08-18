@@ -5,7 +5,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import numpy as np
 import math
-
+from datetime import datetime
 from tqdm import tqdm
 import time
 import pickle
@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2018_2022_v4.pkl',
+        default='train_cnn_2013_2022_v4.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -399,15 +399,25 @@ def main() -> None:
     
     #### READ DATA ##################################################################
     with open(data_path + data_file, 'rb') as file:
-        xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)
-
-    print("######## TRAINING DATA IS PREPARED (# of samples: {0}) ########".format(len(days)))
+        xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    cnn_input, cnn_output = convert_cnn_input2D(cnn_input, cnn_output, days = 3)
+    # Cehck sequential days
+    seq_days = []
+    step = 0
+
+    for i in range(0, len(days)):
+        if (days[i] ==1) & (years[i] != years[0]):
+            step += days[i-1]
+        seq_days.append(days[i] + step)
+
+    seq_days = np.array(seq_days)
+    
+    dayint = 7
+    cnn_input, cnn_output, seq_days, months, years = convert_cnn_input2D(cnn_input, cnn_output, seq_days, months, years, dayint)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
     yy_n = (yy - yy.min())/(yy.max() - yy.min())
-
+    
     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0)), axis = 3)
     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0)), axis = 3)
     
@@ -443,7 +453,7 @@ def main() -> None:
     n_samples, in_channels, row, col = train_input.size()
     _, out_channels, _, _ = train_output.size()
     
-    del train_input, train_output, val_input, val_output, mask1, mask2, xx_n, yy_n
+    del cnn_input, cnn_output, train_input, train_output, val_input, val_output, mask1, mask2, xx_n, yy_n
     
     #############################################################################   
     
@@ -458,7 +468,6 @@ def main() -> None:
         device = torch.device('cuda')
         device_name = 'gpu'
         # net = nn.DataParallel(net) 
-
 
     print(device)
     net.to(device)

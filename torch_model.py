@@ -55,22 +55,25 @@ class physics_loss(nn.Module):
         return err_sum*100
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, days = 7):
+def convert_cnn_input2D(data_input, data_output, seq_days, months, years, dayint = 7):
     # Input & output should be entire images for CNN
     n_samples, row, col, var_ip = np.shape(data_input)
     _, _, _, var_op = np.shape(data_output)
 
-    cnn_input = np.zeros([n_samples-days, row, col, var_ip * days])
-    cnn_output = np.zeros([n_samples-days, row, col, var_op * days])
+    cnn_input = np.zeros([n_samples-dayint, row, col, var_ip * dayint], dtype = np.float16)
+    cnn_output = np.zeros([n_samples-dayint, row, col, var_op * dayint], dtype = np.float16)
+    valid = []
     
-    for n in range(0, n_samples-days):
-        for i in range(0, days):
-            for v in range(0, var_ip):            
-                cnn_input[n, :, :, v+i*days] = (data_input[n+i, :, :, v])
-            if v in range(0, var_op):
-                cnn_output[n, :, :, v+i*days] = (data_output[n+i, :, :, v])
+    for n in range(0, n_samples-dayint):
+        if seq_days[n] + dayint == seq_days[n+dayint]:
+            valid.append(n)
+            for i in range(0, dayint):
+                for v in range(0, var_ip):            
+                    cnn_input[n, :, :, v+i*var_ip] = (data_input[n+i, :, :, v])
+                if v in range(0, var_op):
+                    cnn_output[n, :, :, v+i*var_op] = (data_output[n+i, :, :, v])
                 
-    return cnn_input, cnn_output
+    return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], seq_days[valid], months[valid], years[valid]
 
 ### ML MODELS #####################################################################
 # CNN model
