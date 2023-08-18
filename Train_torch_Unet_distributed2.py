@@ -150,7 +150,13 @@ def parse_args() -> argparse.Namespace:
         default=0.001,
         metavar='LR',
         help='base learning rate (default: 0.01)',
-    )    
+    )
+    parser.add_argument(
+        '--day-int',
+        type=int,
+        default=1,
+        help='date interval to create inputs',
+    )
     
     parser.add_argument(
         '--backend',
@@ -412,7 +418,7 @@ def main() -> None:
 
     seq_days = np.array(seq_days)
     
-    dayint = 7
+    dayint = args.day_int
     cnn_input, cnn_output, seq_days, months, years = convert_cnn_input2D(cnn_input, cnn_output, seq_days, months, years, dayint)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
