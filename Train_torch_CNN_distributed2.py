@@ -15,6 +15,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.optim.lr_scheduler import ExponentialLR
+
 import torch.distributed as dist
 from torch.utils import collect_env
 from torch.utils.data import TensorDataset
@@ -22,6 +24,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
  
 from torch.utils.tensorboard import SummaryWriter
+
 
 from torch_model import *
 
@@ -507,6 +510,7 @@ def main() -> None:
         loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
+    scheduler = ExponentialLR(optimizer, gamma=0.95)
 
     history = {'loss': [], 'val_loss': [], 'time': []}
 
@@ -531,6 +535,7 @@ def main() -> None:
             args,
         )
         
+        scheduler.step()
         val_loss = validate(epoch, net, loss_fn, val_loader, args)
         
         if dist.get_rank() == 0:
