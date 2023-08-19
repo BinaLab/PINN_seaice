@@ -423,12 +423,12 @@ def main() -> None:
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
 
     mask1 = (years == date) # Test samples
-    mask2 = (days % 4 == 2) # Validation samples
+    mask2 = (days % 5 == 2) # Validation samples
 
     val_input = cnn_input[mask1, :, :, :] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[mask1, :, :, :] #cnn_output[(~mask1)&(mask2), :, :, :]
-    train_input = cnn_input[(~mask1), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
-    train_output = cnn_output[(~mask1), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
+    train_input = cnn_input[(~mask1)&(~mask2), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
+    train_output = cnn_output[(~mask1)&(~mask2), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
     # test_output = cnn_output[mask1, :, :, :]
     
