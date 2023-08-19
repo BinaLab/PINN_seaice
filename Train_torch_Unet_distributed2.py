@@ -344,6 +344,7 @@ def test(
 
     if args.log_writer is not None:
         args.log_writer.add_scalar('val/loss', val_loss.avg, epoch)
+        
     return val_loss.avg
     
 ##########################################################################################
@@ -407,21 +408,10 @@ def main() -> None:
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    # Cehck sequential days
-    seq_days = []
-    step = 0
-
-    for i in range(0, len(days)):
-        if (days[i] ==1) & (years[i] != years[0]):
-            step += days[i-1]
-        seq_days.append(days[i] + step)
-
-    seq_days = np.array(seq_days)
-    
     dayint = args.day_int
     
     if dayint > 1:
-        cnn_input, cnn_output, seq_days, months, years = convert_cnn_input2D(cnn_input, cnn_output, seq_days, months, years, dayint)
+        cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
     yy_n = (yy - yy.min())/(yy.max() - yy.min())
@@ -432,8 +422,6 @@ def main() -> None:
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
 
-    print(np.shape(cnn_input), np.shape(cnn_output))
-
     mask1 = (years == date) # Test samples
     mask2 = (days % 4 == 2) # Validation samples
 
@@ -441,8 +429,8 @@ def main() -> None:
     val_output = cnn_output[(~mask1)&(mask2), :, :, :]
     train_input = cnn_input[(~mask1)&(~mask2), :, :, :]
     train_output = cnn_output[(~mask1)&(~mask2), :, :, :]
-    # test_input = cnn_input[mask1, :, :, :]
-    # test_output = cnn_output[mask1, :, :, :]
+    test_input = cnn_input[mask1, :, :, :]
+    test_output = cnn_output[mask1, :, :, :]
     
     print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output))
     
@@ -450,18 +438,19 @@ def main() -> None:
     train_output = torch.tensor(train_output, dtype=torch.float32)
     val_input = torch.tensor(val_input, dtype=torch.float32)
     val_output = torch.tensor(val_output, dtype=torch.float32)
-    # test_input = torch.tensor(test_input, dtype=torch.float32)
-    # test_output = torch.tensor(test_output, dtype=torch.float32)   
+    test_input = torch.tensor(test_input, dtype=torch.float32)
+    test_output = torch.tensor(test_output, dtype=torch.float32)   
     
     train_dataset = TensorDataset(train_input, train_output)
     val_dataset = TensorDataset(val_input, val_output)
+    # test_dataset = TensorDataset(test_input, test_output)
     
     train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)
     
     n_samples, in_channels, row, col = train_input.size()
     _, out_channels, _, _ = train_output.size()
     
-    del cnn_input, cnn_output, train_input, train_output, val_input, val_output, mask1, mask2, xx_n, yy_n
+    del cnn_input, cnn_output, train_input, train_output, val_input, val_output, xx_n, yy_n
     
     #############################################################################   
     
@@ -532,6 +521,16 @@ def main() -> None:
 
                 with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
                     pickle.dump(history, file)
+    
+    # Test the model with the trained model ========================================
+    net.eval()
+    pred = net(test_input)   
+    test_save = [xx, yy, days[mask1], months[mask1], years[mask1], test_input, test_output, pred]
+
+    # Open a file and use dump()
+    with open(f'../results/test_{model_name}.pkl', 'wb') as file:
+        pickle.dump(test_save, file)
+    # ===============================================================================
 
 if __name__ == '__main__':
     main()

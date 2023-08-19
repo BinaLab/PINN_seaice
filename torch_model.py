@@ -55,8 +55,20 @@ class physics_loss(nn.Module):
         return err_sum*100
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, seq_days, months, years, dayint = 7):
+def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 7):
     # Input & output should be entire images for CNN
+    
+    # Cehck sequential days
+    seq_days = []
+    step = 0
+
+    for i in range(0, len(days)):
+        if (days[i] ==1) & (years[i] != years[0]):
+            step += days[i-1]
+        seq_days.append(days[i] + step)
+
+    seq_days = np.array(seq_days)
+    
     n_samples, row, col, var_ip = np.shape(data_input)
     _, _, _, var_op = np.shape(data_output)
 
@@ -73,7 +85,7 @@ def convert_cnn_input2D(data_input, data_output, seq_days, months, years, dayint
                 if v in range(0, var_op):
                     cnn_output[n, :, :, v+i*var_op] = (data_output[n+i, :, :, v])
                 
-    return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], seq_days[valid], months[valid], years[valid]
+    return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
 
 ### ML MODELS #####################################################################
 # CNN model
