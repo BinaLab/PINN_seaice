@@ -507,6 +507,7 @@ def main() -> None:
         loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
+    scheduler = ExponentialLR(optimizer, gamma=0.95)
 
     history = {'loss': [], 'val_loss': [], 'time': []}
 
@@ -531,6 +532,7 @@ def main() -> None:
             args,
         )
         
+        scheduler.step()
         val_loss = validate(epoch, net, loss_fn, val_loader, args)
         
         if dist.get_rank() == 0:
