@@ -367,7 +367,7 @@ def test(
             output = model(data)
             val_loss.update(loss_func(output, target))
 
-            test_save = [data, target, output]
+            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy()]
 
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{args.global_rank}_{i}.pkl', 'wb') as file:
