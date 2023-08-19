@@ -427,8 +427,8 @@ def main() -> None:
 
     val_input = cnn_input[mask1, :, :, :] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[mask1, :, :, :] #cnn_output[(~mask1)&(mask2), :, :, :]
-    train_input = cnn_input[(~mask1), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
-    train_output = cnn_output[(~mask1), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
+    train_input = cnn_input[(~mask1)&(~mask2), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
+    train_output = cnn_output[(~mask1)&(~mask2), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
     # test_output = cnn_output[mask1, :, :, :]
     
