@@ -447,14 +447,14 @@ def main() -> None:
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
 
     mask1 = (years == date) # Test samples
-    mask2 = (days % 4 == 2) # Validation samples
+    mask2 = (days % 7 == 2) # Validation samples
 
-    val_input = cnn_input[(~mask1)&(mask2), :, :, :]
-    val_output = cnn_output[(~mask1)&(mask2), :, :, :]
+    val_input = cnn_input[mask1, :, :, :] #cnn_input[(~mask1)&(mask2), :, :, :]
+    val_output = cnn_output[mask1, :, :, :] #cnn_output[(~mask1)&(mask2), :, :, :]
     train_input = cnn_input[(~mask1)&(~mask2), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
     train_output = cnn_output[(~mask1)&(~mask2), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
-    test_input = cnn_input[mask1, :, :, :]
-    test_output = cnn_output[mask1, :, :, :]
+    # test_input = cnn_input[mask1, :, :, :]
+    # test_output = cnn_output[mask1, :, :, :]
     
     print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output))
     
@@ -462,12 +462,12 @@ def main() -> None:
     val_output = torch.tensor(val_output, dtype=torch.float32)
     train_input = torch.tensor(train_input, dtype=torch.float32)
     train_output = torch.tensor(train_output, dtype=torch.float32)
-    test_input = torch.tensor(test_input, dtype=torch.float32)
-    test_output = torch.tensor(test_output, dtype=torch.float32)   
+    # test_input = torch.tensor(test_input, dtype=torch.float32)
+    # test_output = torch.tensor(test_output, dtype=torch.float32)   
     
     train_dataset = TensorDataset(train_input, train_output)
     val_dataset = TensorDataset(val_input, val_output)
-    test_dataset = TensorDataset(test_input, test_output)
+    # test_dataset = TensorDataset(test_input, test_output)
     
     train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)
     
@@ -549,8 +549,7 @@ def main() -> None:
     torch.cuda.empty_cache()
     
     # Test the model with the trained model ========================================
-    test_sampler, test_loader, _, _ = make_sampler_and_loader(args, test_dataset, test_dataset)
-    test(net, loss_fn, test_loader, args)
+    test(net, loss_fn, val_loader, args)
     # ===============================================================================
 
 if __name__ == '__main__':
