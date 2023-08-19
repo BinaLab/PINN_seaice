@@ -351,6 +351,7 @@ def test(
     model: torch.nn.Module,
     loss_func: torch.nn.Module,
     val_loader: torch.utils.data.DataLoader,
+    model_name,
     args
 ):
     """Test the model."""
@@ -549,7 +550,7 @@ def main() -> None:
     torch.cuda.empty_cache()
     
     # Test the model with the trained model ========================================
-    test(net, loss_fn, val_loader, args)
+    test(net, loss_fn, val_loader, model_name, args)
     # ===============================================================================
 
 if __name__ == '__main__':
