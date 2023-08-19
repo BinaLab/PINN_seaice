@@ -311,7 +311,7 @@ def train(
     return train_loss.avg
 
 
-def test(
+def validate(
     epoch: int,
     model: torch.nn.Module,
     loss_func: torch.nn.Module,
@@ -346,6 +346,30 @@ def test(
         args.log_writer.add_scalar('val/loss', val_loss.avg, epoch)
         
     return val_loss.avg
+
+def test(
+    epoch: int,
+    model: torch.nn.Module,
+    loss_func: torch.nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    args
+):
+    """Test the model."""
+    model.eval()
+    val_loss = Metric('val_loss')
+
+    with torch.no_grad():
+        for i, (data, target) in enumerate(val_loader):
+            if args.cuda:
+                data, target = data.cuda(), target.cuda()
+            output = model(data)
+            val_loss.update(loss_func(output, target))
+
+            test_save = [data, target, output]
+
+            # Open a file and use dump()
+            with open(f'../results/test_{model_name}_{args.global_rank}_{i}.pkl', 'wb') as file:
+                pickle.dump(test_save, file)
     
 ##########################################################################################
 
@@ -385,7 +409,8 @@ def main() -> None:
                 f'world_size = {torch.distributed.get_world_size()}',
             )
         torch.distributed.barrier()
-
+    
+    args.global_rank = torch.distributed.get_rank()
 
     os.makedirs(args.log_dir, exist_ok=True)
     args.checkpoint_format = os.path.join(args.log_dir, args.checkpoint_format)
@@ -423,10 +448,10 @@ def main() -> None:
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
 
     mask1 = (years == date) # Test samples
-    mask2 = (days % 5 == 2) # Validation samples
+    mask2 = (days % 4 == 2) # Validation samples
 
-    val_input = cnn_input[mask1, :, :, :] #cnn_input[(~mask1)&(mask2), :, :, :]
-    val_output = cnn_output[mask1, :, :, :] #cnn_output[(~mask1)&(mask2), :, :, :]
+    val_input = cnn_input[(~mask1)&(mask2), :, :, :]
+    val_output = cnn_output[(~mask1)&(mask2), :, :, :]
     train_input = cnn_input[(~mask1)&(~mask2), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
     train_output = cnn_output[(~mask1)&(~mask2), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
@@ -506,7 +531,7 @@ def main() -> None:
             args,
         )
         
-        val_loss = test(epoch, net, loss_fn, val_loader, args)
+        val_loss = validate(epoch, net, loss_fn, val_loader, args)
         
         if dist.get_rank() == 0:
             if epoch % args.checkpoint_freq == 0:
@@ -521,6 +546,8 @@ def main() -> None:
 
                 with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
                     pickle.dump(history, file)
+    
+    torch.cuda.empty_cache()
     
     # Test the model with the trained model ========================================
     net.eval()
