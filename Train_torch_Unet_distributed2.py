@@ -450,7 +450,7 @@ def main() -> None:
     n_samples, in_channels, row, col = train_input.size()
     _, out_channels, _, _ = train_output.size()
     
-    del cnn_input, cnn_output, train_input, train_output, val_input, val_output, xx_n, yy_n
+    del cnn_input, cnn_output, train_input, train_output, xx_n, yy_n
     
     #############################################################################   
     
