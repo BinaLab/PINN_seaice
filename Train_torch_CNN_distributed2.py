@@ -555,7 +555,21 @@ def main() -> None:
     torch.cuda.empty_cache()
     
     # Test the model with the trained model ========================================
-    test(net, loss_fn, val_loader, model_name, args)
+    val_months = months[mask1]
+    
+    for m in [1, 2, 3, 4, 10, 11, 12]:
+        if m % 3 == dist.get_rank():            
+            data = val_input[val_months==m, :, :, :]
+            target = val_output[val_months==m, :, :, :]
+            output = net(data)
+
+            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy()]
+
+            # Open a file and use dump()
+            with open(f'../results/test_{model_name}_{str(m).zfill(2)}.pkl', 'wb') as file:
+                pickle.dump(test_save, file)
+    if dist.get_rank() == 0:
+        print("#### Validation done!! ####")        
     # ===============================================================================
 
 if __name__ == '__main__':
