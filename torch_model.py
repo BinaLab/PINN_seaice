@@ -19,8 +19,9 @@ class custom_loss(nn.Module):
         u_p = prd[:, 0, :, :]; v_p = prd[:, 1, :, :]
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
-        theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
-        theta = theta[theta > 0]
+        
+        f0 = (vel_o > 0) & (vel_p > 0)
+        theta = torch.acos((u_o[f0]*u_p[f0]+v_o[f0]*v_p[f0])/(vel_o[f0]*vel_p[f0]))
 
         err_u = torch.abs(u_o - u_p)
         err_v = torch.abs(v_o - v_p)
