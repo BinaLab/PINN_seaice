@@ -501,7 +501,7 @@ def main() -> None:
         device_ids=[args.local_rank],
     )
 
-    model_name = f"torch_unet_sit_lr{lr}_wo{date}_{phy}_{device_name}{world_size}"
+    model_name = f"torch_unet_sit_lr{lr}_wo{date}_{phy}_day{dayint}_{device_name}{world_size}"
 
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
