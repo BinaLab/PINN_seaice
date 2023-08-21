@@ -34,10 +34,10 @@ class custom_loss(nn.Module):
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
 
-        err_sum = torch.mean((err_u + err_v + err_vel) + err_sic + err_sit + neg_sic + neg_sit)
+        err_sum = torch.mean((err_u + err_v + err_vel) + err_sic + err_sit + neg_sic + neg_sit)*100
         err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
-        return err_sum*100    
+        return err_sum   
     
 class physics_loss(nn.Module):
     def __init__(self):
