@@ -24,7 +24,7 @@ class custom_loss(nn.Module):
         err_u = torch.abs(u_o - u_p)
         err_v = torch.abs(v_o - v_p)
         err_vel = torch.abs(vel_o - vel_p)
-        err_theta = torch.abs(theta)
+        err_theta = torch.abs(theta[theta >= 0])
         
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
         err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])
@@ -32,7 +32,8 @@ class custom_loss(nn.Module):
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
         
-        err_sum = torch.mean((err_u + err_v + err_vel) + (err_theta)*0.5/torch.pi + err_sic + err_sit + neg_sic + neg_sit)
+        err_sum = torch.mean((err_u + err_v + err_vel) + err_sic + err_sit + neg_sic + neg_sit)
+        err_sum += torch.mean(err_theta)*0.5/torch.pi
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum*100    
     
