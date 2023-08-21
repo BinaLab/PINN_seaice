@@ -493,7 +493,7 @@ def main() -> None:
         device_name = 'gpu'
         # net = nn.DataParallel(net) 
 
-    print(device)
+    # print(device)
     net.to(device)
     
     net = torch.nn.parallel.DistributedDataParallel(

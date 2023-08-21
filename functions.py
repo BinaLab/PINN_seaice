@@ -317,7 +317,7 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
             grid_output[i, :, :, 2] = grid_sic2
             
             grid_sit2 = get_SIT(sit_file2[0], xx, yy)            
-            grid_output[i, :, :, 3] = grid_sit2
+            grid_output[i, :, :, 3] = grid_sit2 / 8
 
             # Masking ======================================
             mask1 = (grid_sic == 0) #(np.isnan(grid_u))
