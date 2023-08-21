@@ -88,17 +88,17 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 7
     _, _, _, var_op = np.shape(data_output)
 
     cnn_input = np.zeros([n_samples-dayint, row, col, var_ip * dayint], dtype = np.float16)
-    cnn_output = np.zeros([n_samples-dayint, row, col, var_op * dayint], dtype = np.float16)
+    cnn_output = np.zeros([n_samples-dayint, row, col, var_op], dtype = np.float16)
     valid = []
     
-    for n in range(0, n_samples-dayint):
-        if seq_days[n] + dayint == seq_days[n+dayint]:
+    for n in range(dayint, n_samples):
+        if seq_days[n] - dayint == seq_days[n-dayint]:
             valid.append(n)
             for i in range(0, dayint):
                 for v in range(0, var_ip):            
-                    cnn_input[n, :, :, v+i*var_ip] = (data_input[n+i, :, :, v])
-                if v in range(0, var_op):
-                    cnn_output[n, :, :, v+i*var_op] = (data_output[n+i, :, :, v])
+                    cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v])
+                # if v in range(0, var_op):
+                cnn_output[n, :, :, :] = (data_output[n, :, :, :])
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
 

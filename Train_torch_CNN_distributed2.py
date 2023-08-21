@@ -484,7 +484,7 @@ def main() -> None:
     
     net = Net(in_channels, out_channels)
 
-    # torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     
     if args.no_cuda:
         device = torch.device('cpu')
