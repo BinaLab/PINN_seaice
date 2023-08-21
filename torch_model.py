@@ -87,8 +87,8 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 7
     n_samples, row, col, var_ip = np.shape(data_input)
     _, _, _, var_op = np.shape(data_output)
 
-    cnn_input = np.zeros([n_samples-dayint, row, col, var_ip * dayint], dtype = np.float16)
-    cnn_output = np.zeros([n_samples-dayint, row, col, var_op], dtype = np.float16)
+    cnn_input = np.zeros([n_samples, row, col, var_ip * dayint], dtype = np.float16)
+    cnn_output = np.zeros([n_samples, row, col, var_op], dtype = np.float16)
     valid = []
     
     for n in range(dayint, n_samples):
