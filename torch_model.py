@@ -20,11 +20,12 @@ class custom_loss(nn.Module):
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
+        theta = theta[theta > 0]
         
         err_u = torch.abs(u_o - u_p)
         err_v = torch.abs(v_o - v_p)
         err_vel = torch.abs(vel_o - vel_p)
-        err_theta = torch.abs(theta[theta >= 0])
+        err_theta = torch.abs(theta)
         
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
         err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])
