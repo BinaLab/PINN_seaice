@@ -12,7 +12,7 @@ from torch_geometric.nn.inits import glorot, zeros
 ### LOSS FUNCTIONS #####################################################################
 class vel_loss(nn.Module):
     def __init__(self):
-        super(custom_loss, self).__init__();
+        super(vel_loss, self).__init__();
 
     def forward(self, obs, prd):
         u_o = obs[:, 0, :, :]; v_o = obs[:, 1, :, :]
