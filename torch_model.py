@@ -10,6 +10,29 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn.inits import glorot, zeros
 
 ### LOSS FUNCTIONS #####################################################################
+class vel_loss(nn.Module):
+    def __init__(self):
+        super(custom_loss, self).__init__();
+
+    def forward(self, obs, prd):
+        u_o = obs[:, 0, :, :]; v_o = obs[:, 1, :, :]
+        u_p = prd[:, 0, :, :]; v_p = prd[:, 1, :, :]
+        vel_o = (u_o**2 + v_o**2)**0.5
+        vel_p = (u_p**2 + v_p**2)**0.5
+        
+        theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
+        theta = torch.where(theta >= 0, theta, 0)
+
+        err_u = torch.abs(u_o - u_p)
+        err_v = torch.abs(v_o - v_p)
+        err_vel = torch.abs(vel_o - vel_p)
+        err_theta = torch.abs(theta)
+
+        err_sum = torch.mean((err_u + err_v + err_vel))*100
+        err_sum += torch.nanmean(err_theta)*0.5/3.141592
+        # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
+        return err_sum  
+
 class custom_loss(nn.Module):
     def __init__(self):
         super(custom_loss, self).__init__();
@@ -70,7 +93,7 @@ class physics_loss(nn.Module):
         return err_sum*100
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 7):
+def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 1):
     # Input & output should be entire images for CNN
     
     # Cehck sequential days

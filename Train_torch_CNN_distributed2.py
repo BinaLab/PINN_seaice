@@ -449,6 +449,7 @@ def main() -> None:
     
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
+    cnn_output = cnn_output[:, 0:2, :, :] # Only predict U/V
 
     mask1 = (years == date) # Test samples
     mask2 = (days % 7 == 2) # Validation samples
@@ -501,13 +502,19 @@ def main() -> None:
         net,
         device_ids=[args.local_rank],
     )
-
-    model_name = f"torch_cnn_sit_lr{lr}_wo{date}_{phy}_day{dayint}_{device_name}{world_size}"
+    
+    if out_channels == 2:
+        model_name = f"torch_cnn_uv_lr{lr}_wo{date}_{phy}_day{dayint}_{device_name}{world_size}"
+    else:
+        model_name = f"torch_cnn_sit_lr{lr}_wo{date}_{phy}_day{dayint}_{device_name}{world_size}"
 
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
-        loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
+        if out_channels == 2:
+            loss_fn = vel_loss()
+        else:
+            loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)
