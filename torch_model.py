@@ -20,15 +20,16 @@ class vel_loss(nn.Module):
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
-        theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
-        theta = torch.where(theta >= 0, theta, 0)/3.141592
+        theta = (u_o*u_p+v_o*v_p)/(vel_o*vel_p)
+        theta = (1 - theta**2)**0.5
+        theta = torch.where(theta >= 0, theta, 0)
 
         err_u = torch.abs(u_o - u_p)
         err_v = torch.abs(v_o - v_p)
         err_vel = torch.abs(vel_o - vel_p)
         err_theta = torch.abs(theta)
 
-        err_sum = torch.mean((err_u + err_v + err_vel))*10000
+        err_sum = torch.mean((err_u + err_v + err_vel))*100
         err_sum += torch.nanmean(err_theta)/10000
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum  
