@@ -28,8 +28,8 @@ class vel_loss(nn.Module):
         err_vel = torch.abs(vel_o - vel_p)
         err_theta = torch.abs(theta)
 
-        err_sum = torch.mean((err_u + err_v + err_vel))*100
-        # err_sum += torch.nanmean(err_theta)/100
+        err_sum = torch.mean((err_u + err_v + err_vel))*10000
+        err_sum += torch.nanmean(err_theta)/10000
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum  
 
