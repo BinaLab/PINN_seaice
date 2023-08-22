@@ -23,11 +23,11 @@ class vel_loss(nn.Module):
         # theta = (u_o*u_p+v_o*v_p)/(vel_o*vel_p)
         # theta = (1 - theta**2)**0.5
         # theta = torch.where(theta >= 0, theta, 0)
+        # err_theta = torch.abs(theta)
 
         err_u = torch.abs(u_o - u_p)
         err_v = torch.abs(v_o - v_p)
-        err_vel = torch.abs(vel_o - vel_p)
-        err_theta = torch.abs(theta)
+        err_vel = torch.abs(vel_o - vel_p)        
 
         err_sum = torch.mean((err_u + err_v + err_vel))*100
         # err_sum += torch.nanmean(err_theta)/10000
