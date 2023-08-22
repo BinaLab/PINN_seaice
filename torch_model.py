@@ -21,6 +21,7 @@ class vel_loss(nn.Module):
         vel_p = (u_p**2 + v_p**2)**0.5
         
         theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
+        print(theta.size())
         theta = torch.where(theta >= 0, theta, 0)
 
         err_u = torch.abs(u_o - u_p)
