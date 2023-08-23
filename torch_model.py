@@ -116,7 +116,7 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
     valid = []
     
     for n in range(dayint, n_samples):
-        if seq_days[n+forecast] - sec_days[n-dayint+1] == dayint + forecast-1:
+        if seq_days[n+forecast] - seq_days[n-dayint+1] == dayint + forecast-1:
             valid.append(n)
             for i in range(0, dayint):
                 for v in range(0, var_ip):            
