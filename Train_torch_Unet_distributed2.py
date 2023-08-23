@@ -520,7 +520,7 @@ def main() -> None:
         if out_channels == 2:
             loss_fn = vel_loss()
         else:
-            loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
+            loss_fn = nn.L1Loss() #custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)
@@ -571,7 +571,7 @@ def main() -> None:
     val_months = months[mask1]
     val_days = days[mask1]
     
-    for m in [1, 2, 3, 4, 10, 11, 12]:
+    for m in np.unique(val_months):
         if m % 3 == dist.get_rank():            
             data = val_input[val_months==m, :, :, :]
             target = val_output[val_months==m, :, :, :]
@@ -581,7 +581,7 @@ def main() -> None:
                          val_months[val_months==m], val_days[val_months==m]]
 
             # Open a file and use dump()
-            with open(f'../results/test_{model_name}_{str(m).zfill(2)}.pkl', 'wb') as file:
+            with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
                 pickle.dump(test_save, file)
     if dist.get_rank() == 0:
         print("#### Validation done!! ####")     

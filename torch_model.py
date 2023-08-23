@@ -58,7 +58,7 @@ class custom_loss(nn.Module):
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
 
-        err_sum = torch.mean((err_u + err_v + err_vel) + err_sic + err_sit + neg_sic + neg_sit)*100
+        err_sum = torch.mean((err_u + err_v) + err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum   
@@ -167,6 +167,45 @@ class Net(nn.Module):
         # x = F.linear(self.conv6(x), weight = 1)
         # x = F.linear(self.conv7(x), weight = 1)
         # x = F.linear(self.conv8(x), weight = 1)
+        
+        return x
+    
+class CNN_flatten(nn.Module):
+    def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5):
+        super().__init__()
+        self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
+        self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.conv3 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.conv4 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.conv5 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.conv6 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.conv7 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.conv8 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.fc1 = nn.Linear(in_features=n_filters * 320 * 320, out_features=n_filters)
+        self.fc2 = nn.Linear(in_features=n_filters, out_features=n_outputs)
+
+    def forward(self, x):
+        # x = F.tanh(self.conv1(x)) #F.leaky_relu(self.conv1(x))
+        # x = F.tanh(self.conv2(x)) #F.leaky_relu(self.conv2(x))
+        # x = F.tanh(self.conv3(x)) #F.leaky_relu(self.conv3(x))
+        # x = F.tanh(self.conv4(x)) #F.leaky_relu(self.conv4(x))
+        # x = F.tanh(self.conv5(x)) #F.leaky_relu(self.conv5(x))
+        # x = F.tanh(self.conv6(x)) #F.leaky_relu(self.conv6(x))
+        # x = F.tanh(self.conv7(x)) #F.leaky_relu(self.conv7(x))
+        # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
+        
+        x = F.leaky_relu(self.conv1(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv2(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv3(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv4(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv6(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv7(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv8(x), negative_slope=0.1)
+        x = x.view(-1, n_filters * 320 * 320)
+        x = self.fc1(x)
+        x = nn.functional.relu(x)
+        x = self.fc2(x)
         
         return x
     
