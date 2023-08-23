@@ -160,6 +160,12 @@ def parse_args() -> argparse.Namespace:
         default=1,
         help='date interval to create inputs',
     )
+    parser.add_argument(
+        '--forecast',
+        type=int,
+        default=1,
+        help='date to forecast',
+    )
     
     parser.add_argument(
         '--backend',
@@ -437,9 +443,9 @@ def main() -> None:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
     dayint = args.day_int
-    
-    if dayint > 1:
-        cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint)
+    forecast = args.forecast
+
+    cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
     yy_n = (yy - yy.min())/(yy.max() - yy.min())

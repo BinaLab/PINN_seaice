@@ -94,7 +94,7 @@ class physics_loss(nn.Module):
         return err_sum*100
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 1, forecast = 7):
+def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3, forecast = 3):
     # Input & output should be entire images for CNN
     
     # Cehck sequential days
@@ -116,13 +116,13 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 1
     valid = []
     
     for n in range(dayint, n_samples):
-        if seq_days[n] - dayint == seq_days[n-dayint]:
+        if seq_days[n+forecast] - sec_days[n-dayint+1] == dayint + forecast-1:
             valid.append(n)
             for i in range(0, dayint):
                 for v in range(0, var_ip):            
                     cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v])
                 # if v in range(0, var_op):
-                cnn_output[n, :, :, :] = (data_output[n, :, :, :])
+                cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :])
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
 
