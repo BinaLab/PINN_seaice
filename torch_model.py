@@ -94,7 +94,7 @@ class physics_loss(nn.Module):
         return err_sum*100
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 1):
+def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 1, forecast = 7):
     # Input & output should be entire images for CNN
     
     # Cehck sequential days
