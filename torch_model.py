@@ -39,6 +39,7 @@ class custom_loss(nn.Module):
         super(custom_loss, self).__init__();
 
     def forward(self, obs, prd):
+        sic = prd[:, 2, :, :]
         u_o = obs[:, 0, :, :]; v_o = obs[:, 1, :, :]
         u_p = prd[:, 0, :, :]; v_p = prd[:, 1, :, :]
         vel_o = (u_o**2 + v_o**2)**0.5
@@ -47,9 +48,9 @@ class custom_loss(nn.Module):
         theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
         theta = torch.where(torch.isnan(theta), 0, theta)
 
-        err_u = torch.abs(u_o - u_p)
-        err_v = torch.abs(v_o - v_p)
-        err_vel = torch.abs(vel_o - vel_p)
+        err_u = torch.abs(u_o - u_p)[sic > 0]
+        err_v = torch.abs(v_o - v_p)[sic > 0]
+        err_vel = torch.abs(vel_o - vel_p)[sic > 0]
         err_theta = torch.abs(theta)
 
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
@@ -58,7 +59,8 @@ class custom_loss(nn.Module):
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
 
-        err_sum = torch.mean((err_u + err_v) + err_sic + err_sit)*100
+        err_sum = torch.mean(err_u + err_v)*100
+        err_sum += torch.mean((err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum   
