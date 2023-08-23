@@ -174,14 +174,15 @@ class CNN_flatten(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5):
         super().__init__()
         self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
         self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 80*80
         self.conv3 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 40*40
         self.conv4 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.conv5 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.conv6 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.conv7 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.conv8 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.fc1 = nn.Linear(in_features=n_filters * 320 * 320, out_features=n_outputs*320*320)
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
+        self.conv5 = nn.Conv2d(n_filters, n_outputs, kernel, padding = "same")
+        self.fc1 = nn.Linear(in_features=n_outputs * 20 * 20, out_features=n_outputs*320*320)
         # self.fc2 = nn.Linear(in_features=10, out_features=n_outputs*320*320)
 
     def forward(self, x):
@@ -195,16 +196,17 @@ class CNN_flatten(nn.Module):
         # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
         
         x = F.leaky_relu(self.conv1(x), negative_slope=0.1)
+        x = self.pool1(x)
         x = F.leaky_relu(self.conv2(x), negative_slope=0.1)
+        x = self.pool2(x)
         x = F.leaky_relu(self.conv3(x), negative_slope=0.1)
+        x = self.pool3(x)
         x = F.leaky_relu(self.conv4(x), negative_slope=0.1)
+        x = self.pool4(x)
         x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
-        x = F.leaky_relu(self.conv6(x), negative_slope=0.1)
-        x = F.leaky_relu(self.conv7(x), negative_slope=0.1)
-        x = F.leaky_relu(self.conv8(x), negative_slope=0.1)
-        x = x.view(-1, n_filters * 320 * 320)
+        x = x.view(-1, n_outputs * 20 * 20)
         x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
-        x = x.view(-1, 320, 320, n_outputs)
+        x = x.view(-1, n_outputs, 320, 320)
         
         return x
     
