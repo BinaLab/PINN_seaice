@@ -181,8 +181,8 @@ class CNN_flatten(nn.Module):
         self.conv6 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.conv7 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.conv8 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.fc1 = nn.Linear(in_features=n_filters * 320 * 320, out_features=n_filters)
-        self.fc2 = nn.Linear(in_features=n_filters, out_features=n_outputs)
+        self.fc1 = nn.Linear(in_features=n_filters * 320 * 320, out_features=n_outputs*320*320)
+        # self.fc2 = nn.Linear(in_features=10, out_features=n_outputs*320*320)
 
     def forward(self, x):
         # x = F.tanh(self.conv1(x)) #F.leaky_relu(self.conv1(x))
@@ -203,9 +203,8 @@ class CNN_flatten(nn.Module):
         x = F.leaky_relu(self.conv7(x), negative_slope=0.1)
         x = F.leaky_relu(self.conv8(x), negative_slope=0.1)
         x = x.view(-1, n_filters * 320 * 320)
-        x = self.fc1(x)
-        x = nn.functional.relu(x)
-        x = self.fc2(x)
+        x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
+        x = x.view(-1, 320, 320, n_outputs)
         
         return x
     

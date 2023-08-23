@@ -490,7 +490,7 @@ def main() -> None:
     
     #############################################################################   
     
-    net = Net(in_channels, out_channels)
+    net = CNN_flatten(in_channels, out_channels)
 
     torch.cuda.empty_cache()
     
