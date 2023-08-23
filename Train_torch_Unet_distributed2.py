@@ -444,7 +444,7 @@ def main() -> None:
     dayint = args.day_int
     forecast = args.forecast
     
-    cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
+    # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
