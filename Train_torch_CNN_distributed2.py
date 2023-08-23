@@ -569,6 +569,7 @@ def main() -> None:
     
     # Test the model with the trained model ========================================
     val_months = months[mask1]
+    val_days = days[mask1]
     
     for m in [1, 2, 3, 4, 10, 11, 12]:
         if m % 3 == dist.get_rank():            
@@ -576,7 +577,8 @@ def main() -> None:
             target = val_output[val_months==m, :, :, :]
             output = net(data)
 
-            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy()]
+            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
+                         val_months[val_months==m], val_days[val_months==m]]
 
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{str(m).zfill(2)}.pkl', 'wb') as file:
