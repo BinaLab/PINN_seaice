@@ -204,9 +204,9 @@ class CNN_flatten(nn.Module):
         x = F.leaky_relu(self.conv4(x), negative_slope=0.1)
         x = self.pool4(x)
         x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
-        x = x.view(-1, n_outputs * 20 * 20)
+        x = x.view(-1, 4 * 20 * 20)
         x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
-        x = x.view(-1, n_outputs, 320, 320)
+        x = x.view(-1, 4, 320, 320)
         
         return x
     
