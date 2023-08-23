@@ -115,7 +115,7 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
     cnn_output = np.zeros([n_samples, row, col, var_op], dtype = np.float16)
     valid = []
     
-    for n in range(dayint, n_samples):
+    for n in range(dayint-1, n_samples-forecast):
         if seq_days[n+forecast] - seq_days[n-dayint+1] == dayint + forecast-1:
             valid.append(n)
             for i in range(0, dayint):
