@@ -518,7 +518,7 @@ def main() -> None:
         if out_channels == 2:
             loss_fn = vel_loss()
         else:
-            loss_fn = nn.L1Loss() #custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
+            loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)
