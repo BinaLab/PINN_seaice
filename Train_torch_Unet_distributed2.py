@@ -512,7 +512,7 @@ def main() -> None:
     if out_channels == 2:
         model_name = f"torch_unet_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
     else:
-        model_name = f"torch_unet_sit_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+        model_name = f"torch_unet_sit_relu_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
 
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
