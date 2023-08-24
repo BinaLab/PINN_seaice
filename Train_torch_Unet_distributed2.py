@@ -455,7 +455,7 @@ def main() -> None:
     
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
-    # cnn_output = cnn_output[:, 0:2, :, :] # Only predict U/V
+    cnn_output = cnn_output[:, 0:2, :, :] # Only predict U/V
     
     mask1 = (years == date) # Test samples
     mask2 = (days % 7 == 2) # Validation samples

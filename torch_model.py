@@ -123,8 +123,9 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
             for i in range(0, dayint):
                 for v in range(0, var_ip):            
                     cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v])
-                # if v in range(0, var_op):
-                cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :])
+            for j in range(0, forecast):
+                if v in range(0, var_op):
+                    cnn_output[n, :, :, v+j*var_ip] = (data_output[n+j, :, :, v])
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
 
@@ -186,7 +187,7 @@ class CNN_flatten(nn.Module):
         self.conv5 = nn.Conv2d(n_filters, 4, kernel, padding = "same")
         self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(in_features=4 * 10 * 10, out_features=4*10 * 10)
+        self.fc1 = nn.Linear(in_features=4 * 10 * 10, out_features=4*360 * 360)
         self.fc2 = nn.Linear(in_features=4*10 * 10, out_features=4 * 80 * 80)
         self.upconv1 = nn.ConvTranspose2d(4, n_filters, kernel_size=2, stride=2) # 160*160
         self.upconv2 = nn.ConvTranspose2d(n_filters, n_outputs, kernel_size=2, stride=2) # 320*320
