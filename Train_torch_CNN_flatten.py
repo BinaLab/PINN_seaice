@@ -517,10 +517,12 @@ def main() -> None:
     elif phy == "nophy":
         if out_channels == 2:
             loss_fn = vel_loss()
-            model_name = f"torch_cnn_fc_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+            model_name = f"torch_cnn_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+            
         else:
             loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
-            model_name = f"torch_cnn_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+            model_name = f"torch_cnn_fc_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+            
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)
