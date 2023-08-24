@@ -185,13 +185,11 @@ class CNN_flatten(nn.Module):
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
         self.conv5 = nn.Conv2d(n_filters, 4, kernel, padding = "same")
         self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
+        self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(in_features=4 * 10 * 10, out_features=4*10 * 10)
-        self.fc2 = nn.Linear(in_features=4*10 * 10, out_features=4 * 10 * 10)
-        self.upconv1 = nn.ConvTranspose2d(4, n_filters, kernel_size=2, stride=2) # 20*20
-        self.upconv2 = nn.ConvTranspose2d(n_filters, n_filters, kernel_size=2, stride=2) # 40*40 
-        self.upconv3 = nn.ConvTranspose2d(n_filters, n_filters, kernel_size=2, stride=2) # 80*80
-        self.upconv4 = nn.ConvTranspose2d(n_filters, n_filters, kernel_size=2, stride=2) # 160*160
-        self.upconv5 = nn.ConvTranspose2d(n_filters, n_outputs, kernel_size=2, stride=2) # 320*320
+        self.fc2 = nn.Linear(in_features=4*10 * 10, out_features=4 * 80 * 80)
+        self.upconv1 = nn.ConvTranspose2d(4, n_filters, kernel_size=2, stride=2) # 160*160
+        self.upconv2 = nn.ConvTranspose2d(n_filters, n_outputs, kernel_size=2, stride=2) # 320*320
         # self.fc2 = nn.Linear(in_features=10, out_features=n_outputs*320*320)
 
     def forward(self, x):
@@ -214,15 +212,12 @@ class CNN_flatten(nn.Module):
         x = self.pool4(x)
         x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
         x = self.pool5(x)
-        x = x.reshape(-1, 4*10*10)
+        x = self.flatten(x)
         x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
         x = F.leaky_relu(self.fc2(x), negative_slope=0.1)
-        x = x.reshape(-1, 4, 10, 10)
+        x = x.reshape(-1, 4, 80, 80)
         x = F.leaky_relu(self.upconv1(x), negative_slope=0.1)
         x = F.leaky_relu(self.upconv2(x), negative_slope=0.1)
-        x = F.leaky_relu(self.upconv3(x), negative_slope=0.1)
-        x = F.leaky_relu(self.upconv4(x), negative_slope=0.1)
-        x = F.leaky_relu(self.upconv5(x), negative_slope=0.1)
         
         return x
     
