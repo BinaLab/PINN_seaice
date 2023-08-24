@@ -60,7 +60,7 @@ class custom_loss(nn.Module):
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
 
         err_sum = torch.mean(err_u + err_v)*100
-        err_sum += torch.mean((err_sic + err_sit)*100
+        err_sum += torch.mean(err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum   
