@@ -102,10 +102,19 @@ class MultiTaskLossWrapper(nn.Module):
         self.log_vars = nn.Parameter(torch.zeros((task_num)))
 
     def forward(self, obs, sid, sic, sit):
-
-        loss0 = nn.L1Loss(obs[:, 0:2, :, :], sid)
-        loss1 = nn.L1Loss(obs[:, 2, :, :], sic)
-        loss2 = nn.L1Loss(obs[:, 3, :, :], sit)
+        
+        # Sea ice drift error
+        err_u = torch.abs(obs[:, 0, :, :] - sid[:, 0, :, :])
+        err_v = torch.abs(obs[:, 1, :, :] - sid[:, 1, :, :])
+        loss0 = torch.mean((err_u + err_v))*100 
+        
+        # SIC error
+        err_sic = torch.abs(obs[:, 2, :, :]-sic)
+        loss1 = torch.mean(err_sic)*100
+        
+        # SIT error
+        err_sit = torch.abs(obs[:, 3, :, :]-sit)
+        loss2 = torch.mean(err_sit)*100
 
         precision0 = torch.exp(-self.log_vars[0])
         loss0 = precision0*loss0 + self.log_vars[0]
