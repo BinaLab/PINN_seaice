@@ -498,7 +498,7 @@ def main() -> None:
     
     #############################################################################   
     
-    net = CNN_hydra(in_channels, out_channels)
+    net = CNN_flatten_hydra(in_channels, out_channels)
 
     torch.cuda.empty_cache()
     
@@ -529,7 +529,7 @@ def main() -> None:
             
         else:
             loss_fn = MultiTaskLossWrapper(3).to(device) #custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
-            model_name = f"torch_cnn_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+            model_name = f"torch_cnn_fc_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
             
 
     optimizer = optim.Adam(net.parameters(), lr=lr)

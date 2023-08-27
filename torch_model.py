@@ -253,6 +253,63 @@ class CNN_flatten(nn.Module):
         
         return x
     
+class CNN_flatten_hydra(nn.Module):
+    def __init__(self, n_inputs, n_outputs, n_filters=64, kernel = 5):
+        super().__init__()
+        self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
+        self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 80*80
+        self.conv3 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 40*40
+        self.conv4 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
+        self.conv5 = nn.Conv2d(n_filters, 4, kernel, padding = "same")
+        self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
+        
+        self.flatten = nn.Flatten()
+        self.fc1 = nn.Linear(in_features=4 * 10 * 10, out_features=2*320 * 320)
+        self.fc2 = nn.Linear(in_features=4 * 10 * 10, out_features=1*320 * 320)
+        self.fc3 = nn.Linear(in_features=4 * 10 * 10, out_features=1*320 * 320)
+
+    def forward(self, x):
+        # x = F.tanh(self.conv1(x)) #F.leaky_relu(self.conv1(x))
+        # x = F.tanh(self.conv2(x)) #F.leaky_relu(self.conv2(x))
+        # x = F.tanh(self.conv3(x)) #F.leaky_relu(self.conv3(x))
+        # x = F.tanh(self.conv4(x)) #F.leaky_relu(self.conv4(x))
+        # x = F.tanh(self.conv5(x)) #F.leaky_relu(self.conv5(x))
+        # x = F.tanh(self.conv6(x)) #F.leaky_relu(self.conv6(x))
+        # x = F.tanh(self.conv7(x)) #F.leaky_relu(self.conv7(x))
+        # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
+        
+        x = F.leaky_relu(self.conv1(x), negative_slope=0.1)
+        x = self.pool1(x)
+        x = F.leaky_relu(self.conv2(x), negative_slope=0.1)
+        x = self.pool2(x)
+        x = F.leaky_relu(self.conv3(x), negative_slope=0.1)
+        x = self.pool3(x)
+        x = F.leaky_relu(self.conv4(x), negative_slope=0.1)
+        x = self.pool4(x)
+        x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
+        x = self.pool5(x)
+        x = self.flatten(x)
+        # x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
+        # # x = F.leaky_relu(self.fc2(x), negative_slope=0.1)
+        # x = x.reshape(-1, 4, 320, 320)
+        
+        # sid_head = F.tanh(self.conv_uv(x))
+        # sic_head = F.tanh(self.conv_sic(x))
+        # sit_head = F.tanh(self.conv_sit(x))
+        
+        x1 = self.fc1(x)
+        sid_head = x1.reshape(-1, 2, 320, 320)
+        x2 = self.fc2(x)
+        sic_head = x2.reshape(-1, 1, 320, 320)
+        x3 = self.fc3(x)
+        sit_head = x3.reshape(-1, 1, 320, 320)
+        
+        return sid_head, sic_head, sit_head
+    
 class CNN_hydra(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=64, kernel = 5):
         super().__init__()
@@ -266,10 +323,12 @@ class CNN_hydra(nn.Module):
         # self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
         self.conv5 = nn.Conv2d(n_filters, n_filters*2, kernel, padding = "same")
         # self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
+        
+        # self.conv_uv = nn.Conv2d(n_filters*2, 2, kernel, padding = "same")
+        # self.conv_sic = nn.Conv2d(n_filters*2, 1, kernel, padding = "same")
+        # self.conv_sit = nn.Conv2d(n_filters*2 , 1, kernel, padding = "same")
+        
         # self.flatten = nn.Flatten()
-        self.conv_uv = nn.Conv2d(n_filters*2, 2, kernel, padding = "same")
-        self.conv_sic = nn.Conv2d(n_filters*2, 1, kernel, padding = "same")
-        self.conv_sit = nn.Conv2d(n_filters*2 , 1, kernel, padding = "same")
         # self.fc1 = nn.Linear(in_features=4 * 10 * 10, out_features=2*320 * 320)
         # self.fc2 = nn.Linear(in_features=4 * 10 * 10, out_features=1*320 * 320)
         # self.fc3 = nn.Linear(in_features=4 * 10 * 10, out_features=1*320 * 320)
