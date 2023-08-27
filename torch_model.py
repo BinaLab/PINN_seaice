@@ -155,9 +155,8 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
             for i in range(0, dayint):
                 for v in range(0, var_ip):            
                     cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v])
-            for j in range(0, forecast):
-                if v in range(0, var_op):
-                    cnn_output[n, :, :, v+j*var_ip] = (data_output[n+j, :, :, v])
+            # if v in range(0, var_op):
+            cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :])
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
 
