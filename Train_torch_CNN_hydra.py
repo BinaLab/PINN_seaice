@@ -585,7 +585,9 @@ def main() -> None:
         if m % 3 == dist.get_rank():            
             data = val_input[val_months==m, :, :, :]
             target = val_output[val_months==m, :, :, :]
-            output = net(data)
+            sid, sic, sit = net(data)
+            
+            output = torch.cat((sid, sic, sit), 1)
 
             test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
                          val_months[val_months==m], val_days[val_months==m]]
