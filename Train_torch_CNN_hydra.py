@@ -284,10 +284,7 @@ def train(
                 
             sid, sic, sit = model(data)
             
-            loss_1 = loss_func(target[:, :2, :, :], sid)
-            loss_2 = loss_func(target[:, 2, :, :], sic)
-            loss_3 = loss_func(target[:, 3, :, :], sit)
-            loss = loss_1 + loss_2 + loss_3            
+            loss = (target, sid, sic, sit)         
 
             with torch.no_grad():
                 step_loss += loss
@@ -347,10 +344,7 @@ def validate(
                     data, target = data.cuda(), target.cuda()
                 
                 sid, sic, sit = model(data)            
-                loss_1 = loss_func(target[:, :2, :, :], sid)
-                loss_2 = loss_func(target[:, 2, :, :], sic)
-                loss_3 = loss_fn(target[:, 3, :, :], sit)
-                loss = loss_1 + loss_2 + loss_3  
+                loss = (target, sid, sic, sit)
                 
                 val_loss.update(loss)
 
@@ -381,14 +375,12 @@ def test(
         for i, (data, target) in enumerate(val_loader):
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
-            sid, sic, sit = model(data)
-            output = torch.cat((sid, sic, sit), 1)
+            sid, sic, sit = model(data)           
             
-            loss_1 = loss_func(target[:, :2, :, :], sid)
-            loss_2 = loss_func(target[:, 2, :, :], sic)
-            loss_3 = loss_func(target[:, 3, :, :], sit)
-            loss = loss_1 + loss_2 + loss_3 
+            loss = (target, sid, sic, sit)
             val_loss.update(loss)
+            
+            output = torch.cat((sid, sic, sit), 1)
 
             test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy()]
 
@@ -536,7 +528,7 @@ def main() -> None:
             model_name = f"torch_cnn_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
             
         else:
-            loss_fn = nn.L1Loss() #custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
+            loss_fn = MultiTaskLossWrapper(3).to(device) #custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
             model_name = f"torch_cnn_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
             
 

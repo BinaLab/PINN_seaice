@@ -95,6 +95,29 @@ class physics_loss(nn.Module):
         
         return err_sum*100
     
+class MultiTaskLossWrapper(nn.Module):
+    def __init__(self, task_num):
+        super(MultiTaskLossWrapper, self).__init__()
+        self.task_num = task_num
+        self.log_vars = nn.Parameter(torch.zeros((task_num)))
+
+    def forward(self, obs, sid, sic, sit):
+
+        loss0 = nn.L1Loss(obs[:, 0:2, :, :], sid)
+        loss1 = nn.L1Loss(obs[:, 2, :, :], sic)
+        loss2 = nn.L1Loss(obs[:, 3, :, :], sit)
+
+        precision0 = torch.exp(-self.log_vars[0])
+        loss0 = precision0*loss0 + self.log_vars[0]
+
+        precision1 = torch.exp(-self.log_vars[1])
+        loss1 = precision1*loss1 + self.log_vars[1]
+
+        precision2 = torch.exp(-self.log_vars[2])
+        loss2 = precision2*loss2 + self.log_vars[2]
+        
+        return loss0+loss1+loss2
+    
 ### MAKE INPUT DATASETS #########################################################
 def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3, forecast = 3):
     # Input & output should be entire images for CNN
