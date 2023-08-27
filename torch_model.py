@@ -264,13 +264,13 @@ class CNN_flatten_hydra(nn.Module):
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 40*40
         self.conv4 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
-        self.conv5 = nn.Conv2d(n_filters, 4, kernel, padding = "same")
+        self.conv5 = nn.Conv2d(n_filters, 8, kernel, padding = "same")
         self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
         
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(in_features=4 * 10 * 10, out_features=2*320 * 320)
-        self.fc2 = nn.Linear(in_features=4 * 10 * 10, out_features=1*320 * 320)
-        self.fc3 = nn.Linear(in_features=4 * 10 * 10, out_features=1*320 * 320)
+        self.fc1 = nn.Linear(in_features=8 * 10 * 10, out_features=2*320 * 320)
+        self.fc2 = nn.Linear(in_features=8 * 10 * 10, out_features=1*320 * 320)
+        self.fc3 = nn.Linear(in_features=8 * 10 * 10, out_features=1*320 * 320)
 
     def forward(self, x):
         # x = F.tanh(self.conv1(x)) #F.leaky_relu(self.conv1(x))
@@ -282,15 +282,15 @@ class CNN_flatten_hydra(nn.Module):
         # x = F.tanh(self.conv7(x)) #F.leaky_relu(self.conv7(x))
         # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
         
-        x = F.leaky_relu(self.conv1(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv1(x), negative_slope=0.5)
         x = self.pool1(x)
-        x = F.leaky_relu(self.conv2(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv2(x), negative_slope=0.5)
         x = self.pool2(x)
-        x = F.leaky_relu(self.conv3(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv3(x), negative_slope=0.5)
         x = self.pool3(x)
-        x = F.leaky_relu(self.conv4(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv4(x), negative_slope=0.5)
         x = self.pool4(x)
-        x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
+        x = F.leaky_relu(self.conv5(x), negative_slope=0.5)
         x = self.pool5(x)
         x = self.flatten(x)
         # x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
