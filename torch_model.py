@@ -116,14 +116,14 @@ class MultiTaskLossWrapper(nn.Module):
         err_sit = torch.abs(obs[:, 3, :, :]-sit)
         loss2 = torch.mean(err_sit)*100
 
-        precision0 = torch.exp(-self.log_vars[0])
-        loss0 = precision0*loss0 + self.log_vars[0]
+#         precision0 = torch.exp(-self.log_vars[0])
+#         loss0 = precision0*loss0 + self.log_vars[0]
 
-        precision1 = torch.exp(-self.log_vars[1])
-        loss1 = precision1*loss1 + self.log_vars[1]
+#         precision1 = torch.exp(-self.log_vars[1])
+#         loss1 = precision1*loss1 + self.log_vars[1]
 
-        precision2 = torch.exp(-self.log_vars[2])
-        loss2 = precision2*loss2 + self.log_vars[2]
+#         precision2 = torch.exp(-self.log_vars[2])
+#         loss2 = precision2*loss2 + self.log_vars[2]
         
         return loss0+loss1+loss2
     
@@ -252,20 +252,178 @@ class CNN_flatten(nn.Module):
         # x = F.leaky_relu(self.upconv2(x), negative_slope=0.1)
         
         return x
+
+'''
+class BasicBlock(nn.Module):
+    def __init__(
+        in_channels: int,
+        out_channels: int,
+        stride: int = 1,
+        expansion: int = 1,
+        downsample: nn.Module = None
+    ) -> None:
+        super(BasicBlock, self).__init__()
+        # Multiplicative factor for the subsequent conv2d layer's output channels.
+        # It is 1 for ResNet18 and ResNet34.
+        self.expansion = expansion
+        self.downsample = downsample
+        self.conv1 = nn.Conv2d(
+            in_channels, 
+            out_channels, 
+            kernel_size=3, 
+            stride=stride, 
+            padding=1,
+            bias=False
+        )
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(
+            out_channels, 
+            out_channels*self.expansion, 
+            kernel_size=3, 
+            padding=1,
+            bias=False
+        )
+        self.bn2 = nn.BatchNorm2d(out_channels*self.expansion)
+    def forward(self, x: Tensor) -> Tensor:
+        identity = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        if self.downsample is not None:
+            identity = self.downsample(x)
+        out += identity
+        out = self.relu(out)
+        return  out
     
+class ResNet(nn.Module):
+    def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5) -> None:
+        super(ResNet, self).__init__()
+        
+        self.in_channels = 64
+        # All ResNets (18 to 152) contain a Conv2d => BN => ReLU for the first
+        # three layers. Here, kernel size is 7.
+        self.conv1 = nn.Conv2d(
+            in_channels=n_inputs,
+            out_channels=self.in_channels,
+            kernel_size=7, 
+            stride=2,
+            padding=3,
+            bias=False
+        )
+        self.bn1 = nn.BatchNorm2d(self.in_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(512*self.expansion, num_classes)
+
+    def _make_layer(
+        self, 
+        block: Type[BasicBlock],
+        out_channels: int,
+        blocks: int,
+        stride: int = 1
+    ) -> nn.Sequential:
+        downsample = None
+        if stride != 1:
+            """
+            This should pass from `layer2` to `layer4` or 
+            when building ResNets50 and above. Section 3.3 of the paper
+            Deep Residual Learning for Image Recognition
+            (https://arxiv.org/pdf/1512.03385v1.pdf).
+            """
+            downsample = nn.Sequential(
+                nn.Conv2d(
+                    self.in_channels, 
+                    out_channels*self.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False 
+                ),
+                nn.BatchNorm2d(out_channels * self.expansion),
+            )
+        layers = []
+        layers.append(
+            block(
+                self.in_channels, out_channels, stride, self.expansion, downsample
+            )
+        )
+        self.in_channels = out_channels * self.expansion
+
+        for i in range(1, blocks):
+            layers.append(block(
+                self.in_channels,
+                out_channels,
+                expansion=self.expansion
+            ))
+        return nn.Sequential(*layers)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        # The spatial dimension of the final layer's feature 
+        # map should be (7, 7) for all ResNets.
+        print('Dimensions of the last convolutional feature map: ', x.shape)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+
+        return x
+'''
+
 class CNN_flatten_hydra(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=64, kernel = 5):
         super().__init__()
-        self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
-        self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 80*80
-        self.conv3 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 40*40
-        self.conv4 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
-        self.conv5 = nn.Conv2d(n_filters, 8, kernel, padding = "same")
-        self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
+
+        self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")     
+        self.bn1 = nn.BatchNorm2d(n_filters)      
+        self.pool1 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 160*160
+        
+        self.activation = nn.Tanh()  
+        
+        self.conv2_1 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.bn2_1 = nn.BatchNorm2d(n_filters)
+        # self.activation = nn.Tanh()
+        self.conv2_2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.bn2_2 = nn.BatchNorm2d(n_filters)
+        self.pool2 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 80*80
+        
+        self.conv3_1 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.bn3_1 = nn.BatchNorm2d(n_filters)
+        # self.activation = nn.Tanh()   
+        self.conv3_2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.bn3_2 = nn.BatchNorm2d(n_filters)
+        self.pool3 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 40*40
+        
+        self.conv4_1 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.bn4_1 = nn.BatchNorm2d(n_filters)
+        # self.activation = nn.Tanh()   
+        self.conv4_2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
+        self.bn4_2 = nn.BatchNorm2d(n_filters)
+        self.pool4 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 20*20
+        
+        self.conv5_1 = nn.Conv2d(n_filters, 16, kernel, padding = "same")
+        self.bn5_1 = nn.BatchNorm2d(16)
+        # self.activation = nn.Tanh()   
+        self.conv5_2 = nn.Conv2d(16, 8, kernel, padding = "same")
+        self.bn5_2 = nn.BatchNorm2d(8)
+        self.pool5 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 10*10
         
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(in_features=8 * 10 * 10, out_features=2*320 * 320)
@@ -273,34 +431,41 @@ class CNN_flatten_hydra(nn.Module):
         self.fc3 = nn.Linear(in_features=8 * 10 * 10, out_features=1*320 * 320)
 
     def forward(self, x):
-        # x = F.tanh(self.conv1(x)) #F.leaky_relu(self.conv1(x))
-        # x = F.tanh(self.conv2(x)) #F.leaky_relu(self.conv2(x))
-        # x = F.tanh(self.conv3(x)) #F.leaky_relu(self.conv3(x))
-        # x = F.tanh(self.conv4(x)) #F.leaky_relu(self.conv4(x))
-        # x = F.tanh(self.conv5(x)) #F.leaky_relu(self.conv5(x))
-        # x = F.tanh(self.conv6(x)) #F.leaky_relu(self.conv6(x))
-        # x = F.tanh(self.conv7(x)) #F.leaky_relu(self.conv7(x))
-        # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
-        
-        x = F.leaky_relu(self.conv1(x), negative_slope=1)
+       
+        x = self.conv1(x)
+        x = self.bn1(x)
         x = self.pool1(x)
-        x = F.leaky_relu(self.conv2(x), negative_slope=1)
+        x = self.activation(x)
+        
+        x = self.conv2_1(x)
+        x = self.bn2_1(x)
+        x = self.activation(x)
+        x = self.conv2_2(x)
+        x = self.bn2_2(x)
         x = self.pool2(x)
-        x = F.leaky_relu(self.conv3(x), negative_slope=1)
+        
+        x = self.conv3_1(x)
+        x = self.bn3_1(x)
+        x = self.activation(x)
+        x = self.conv3_2(x)
+        x = self.bn3_2(x)
         x = self.pool3(x)
-        x = F.leaky_relu(self.conv4(x), negative_slope=1)
+        
+        x = self.conv4_1(x)
+        x = self.bn4_1(x)
+        x = self.activation(x)
+        x = self.conv4_2(x)
+        x = self.bn4_2(x)
         x = self.pool4(x)
-        x = F.leaky_relu(self.conv5(x), negative_slope=1)
+        
+        x = self.conv5_1(x)
+        x = self.bn5_1(x)
+        x = self.activation(x)
+        x = self.conv5_2(x)
+        x = self.bn5_2(x)
         x = self.pool5(x)
+        
         x = self.flatten(x)
-        # x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
-        # # x = F.leaky_relu(self.fc2(x), negative_slope=0.1)
-        # x = x.reshape(-1, 4, 320, 320)
-        
-        # sid_head = F.tanh(self.conv_uv(x))
-        # sic_head = F.tanh(self.conv_sic(x))
-        # sit_head = F.tanh(self.conv_sit(x))
-        
         x1 = self.fc1(x)
         sid_head = x1.reshape(-1, 2, 320, 320)
         x2 = self.fc2(x)
