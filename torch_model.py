@@ -297,9 +297,12 @@ class CNN_hydra(nn.Module):
         # # x = F.leaky_relu(self.fc2(x), negative_slope=0.1)
         # x = x.reshape(-1, 4, 320, 320)
         
-        sid_head = self.fc1(x).reshape(-1, 2, 320, 320)
-        sic_head = self.fc2(x).reshape(-1, 1, 320, 320)
-        sit_head = self.fc2(x).reshape(-1, 1, 320, 320)
+        x1 = F.leaky_relu(self.fc1(x), negative_slope=0.1)
+        sid_head = x1.reshape(-1, 2, 320, 320)
+        x2 = F.leaky_relu(self.fc2(x), negative_slope=0.1)
+        sic_head = x2.reshape(-1, 1, 320, 320)
+        x3 = F.leaky_relu(self.fc3(x), negative_slope=0.1)
+        sit_head = x3.reshape(-1, 1, 320, 320)
         
         return sid_head, sic_head, sit_head
     
