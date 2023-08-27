@@ -284,7 +284,7 @@ def train(
                 
             sid, sic, sit = model(data)
             
-            loss = (target, sid, sic, sit)         
+            loss = loss_func(target, sid, sic, sit)         
 
             with torch.no_grad():
                 step_loss += loss
@@ -344,7 +344,7 @@ def validate(
                     data, target = data.cuda(), target.cuda()
                 
                 sid, sic, sit = model(data)            
-                loss = (target, sid, sic, sit)
+                loss = loss_func(target, sid, sic, sit)
                 
                 val_loss.update(loss)
 
@@ -377,7 +377,7 @@ def test(
                 data, target = data.cuda(), target.cuda()
             sid, sic, sit = model(data)           
             
-            loss = (target, sid, sic, sit)
+            loss = loss_func(target, sid, sic, sit)
             val_loss.update(loss)
             
             output = torch.cat((sid, sic, sit), 1)
