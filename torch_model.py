@@ -37,6 +37,7 @@ class vel_loss(nn.Module):
 class custom_loss(nn.Module):
     def __init__(self, landmask):
         super(custom_loss, self).__init__();
+        self.landmask = landmask
 
     def forward(self, obs, prd):
         sic = prd[:, 2, :, :]
@@ -53,12 +54,12 @@ class custom_loss(nn.Module):
         err_vel = torch.abs(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(landmask == 1)]
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 1)]
 
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
         err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])
         
-        err2 = torch.mean(err_sic + err_sit, dim=0)[torch.where(landmask == 1)]
+        err2 = torch.mean(err_sic + err_sit, dim=0)[torch.where(self.landmask == 1)]
 
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
