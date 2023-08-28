@@ -395,7 +395,7 @@ class CNN_flatten_hydra(nn.Module):
         self.bn1 = nn.BatchNorm2d(n_filters)      
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
         
-        self.activation = nn.Tanh()  
+        self.activation = nn.LeakyReLU(negative_slope=1)
         
         self.conv2_1 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.bn2_1 = nn.BatchNorm2d(n_filters)
