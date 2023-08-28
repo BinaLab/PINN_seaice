@@ -436,7 +436,6 @@ class CNN_flatten_hydra(nn.Module):
         x = self.bn1(x)
         x = self.pool1(x)
         x = self.activation(x)
-        print(x.size())
         
         x = self.conv2_1(x)
         x = self.bn2_1(x)
@@ -444,7 +443,6 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv2_2(x)
         x = self.bn2_2(x)
         x = self.pool2(x)
-        print(x.size())
         
         x = self.conv3_1(x)
         x = self.bn3_1(x)
@@ -452,7 +450,6 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv3_2(x)
         x = self.bn3_2(x)
         x = self.pool3(x)
-        print(x.size())
         
         x = self.conv4_1(x)
         x = self.bn4_1(x)
@@ -460,7 +457,6 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv4_2(x)
         x = self.bn4_2(x)
         x = self.pool4(x)
-        print(x.size())
         
         x = self.conv5_1(x)
         x = self.bn5_1(x)
@@ -468,10 +464,8 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv5_2(x)
         x = self.bn5_2(x)
         x = self.pool5(x)
-        print(x.size())
         
         x = self.flatten(x)
-        print(x.size())
         x1 = self.fc1(x)
         sid_head = x1.reshape(-1, 2, 320, 320)
         x2 = self.fc2(x)
