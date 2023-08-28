@@ -710,7 +710,7 @@ class UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=5):
         super().__init__()
         
-        self.activation = nn.Tanh(negative_slope=1)
+        self.activation = nn.Tanh()
         
         # Encoder
         # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
