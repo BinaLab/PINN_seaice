@@ -258,7 +258,7 @@ def train(
     loss_func: torch.nn.Module,
     train_loader: torch.utils.data.DataLoader,
     train_sampler: torch.utils.data.distributed.DistributedSampler,
-    args,
+    args
 ):
     
     """Train model."""
@@ -513,6 +513,11 @@ def main() -> None:
         model_name = f"torch_unet_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
     else:
         model_name = f"torch_unet_sit_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+        
+    with open(data_path + f"landmask_{row}.pkl", 'rb') as file:
+        landmask = pickle.load(file) 
+    landmask = torch.tensor(landmask)
+    landmask = torch.where(landmask == 1, 0, 1)
 
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
@@ -520,7 +525,7 @@ def main() -> None:
         if out_channels == 2:
             loss_fn = vel_loss()
         else:
-            loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
+            loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)
@@ -545,7 +550,7 @@ def main() -> None:
             loss_fn,
             train_loader,
             train_sampler,
-            args,
+            args
         )
         
         scheduler.step()
