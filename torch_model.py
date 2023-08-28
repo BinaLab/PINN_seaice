@@ -59,8 +59,8 @@ class custom_loss(nn.Module):
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
 
-        err_sum = torch.mean(err_u + err_v + err_vel)*100
-        err_sum += torch.mean(err_sic + err_sit)*1000
+        err_sum = torch.mean(err_u + err_v)*100
+        err_sum += torch.mean(err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum   
@@ -473,7 +473,9 @@ class CNN_flatten_hydra(nn.Module):
         x3 = self.fc3(x)
         sit_head = x3.reshape(-1, 1, 320, 320)
         
-        return sid_head, sic_head, sit_head
+        out = torch.cat([sid_head, sic_head, sit_head], dim=1)
+        
+        return out
     
 class CNN_hydra(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=64, kernel = 5):
@@ -534,7 +536,9 @@ class CNN_hydra(nn.Module):
         # x3 = F.leaky_relu(self.fc3(x), negative_slope=0.1)
         # sit_head = x3.reshape(-1, 1, 320, 320)
         
-        return sid_head, sic_head, sit_head
+        out = torch.cat([sid_head, sic_head, sit_head], dim=1)
+        
+        return out
     
     
 class GCNet(torch.nn.Module):
