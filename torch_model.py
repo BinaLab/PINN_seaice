@@ -393,7 +393,7 @@ class CNN_flatten_hydra(nn.Module):
 
         self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")     
         self.bn1 = nn.BatchNorm2d(n_filters)      
-        self.pool1 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 160*160
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
         
         self.activation = nn.Tanh()  
         
@@ -402,28 +402,28 @@ class CNN_flatten_hydra(nn.Module):
         # self.activation = nn.Tanh()
         self.conv2_2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.bn2_2 = nn.BatchNorm2d(n_filters)
-        self.pool2 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 80*80
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 80*80
         
         self.conv3_1 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.bn3_1 = nn.BatchNorm2d(n_filters)
         # self.activation = nn.Tanh()   
         self.conv3_2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.bn3_2 = nn.BatchNorm2d(n_filters)
-        self.pool3 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 40*40
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 40*40
         
         self.conv4_1 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.bn4_1 = nn.BatchNorm2d(n_filters)
         # self.activation = nn.Tanh()   
         self.conv4_2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.bn4_2 = nn.BatchNorm2d(n_filters)
-        self.pool4 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 20*20
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
         
         self.conv5_1 = nn.Conv2d(n_filters, 16, kernel, padding = "same")
         self.bn5_1 = nn.BatchNorm2d(16)
         # self.activation = nn.Tanh()   
         self.conv5_2 = nn.Conv2d(16, 8, kernel, padding = "same")
         self.bn5_2 = nn.BatchNorm2d(8)
-        self.pool5 = nn.MaxPool2d(kernel_size=3, stride=2) # size: 10*10
+        self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
         
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(in_features=8 * 10 * 10, out_features=2*320 * 320)
@@ -436,6 +436,7 @@ class CNN_flatten_hydra(nn.Module):
         x = self.bn1(x)
         x = self.pool1(x)
         x = self.activation(x)
+        print(x.size())
         
         x = self.conv2_1(x)
         x = self.bn2_1(x)
@@ -443,6 +444,7 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv2_2(x)
         x = self.bn2_2(x)
         x = self.pool2(x)
+        print(x.size())
         
         x = self.conv3_1(x)
         x = self.bn3_1(x)
@@ -450,6 +452,7 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv3_2(x)
         x = self.bn3_2(x)
         x = self.pool3(x)
+        print(x.size())
         
         x = self.conv4_1(x)
         x = self.bn4_1(x)
@@ -457,6 +460,7 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv4_2(x)
         x = self.bn4_2(x)
         x = self.pool4(x)
+        print(x.size())
         
         x = self.conv5_1(x)
         x = self.bn5_1(x)
@@ -464,8 +468,10 @@ class CNN_flatten_hydra(nn.Module):
         x = self.conv5_2(x)
         x = self.bn5_2(x)
         x = self.pool5(x)
+        print(x.size())
         
         x = self.flatten(x)
+        print(x.size())
         x1 = self.fc1(x)
         sid_head = x1.reshape(-1, 2, 320, 320)
         x2 = self.fc2(x)
