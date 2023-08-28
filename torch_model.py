@@ -813,7 +813,7 @@ class UNet(nn.Module):
         sit = self.sitconv1(xd42)
         sit = self.sitconv2(sit)
         
-        out = torch.cat([xu4, xe12], dim=2)
+        out = torch.cat([sid, sic, sit], dim=1)
         # out = self.outconv(xd42)
 
         return out
