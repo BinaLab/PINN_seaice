@@ -756,12 +756,12 @@ class UNet(nn.Module):
         self.d42 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
 
         # Output layer
-        self.sidconv1 = nn.Conv2d(64, 32, kernel_size=k)
-        self.sidconv2 = nn.Conv2d(32, 2, kernel_size=k)
-        self.sicconv1 = nn.Conv2d(64, 32, kernel_size=k)
-        self.sicconv2 = nn.Conv2d(32, 1, kernel_size=k)
-        self.sitconv1 = nn.Conv2d(64, 32, kernel_size=k)
-        self.sitconv2 = nn.Conv2d(32, 1, kernel_size=k)
+        self.sidconv1 = nn.Conv2d(64, 32, kernel_size=k, padding="same")
+        self.sidconv2 = nn.Conv2d(32, 2, kernel_size=k, padding="same")
+        self.sicconv1 = nn.Conv2d(64, 32, kernel_size=k, padding="same")
+        self.sicconv2 = nn.Conv2d(32, 1, kernel_size=k, padding="same")
+        self.sitconv1 = nn.Conv2d(64, 32, kernel_size=k, padding="same")
+        self.sitconv2 = nn.Conv2d(32, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # Encoder
