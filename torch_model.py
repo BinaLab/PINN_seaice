@@ -59,12 +59,13 @@ class custom_loss(nn.Module):
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
         err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])
         
-        err2 = torch.mean(err_sic + err_sit, dim=0)[torch.where(self.landmask == 1)]
+        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 1)]
+        err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 1)]
 
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
         
-        err_sum = torch.mean(err1)*100 + torch.mean(err2)*100
+        err_sum = torch.mean(err1)*1000 + torch.mean(err2)*1000 + torch.mean(err2)*5000
         # err_sum += torch.mean(err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
@@ -716,7 +717,7 @@ class EncoderDecoderConvLSTM(nn.Module):
 
 # UNET model
 class UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=5):
+    def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
         self.activation = nn.Tanh()
