@@ -57,15 +57,14 @@ class custom_loss(nn.Module):
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 1)]
 
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
-        err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])
-        
-        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 1)]
-        err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 1)]
-
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
-        neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
+        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 1)]
         
-        err_sum = torch.mean(err1)*1000 + torch.mean(err2)*1000 + torch.mean(err2)*5000
+        err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
+        neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
+        err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 1)]       
+        
+        err_sum = torch.mean(err1)*1000 + torch.mean(err2)*1000 + torch.mean(err3)*5000
         # err_sum += torch.mean(err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
@@ -766,12 +765,12 @@ class UNet(nn.Module):
         self.d42 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
 
         # Output layer
-        self.sidconv1 = nn.Conv2d(64, 32, kernel_size=k, padding="same")
-        self.sidconv2 = nn.Conv2d(32, 2, kernel_size=k, padding="same")
-        self.sicconv1 = nn.Conv2d(64, 32, kernel_size=k, padding="same")
-        self.sicconv2 = nn.Conv2d(32, 1, kernel_size=k, padding="same")
-        self.sitconv1 = nn.Conv2d(64, 32, kernel_size=k, padding="same")
-        self.sitconv2 = nn.Conv2d(32, 1, kernel_size=k, padding="same")
+        self.sidconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        self.sidconv2 = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        self.sicconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # Encoder
