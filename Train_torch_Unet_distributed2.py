@@ -512,7 +512,7 @@ def main() -> None:
     if out_channels == 2:
         model_name = f"torch_unet_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
     else:
-        model_name = f"torch_unet_sit_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+        model_name = f"torch_unet_v5_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
         
     with open(data_path + f"landmask_{row}.pkl", 'rb') as file:
         landmask = pickle.load(file) 
