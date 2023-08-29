@@ -441,6 +441,10 @@ def main() -> None:
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
+    if cnn_output.shape[3] > 3:
+        cnn_input = cnn_input[:,:,:,:-1]
+        cnn_output = cnn_output[:,:,:,:-1]
+    
     dayint = args.day_int
     forecast = args.forecast
     
