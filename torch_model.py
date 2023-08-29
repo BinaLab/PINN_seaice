@@ -772,8 +772,8 @@ class UNet(nn.Module):
         self.sidconv2 = nn.Conv2d(64, 2, kernel_size=k, padding="same")
         self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
         self.sicconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        # self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        # self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # Encoder
@@ -822,10 +822,10 @@ class UNet(nn.Module):
         sid = self.sidconv2(sid)
         sic = self.sicconv1(xd42)
         sic = self.sicconv2(sic)
-        sit = self.sitconv1(xd42)
-        sit = self.sitconv2(sit)
+        # sit = self.sitconv1(xd42)
+        # sit = self.sitconv2(sit)
         
-        out = torch.cat([sid, sic, sit], dim=1)
+        out = torch.cat([sid, sic], dim=1)
         # out = self.outconv(xd42)
 
         return out

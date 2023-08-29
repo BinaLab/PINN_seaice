@@ -126,28 +126,27 @@ def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
         ncfile = data_path + "/{0}/SIC_NOAA/seaice_conc_daily_{0}_{1}_f17_v04r00.nc".format(region, dt.datetime.strftime(t1, "%Y%m%d"))
         
         if os.path.exists(ncfile):
-            nc = netCDF4.Dataset(ncfile, 'r')
-            
-            xx0 = np.array(nc.variables['xgrid'])
-            yy0 = np.array(nc.variables['ygrid'])
-            sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
-            # bt = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
-            # nt = np.array(nc.variables['nsidc_nt_seaice_conc'])[0] # NT SIC
-            
-            sic[sic <= 0] = 0
-            sic[sic > 1] = 0
+            with netCDF4.Dataset(ncfile, 'r') as nc:
+                xx0 = np.array(nc.variables['xgrid'])
+                yy0 = np.array(nc.variables['ygrid'])
+                sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
+                # bt = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
+                # nt = np.array(nc.variables['nsidc_nt_seaice_conc'])[0] # NT SIC
 
-            # ESPG:3411 (NSIDC Sea Ice Polar Stereographic North - SIC data)
-            if region == "NH":
-                inProj = Proj('epsg:3411')
-                outProj = Proj('epsg:3408')
-            elif region == "SH":
-                inProj = Proj('epsg:3412')
-                outProj = Proj('epsg:3409')
-            xx1, yy1 = np.meshgrid(xx0, yy0)
-            xx2,yy2 = transform(inProj,outProj,xx1,yy1)
-            grid_sic = griddata((xx2.flatten(), yy2.flatten()), sic.flatten(), (xx, yy), method='linear')
-            grid_sic[np.isnan(grid_sic)] = 0
+                sic[sic <= 0] = 0
+                sic[sic > 1] = 0
+
+                # ESPG:3411 (NSIDC Sea Ice Polar Stereographic North - SIC data)
+                if region == "NH":
+                    inProj = Proj('epsg:3411')
+                    outProj = Proj('epsg:3408')
+                elif region == "SH":
+                    inProj = Proj('epsg:3412')
+                    outProj = Proj('epsg:3409')
+                xx1, yy1 = np.meshgrid(xx0, yy0)
+                xx2,yy2 = transform(inProj,outProj,xx1,yy1)
+                grid_sic = griddata((xx2.flatten(), yy2.flatten()), sic.flatten(), (xx, yy), method='linear')
+                grid_sic[np.isnan(grid_sic)] = 0
             return grid_sic
 
         else:
@@ -269,6 +268,121 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
         t1 = dt.datetime(1970, 1, 1) + dt.timedelta(days = days[idx])
         t2 = dt.datetime(1970, 1, 1) + dt.timedelta(days = days[idx]+1)  
         
+        valid.append(i)
+
+        ## Read ice motion data ===========================================
+        sampling_size = 1
+        xx, yy, lat, lon, u, v = get_ice_motion(ncfile, idx, sampling_size)
+        grid_u = np.mean(u, axis = 0)
+        grid_v = np.mean(v, axis = 0)
+
+        ## Read SIC data ==================================================
+        grid_sic = get_SIC(t1, xx, yy, region = region)
+
+        ## Read ERA5 data =================================================
+        grid_t2m, grid_u10, grid_v10, _ = get_ERA5(ds, idx, xx, yy, region = region)
+
+        grid_input[i, :, :, 0] = grid_u / 50
+        grid_input[i, :, :, 1] = grid_v / 50
+        grid_input[i, :, :, 2] = grid_sic
+        grid_input[i, :, :, 3] = (grid_t2m - 240)/(320 - 240) #Max temp = 320 K, Min temp = 240 K)
+        grid_input[i, :, :, 4] = grid_u10 / 50
+        grid_input[i, :, :, 5] = grid_v10 / 50
+
+        _, _, _, _, u2, v2 = get_ice_motion(ncfile, idx+1, sampling_size)
+        grid_u2 = np.mean(u2, axis = 0)
+        grid_v2 = np.mean(v2, axis = 0) 
+        grid_output[i, :, :, 0] = grid_u2 / 50
+        grid_output[i, :, :, 1] = grid_v2 / 50
+        grid_sic2 = get_SIC(t2, xx, yy, region = region)
+        # _, _, _, grid_sic2 = get_ERA5(ds, idx+1, xx, yy, region = region)
+        grid_output[i, :, :, 2] = grid_sic2
+
+        # Masking ======================================
+        mask1 = (grid_sic == 0) #(np.isnan(grid_u))
+        mask2 = (grid_sic2 == 0) #(np.isnan(grid_u2))
+
+        if datatype == "cell":
+            xx1, yy1 = [], []
+            for m in range(w, row-w):
+                for n in range(w, col-w):
+                    ip = np.array([grid_input[i, m-w:m+w+1, n-w:n+w+1, :]])
+                    if mask1[m,n] == False: #np.prod(ip[0, :, :, 2]) > 0:
+                        op = np.array([grid_output[i, m-w:m+w+1, n-w:n+w+1, :]])
+                        xx1.append(xx[m, n])
+                        yy1.append(yy[m, n])
+                        if first:
+                            conv_input = ip
+                            conv_output = op
+                            first = False
+                        else:
+                            conv_input = np.concatenate((conv_input, ip), axis = 0)
+                            conv_output = np.concatenate((conv_output, op), axis = 0)            
+
+        elif datatype == "entire":
+            var_ip = np.shape(grid_input)[3]
+            var_op = np.shape(grid_output)[3]
+
+            conv_input = np.copy(grid_input)
+            conv_output = np.copy(grid_output)
+
+            for m in range(0, var_ip):
+                subset = grid_input[i, :, :, m]
+                subset[mask1] = 0
+                conv_input[i, :, :, m] = subset
+
+            for n in range(0, var_op):
+                subset = grid_output[i, :, :, n]
+                subset[mask2] = 0
+                conv_output[i, :, :, n] = subset
+
+            xx1, yy1 = xx, yy
+
+        elif datatype == "table":
+
+            xx1, yy1 = [], []
+            for m in range(w, row-w):
+                for n in range(w, col-w):
+                    ip = np.array([grid_input[i, m-w:m+w+1, n-w:n+w+1, :].flatten()])
+                    if np.prod(grid_sic[m-w:m+w+1, n-w:n+w+1]) > 0:
+                        op = np.array([grid_output[i, m-w:m+w+1, n-w:n+w+1, :].flatten()])
+                        xx1.append(xx[m, n])
+                        yy1.append(yy[m, n])
+
+                        if first:
+                            conv_input = ip
+                            conv_output = op
+                            first = False
+                        else:
+                            conv_input = np.concatenate((conv_input, ip), axis = 0)
+                            conv_output = np.concatenate((conv_output, op), axis = 0)  
+    
+    if datatype == "entire":
+        conv_input = conv_input[np.array(valid), :, :, :]
+        conv_output = conv_output[np.array(valid), :, :, :]
+    
+    return xx1, yy1, conv_input, conv_output, valid
+
+
+def make_dataset_wsit(year, n_samples, ds, w = 1, datatype = "entire", region = "NH"):
+    # ncfile = glob.glob("F:\\2022_Ross\\ERA5\\icemotion_daily_sh_25km_{0}*.nc".format(year))[0]
+    ncfile = data_path + f"/{region}/Sea_ice_drift/icemotion_daily_nh_25km_{year}0101_{year}1231_v4.1.nc"
+    with netCDF4.Dataset(ncfile, 'r') as nc:
+    ## Adjust the number of training datasets ===========================
+        days = np.array(nc.variables['time']).astype(float)[:]
+        row, col = np.shape(np.array(nc.variables['latitude']))
+        
+    # Initialize grid input ==========================================
+    grid_input = np.zeros([len(n_samples), row, col, 7])
+    grid_output = np.zeros([len(n_samples), row, col, 4])
+    
+    valid = []
+    first = True
+    
+    for i, idx in tqdm(enumerate(n_samples)):
+        t1 = dt.datetime(1970, 1, 1) + dt.timedelta(days = days[idx])
+        t2 = dt.datetime(1970, 1, 1) + dt.timedelta(days = days[idx]+1)  
+        
         sit_t1 = t1 - dt.timedelta(days = 3)
         sit_y = str(sit_t1.year).zfill(4)
         sit_m = str(sit_t1.month).zfill(2)
@@ -294,7 +408,7 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
             grid_sic = get_SIC(t1, xx, yy, region = region)
             
             ## Read ice thickness data ========================================
-            grid_sit = get_SIT(sit_file[0], xx, yy)
+            # grid_sit = get_SIT(sit_file[0], xx, yy)
 
             ## Read ERA5 data =================================================
             grid_t2m, grid_u10, grid_v10, _ = get_ERA5(ds, idx, xx, yy, region = region)
@@ -302,10 +416,10 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
             grid_input[i, :, :, 0] = grid_u / 50
             grid_input[i, :, :, 1] = grid_v / 50
             grid_input[i, :, :, 2] = grid_sic
-            grid_input[i, :, :, 3] = grid_sit / 8
-            grid_input[i, :, :, 4] = (grid_t2m - 240)/(320 - 240) #Max temp = 320 K, Min temp = 240 K)
-            grid_input[i, :, :, 5] = grid_u10 / 50
-            grid_input[i, :, :, 6] = grid_v10 / 50
+            # grid_input[i, :, :, 3] = grid_sit / 8
+            grid_input[i, :, :, 3] = (grid_t2m - 240)/(320 - 240) #Max temp = 320 K, Min temp = 240 K)
+            grid_input[i, :, :, 4] = grid_u10 / 50
+            grid_input[i, :, :, 5] = grid_v10 / 50
 
             _, _, _, _, u2, v2 = get_ice_motion(ncfile, idx+1, sampling_size)
             grid_u2 = np.mean(u2, axis = 0)
@@ -316,8 +430,8 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
             # _, _, _, grid_sic2 = get_ERA5(ds, idx+1, xx, yy, region = region)
             grid_output[i, :, :, 2] = grid_sic2
             
-            grid_sit2 = get_SIT(sit_file2[0], xx, yy)            
-            grid_output[i, :, :, 3] = grid_sit2 / 8
+            # grid_sit2 = get_SIT(sit_file2[0], xx, yy)            
+            # grid_output[i, :, :, 3] = grid_sit2 / 8
 
             # Masking ======================================
             mask1 = (grid_sic == 0) #(np.isnan(grid_u))
