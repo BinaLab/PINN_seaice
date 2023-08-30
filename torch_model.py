@@ -177,14 +177,14 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
             valid.append(n)
             for i in range(0, dayint):
                 for v in range(0, var_ip):            
-                    cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v])
+                    cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v]).astype(np.float16)
             # if v in range(0, var_op):
             if exact:
-                cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :])
+                cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :]).astype(np.float16)
             else:
                 for j in range(0, forecast):
                     for v in range(0, var_op):            
-                        cnn_output[n, :, :, v+j*var_op] = (data_output[n+j, :, :, v])
+                        cnn_output[n, :, :, v+j*var_op] = (data_output[n+j, :, :, v]).astype(np.float16)
                 
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
