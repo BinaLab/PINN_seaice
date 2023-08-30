@@ -41,7 +41,8 @@ class single_loss(nn.Module):
 
     def forward(self, obs, prd):
         err = torch.abs(obs - prd)
-        err_sum = torch.mean(err, dim=0)[torch.where(self.landmask == 0)]*100
+        err_sum = torch.mean(err, dim=0)[torch.where(self.landmask == 0)]
+        err_sum = torch.mean(err_sum)*100
         return err_sum
 
 class custom_loss(nn.Module):
