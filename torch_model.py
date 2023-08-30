@@ -35,8 +35,9 @@ class vel_loss(nn.Module):
         return err_sum  
     
 class single_loss(nn.Module):
-    def __init__(self):
+    def __init__(self, landmask):
         super(single_loss, self).__init__();
+        self.landmask = landmask
 
     def forward(self, obs, prd):
         err = torch.abs(obs - prd)
