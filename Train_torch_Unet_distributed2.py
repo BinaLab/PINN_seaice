@@ -165,6 +165,18 @@ def parse_args() -> argparse.Namespace:
         default=1,
         help='date to forecast',
     )
+    parser.add_argument(
+        '--predict',
+        type=str,
+        default="all",
+        help='prediction outputs',
+    )
+    parser.add_argument(
+        '--model-type',
+        type=str,
+        default="unet",
+        help='prediction outputs',
+    )
     
     parser.add_argument(
         '--backend',
@@ -383,6 +395,7 @@ def test(
 
 def main() -> None:    
     
+    #### SETTING CUDA ENVIRONMENTS ####
     """Main train and eval function."""
     args = parse_args()
 
@@ -396,10 +409,15 @@ def main() -> None:
         torch.cuda.manual_seed(args.seed)
         # torch.backends.cudnn.benchmark = False
         # torch.backends.cudnn.deterministic = True
-
-    # args.base_lr = (
-    #     args.base_lr * dist.get_world_size() * args.batches_per_allreduce
-    # )
+    
+    if args.no_cuda:
+        device = torch.device('cpu')
+        device_name = 'cpu'
+    else:
+        device = torch.device('cuda')
+        device_name = 'gpu'
+        
+    torch.cuda.empty_cache()
     
     args.verbose = dist.get_rank() == 0
     world_size = int(os.environ['WORLD_SIZE'])
@@ -435,76 +453,93 @@ def main() -> None:
     lr = args.base_lr
 
     phy = args.phy ## PHYSICS OR NOT
+    dayint = args.day_int
+    forecast = args.forecast    
     
+    #### READ DATA ##################################################################    
+    data_ver = data_file[-6:-4]
     
-    #### READ DATA ##################################################################
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    if 'v5' in data_file:
+    if data_ver == 'v5':
         cnn_input = cnn_input[:,:,:,:-1]
         cnn_output = cnn_output[:,:,:,:-1]
-    
-    dayint = args.day_int
-    forecast = args.forecast
+        
+    if args.prediction == "sic":
+        cnn_output = cnn_output[:,:,:,2:3]
+    elif args.prediction == "sit":
+        if data_ver == 'v4':
+            cnn_output = cnn_output[:,:,:,3:4]
+        else:
+            print(f"SIT prediction is not available with {data_ver} data >>> Proceed with all prediction")
+    elif args.prediction == "uv":
+        cnn_output = cnn_output[:,:,:,0:2]     
+        
+    # Read landmask data
+    with open(data_path + f"landmask_320.pkl", 'rb') as file:
+        landmask = pickle.load(file) 
+    landmask = torch.tensor(landmask) # Land = 1; Ocean = 0;
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
+    ## Add x y coordinates as inputs
     xx_n = (xx - xx.min())/(xx.max() - xx.min())
-    yy_n = (yy - yy.min())/(yy.max() - yy.min())
-    
+    yy_n = (yy - yy.min())/(yy.max() - yy.min())    
     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0)), axis = 3)
     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0)), axis = 3)
     
-    cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
-    cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
-    # cnn_output = cnn_output[:, 0:2, :, :] # Only predict U/V
-    cnn_output = cnn_output[:, 2:3, :, :] # Only predict SIC
+    ## Convert numpy array into torch tensor
+    cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
+    cnn_output = torch.tensor(cnn_output, dtype=torch.float32)
     
     mask1 = (years == date) # Test samples
     mask2 = (days % 7 == 2) # Validation samples
 
-    val_input = cnn_input[mask1, :, :, :] #cnn_input[(~mask1)&(mask2), :, :, :]
-    val_output = cnn_output[mask1, :, :, :] #cnn_output[(~mask1)&(mask2), :, :, :]
-    train_input = cnn_input[(~mask1)&(~mask2), :, :, :] #cnn_input[(~mask1)&(~mask2), :, :, :]
-    train_output = cnn_output[(~mask1)&(~mask2), :, :, :] #cnn_output[(~mask1)&(~mask2), :, :, :]
+    val_input = cnn_input[mask1] #cnn_input[(~mask1)&(mask2), :, :, :]
+    val_output = cnn_output[mask1] #cnn_output[(~mask1)&(mask2), :, :, :]
+    train_input = cnn_input[(~mask1)&(~mask2)] #cnn_input[(~mask1)&(~mask2), :, :, :]
+    train_output = cnn_output[(~mask1)&(~mask2)] #cnn_output[(~mask1)&(~mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
-    # test_output = cnn_output[mask1, :, :, :]
+    # test_output = cnn_output[mask1, :, :, :]    
+        
+    if args.model_type == "fc": # in case of fully-connected layer: flatten layers
+        train_input = torch.flatten(train_input[:, landmask==0, :], start_dim=0, end_dim= -2)
+        train_output = torch.flatten(train_output[:, landmask==0, :], start_dim=0, end_dim= -2)
+        val_input = torch.flatten(val_input, start_dim=0, end_dim= -2)
+        val_output = torch.flatten(val_output, start_dim=0, end_dim= -2)
+        n_samples, in_channels = train_input.size()
+        _, out_channels = train_output.size()
+        
+    else:
+        train_input = torch.permute(train_input, (0, 3, 1, 2))
+        train_output = torch.permute(train_output, (0, 3, 1, 2))
+        val_input = torch.permute(val_input, (0, 3, 1, 2))
+        val_output = torch.permute(val_output, (0, 3, 1, 2))
+        
+        n_samples, in_channels, row, col = train_input.size()
+        _, out_channels, _, _ = train_output.size()
     
-    print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output))
-    
-    val_input = torch.tensor(val_input, dtype=torch.float32)
-    val_output = torch.tensor(val_output, dtype=torch.float32)
-    train_input = torch.tensor(train_input, dtype=torch.float32)
-    train_output = torch.tensor(train_output, dtype=torch.float32)
-    # test_input = torch.tensor(test_input, dtype=torch.float32)
-    # test_output = torch.tensor(test_output, dtype=torch.float32)   
+    print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output)) 
     
     train_dataset = TensorDataset(train_input, train_output)
     val_dataset = TensorDataset(val_input, val_output)
     # test_dataset = TensorDataset(test_input, test_output)
     
-    train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)
-    
-    n_samples, in_channels, row, col = train_input.size()
-    _, out_channels, _, _ = train_output.size()
+    train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)   
     
     del cnn_input, cnn_output, train_input, train_output, xx_n, yy_n
     
     #############################################################################   
-    
-    net = UNet(in_channels, out_channels)
+    if args.model_type == "unet":
+        net = UNet(in_channels, out_channels)
+    elif args.model_type == "cnn":
+        net = Net(in_channels, out_channels)
+    elif args.model_type == "fc":
+        net = FC(in_channels, out_channels)
 
-    torch.cuda.empty_cache()
-    
-    if args.no_cuda:
-        device = torch.device('cpu')
-        device_name = 'cpu'
-    else:
-        device = torch.device('cuda')
-        device_name = 'gpu'
-        # net = nn.DataParallel(net) 
+    model_name = f"torch_{args.model_type}_{data_ver}_{args.prediction}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
@@ -514,25 +549,13 @@ def main() -> None:
         device_ids=[args.local_rank],
     )
 
-    if out_channels == 2:
-        model_name = f"torch_unet_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
-    else:
-        model_name = f"torch_unet_v5_sic_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
-        
-    with open(data_path + f"landmask_{row}.pkl", 'rb') as file:
-        landmask = pickle.load(file) 
-    landmask = torch.tensor(landmask)
-    landmask = torch.where(landmask == 1, 0, 1)
-
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
-        if out_channels == 2:
-            loss_fn = vel_loss()
-        elif out_channels == 1:
-            loss_fn = single_loss(landmask)
+        if args.prediction == "all":
+            loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
         else:
-            loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
+            loss_fn = single_loss(landmask)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)

@@ -40,7 +40,7 @@ class single_loss(nn.Module):
 
     def forward(self, obs, prd):
         err = torch.abs(obs - prd)
-        err_sum = torch.mean(err_sum, dim=0)[torch.where(self.landmask == 1)]*100
+        err_sum = torch.mean(err_sum, dim=0)[torch.where(self.landmask == 0)]*100
         return err_sum  
 
 class custom_loss(nn.Module):
@@ -63,18 +63,18 @@ class custom_loss(nn.Module):
         err_vel = torch.abs(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 1)]
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
         err_sum = torch.mean(err1)*1000 
 
         err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
-        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 1)]
+        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
         err_sum += torch.mean(err2)*1000
         
         if obs.size()[1] > 3:
             err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
             neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
-            err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 1)]   
+            err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 0)]   
             err_sum += torch.mean(err3)*5000
         
         # err_sum += torch.mean(err_sic + err_sit)*100
@@ -195,8 +195,8 @@ class FC(nn.Module):
         super().__init__()
         self.activation = nn.Tanh()
         self.fc1 = nn.Linear(n_inputs, 128)  # 5*5 from image dimension
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, n_outputs)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, n_outputs)
 
     def forward(self, x):
         
@@ -805,10 +805,11 @@ class UNet(nn.Module):
         self.d42 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
 
         # Output layer
-        self.sidconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        self.sidconv2 = nn.Conv2d(64, 2, kernel_size=k, padding="same")
-        self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        self.sicconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.outconv = nn.Conv2d(64, n_outputs, kernel_size=k, padding="same")
+        # self.sidconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        # self.sidconv2 = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        # self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        # self.sicconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         # self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
         # self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
@@ -855,15 +856,15 @@ class UNet(nn.Module):
         xd42 = self.activation(self.d42(xd41))
 
         # Output layer
-        sid = self.sidconv1(xd42)
-        sid = self.sidconv2(sid)
-        sic = self.sicconv1(xd42)
-        sic = self.sicconv2(sic)
-        # sit = self.sitconv1(xd42)
-        # sit = self.sitconv2(sit)
         
-        out = torch.cat([sid, sic], dim=1)
-        # out = self.outconv(xd42)
+        # sid = self.sidconv1(xd42)
+        # sid = self.sidconv2(sid)
+        # sic = self.sicconv1(xd42)
+        # sic = self.sicconv2(sic)
+        # # sit = self.sitconv1(xd42)
+        # # sit = self.sitconv2(sit)        
+        # out = torch.cat([sid, sic], dim=1)
+        out = self.outconv(xd42)
 
         return out
 
