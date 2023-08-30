@@ -522,7 +522,11 @@ def main() -> None:
         else:
             loss_fn = custom_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
             model_name = f"torch_cnn_fc_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
-            
+    
+    with open(data_path + f"landmask_{row}.pkl", 'rb') as file:
+        landmask = pickle.load(file) 
+    landmask = torch.tensor(landmask)
+    landmask = torch.where(landmask == 1, 0, 1)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)

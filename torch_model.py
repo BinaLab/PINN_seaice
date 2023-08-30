@@ -145,7 +145,10 @@ class MultiTaskLossWrapper(nn.Module):
         return loss0+loss1+loss2
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3, forecast = 3):
+def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3, forecast = 3, exact = True):
+    # dayint: days before forecast (use as input features)
+    # forecast: lead day for forecasting (output features)
+    # exact: if True, only that exact date is forecasted; if False, all days before the lead day is forecasted
     # Input & output should be entire images for CNN
     
     # Cehck sequential days
@@ -163,7 +166,10 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
     _, _, _, var_op = np.shape(data_output)
 
     cnn_input = np.zeros([n_samples, row, col, var_ip * dayint], dtype = np.float16)
-    cnn_output = np.zeros([n_samples, row, col, var_op], dtype = np.float16)
+    if exact:
+        cnn_output = np.zeros([n_samples, row, col, var_op], dtype = np.float16)
+    else:
+        cnn_output = np.zeros([n_samples, row, col, var_op * forecast], dtype = np.float16)
     valid = []
     
     for n in range(dayint-1, n_samples-forecast):
@@ -173,11 +179,33 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
                 for v in range(0, var_ip):            
                     cnn_input[n, :, :, v+i*var_ip] = (data_input[n-i, :, :, v])
             # if v in range(0, var_op):
-            cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :])
+            if exact:
+                cnn_output[n, :, :, :] = (data_output[n+forecast-1, :, :, :])
+            else:
+                for j in range(0, forecast):
+                    for v in range(0, var_op):            
+                        cnn_output[n, :, :, v+j*var_op] = (data_output[n+j, :, :, v])
+                
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
 
 ### ML MODELS #####################################################################
+class FC(nn.Module):
+    def __init__(self, n_inputs, n_outputs):
+        super().__init__()
+        self.activation = nn.Tanh()
+        self.fc1 = nn.Linear(n_inputs, 128)  # 5*5 from image dimension
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, n_outputs)
+
+    def forward(self, x):
+        
+        x = self.activation(self.fc1(x))
+        x = self.activation(self.fc2(x))
+        x = self.activation(self.fc3(x))
+        
+        return x
+
 # CNN model
 class Net(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5):

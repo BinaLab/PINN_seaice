@@ -441,7 +441,7 @@ def main() -> None:
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    if cnn_output.shape[3] > 3:
+    if 'v5' in data_file:
         cnn_input = cnn_input[:,:,:,:-1]
         cnn_output = cnn_output[:,:,:,:-1]
     
@@ -460,7 +460,7 @@ def main() -> None:
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
     # cnn_output = cnn_output[:, 0:2, :, :] # Only predict U/V
-    cnn_output = cnn_output[:, 2:3, :, :] # Only predict U/V
+    cnn_output = cnn_output[:, 2:3, :, :] # Only predict SIC
     
     mask1 = (years == date) # Test samples
     mask2 = (days % 7 == 2) # Validation samples
