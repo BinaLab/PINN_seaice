@@ -175,7 +175,7 @@ def parse_args() -> argparse.Namespace:
         '--model-type',
         type=str,
         default="unet",
-        help='prediction outputs',
+        help='types of the neural network model (e.g. unet, cnn, fc)',
     )
     
     parser.add_argument(
@@ -466,14 +466,14 @@ def main() -> None:
         cnn_input = cnn_input[:,:,:,:-1]
         cnn_output = cnn_output[:,:,:,:-1]
         
-    if args.prediction == "sic":
+    if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
-    elif args.prediction == "sit":
+    elif args.predict == "sit":
         if data_ver == 'v4':
             cnn_output = cnn_output[:,:,:,3:4]
         else:
             print(f"SIT prediction is not available with {data_ver} data >>> Proceed with all prediction")
-    elif args.prediction == "uv":
+    elif args.predict == "uv":
         cnn_output = cnn_output[:,:,:,0:2]     
         
     # Read landmask data
@@ -539,7 +539,7 @@ def main() -> None:
     elif args.model_type == "fc":
         net = FC(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_{data_ver}_{args.prediction}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
@@ -552,7 +552,7 @@ def main() -> None:
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
-        if args.prediction == "all":
+        if args.predict== "all":
             loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
         else:
             loss_fn = single_loss(landmask)
