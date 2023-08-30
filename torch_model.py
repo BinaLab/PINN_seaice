@@ -33,6 +33,15 @@ class vel_loss(nn.Module):
         # err_sum += torch.nanmean(err_theta)/10000
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum  
+    
+class single_loss(nn.Module):
+    def __init__(self):
+        super(single_loss, self).__init__();
+
+    def forward(self, obs, prd):
+        err = torch.abs(obs - prd)
+        err_sum = torch.mean(err_sum, dim=0)[torch.where(self.landmask == 1)]*100
+        return err_sum  
 
 class custom_loss(nn.Module):
     def __init__(self, landmask):

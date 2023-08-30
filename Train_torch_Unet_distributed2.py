@@ -460,6 +460,7 @@ def main() -> None:
     cnn_input = np.transpose(cnn_input, (0, 3, 1, 2))
     cnn_output = np.transpose(cnn_output, (0, 3, 1, 2))
     # cnn_output = cnn_output[:, 0:2, :, :] # Only predict U/V
+    cnn_output = cnn_output[:, 2:3, :, :] # Only predict U/V
     
     mask1 = (years == date) # Test samples
     mask2 = (days % 7 == 2) # Validation samples
@@ -516,7 +517,7 @@ def main() -> None:
     if out_channels == 2:
         model_name = f"torch_unet_uv_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
     else:
-        model_name = f"torch_unet_v5_hydra_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
+        model_name = f"torch_unet_v5_sic_lr{lr}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"
         
     with open(data_path + f"landmask_{row}.pkl", 'rb') as file:
         landmask = pickle.load(file) 
@@ -528,6 +529,8 @@ def main() -> None:
     elif phy == "nophy":
         if out_channels == 2:
             loss_fn = vel_loss()
+        elif out_channels == 1:
+            loss_fn = single_loss(landmask)
         else:
             loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
 
