@@ -40,9 +40,12 @@ class single_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
-        err = torch.abs(obs - prd)
-        err_sum = torch.mean(err, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err_sum)*100
+        n_outputs = obs.size()[1]
+        err_sum = 0
+        for i in range(0, n_outputs):
+            err = torch.abs(obs[:, i, :, :] - prd[:, i, :, :])
+            err0 = torch.mean(err, dim=0)[torch.where(self.landmask == 0)]
+            err_sum += torch.mean(err0)*100
         return err_sum
 
 class custom_loss(nn.Module):
