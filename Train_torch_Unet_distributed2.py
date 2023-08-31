@@ -200,7 +200,7 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
-def make_sampler_and_loader(args, train_dataset, val_dataset):
+def make_sampler_and_loader(args, train_dataset):
     """Create sampler and dataloader for train and val datasets."""
     torch.set_num_threads(4)
     kwargs: dict[str, Any] = (
@@ -220,19 +220,19 @@ def make_sampler_and_loader(args, train_dataset, val_dataset):
         sampler=train_sampler,
         **kwargs,
     )
-    val_sampler = DistributedSampler(
-        val_dataset,
-        num_replicas=dist.get_world_size(),
-        rank=dist.get_rank(),
-    )
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=args.val_batch_size,
-        sampler=val_sampler,
-        **kwargs,
-    )
+    # val_sampler = DistributedSampler(
+    #     val_dataset,
+    #     num_replicas=dist.get_world_size(),
+    #     rank=dist.get_rank(),
+    # )
+    # val_loader = DataLoader(
+    #     val_dataset,
+    #     batch_size=args.val_batch_size,
+    #     sampler=val_sampler,
+    #     **kwargs,
+    # )
 
-    return train_sampler, train_loader, val_sampler, val_loader
+    return train_sampler, train_loader
 
 # def init_processes(backend):
 #     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
@@ -524,10 +524,10 @@ def main() -> None:
     print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     
     train_dataset = TensorDataset(train_input, train_output)
-    val_dataset = TensorDataset(val_input, val_output)
+    # val_dataset = TensorDataset(val_input, val_output)
     # test_dataset = TensorDataset(test_input, test_output)
     
-    train_sampler, train_loader, _, val_loader = make_sampler_and_loader(args, train_dataset, val_dataset)   
+    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset)   
     
     del cnn_input, cnn_output, train_input, train_output, xx_n, yy_n
     

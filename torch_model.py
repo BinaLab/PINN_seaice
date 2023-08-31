@@ -820,45 +820,45 @@ class UNet(nn.Module):
         
     def forward(self, x):
         # Encoder
-        xe11 = self.activation(self.e11(x))
-        xe12 = self.activation(self.e12(xe11))
+        # xe11 = self.activation(self.e11(x))
+        xe12 = self.activation(self.e12(self.activation(self.e11(x))))
         xp1 = self.pool1(xe12)
 
-        xe21 = self.activation(self.e21(xp1))
-        xe22 = self.activation(self.e22(xe21))
+        # xe21 = self.activation(self.e21(xp1))
+        xe22 = self.activation(self.e22(self.activation(self.e21(xp1))))
         xp2 = self.pool2(xe22)
 
-        xe31 = self.activation(self.e31(xp2))
-        xe32 = self.activation(self.e32(xe31))
+        # xe31 = self.activation(self.e31(xp2))
+        xe32 = self.activation(self.e32(self.activation(self.e31(xp2))))
         xp3 = self.pool3(xe32)
 
-        xe41 = self.activation(self.e41(xp3))
-        xe42 = self.activation(self.e42(xe41))
+        # xe41 = self.activation(self.e41(xp3))
+        xe42 = self.activation(self.e42(self.activation(self.e41(xp3))))
         xp4 = self.pool4(xe42)
 
-        xe51 = self.activation(self.e51(xp4))
-        xe52 = self.activation(self.e52(xe51))
+        # xe51 = self.activation(self.e51(xp4))
+        xe52 = self.activation(self.e52(self.activation(self.e51(xp4))))
         
         # Decoder
-        xu1 = self.upconv1(xe52)
-        xu11 = torch.cat([xu1, xe42], dim=1)
-        xd11 = self.activation(self.d11(xu11))
-        xd12 = self.activation(self.d12(xd11))
+        # xu1 = self.upconv1(xe52)
+        xu11 = torch.cat([self.upconv1(xe52), xe42], dim=1)
+        # xd11 = self.activation(self.d11(xu11))
+        xd12 = self.activation(self.d12(self.activation(self.d11(xu11))))
 
-        xu2 = self.upconv2(xd12)
-        xu22 = torch.cat([xu2, xe32], dim=1)
-        xd21 = self.activation(self.d21(xu22))
-        xd22 = self.activation(self.d22(xd21))
+        # xu2 = self.upconv2(xd12)
+        xu22 = torch.cat([self.upconv2(xd12), xe32], dim=1)
+        # xd21 = self.activation(self.d21(xu22))
+        xd22 = self.activation(self.d22(self.activation(self.d21(xu22))))
 
-        xu3 = self.upconv3(xd22)
-        xu33 = torch.cat([xu3, xe22], dim=1)
-        xd31 = self.activation(self.d31(xu33))
-        xd32 = self.activation(self.d32(xd31))
+        # xu3 = self.upconv3(xd22)
+        xu33 = torch.cat([self.upconv3(xd22), xe22], dim=1)
+        # xd31 = self.activation(self.d31(xu33))
+        xd32 = self.activation(self.d32(self.activation(self.d31(xu33))))
 
-        xu4 = self.upconv4(xd32)
-        xu44 = torch.cat([xu4, xe12], dim=1)
-        xd41 = self.activation(self.d41(xu44))
-        xd42 = self.activation(self.d42(xd41))
+        # xu4 = self.upconv4(xd32)
+        xu44 = torch.cat([self.upconv4(xd32), xe12], dim=1)
+        # xd41 = self.activation(self.d41(xu44))
+        xd42 = self.activation(self.d42(self.activation(self.d41(xu44))))
 
         # Output layer
         
