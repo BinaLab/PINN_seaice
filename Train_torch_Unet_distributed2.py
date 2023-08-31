@@ -623,21 +623,37 @@ def main() -> None:
     val_months = months[mask1]
     val_days = days[mask1]
     
+    net.eval()
+    
     for m in np.unique(val_months):
-        if m % 3 == dist.get_rank():      
+        if m % 3 == dist.get_rank():
+            
             data = val_input[val_months==m, :, :, :]
             target = val_output[val_months==m, :, :, :]
             output = np.zeros(target.size())
             
-            for j in tqdm(range(0, target.size()[0])):
-                output[j:j+1, :, :, :] = net(data[j:j+1, :, :, :]).to('cpu').detach().numpy()
+            with tqdm(total=target.size()[0],
+                      bar_format='{l_bar}{bar:10}|{postfix}',
+                      desc=f'Validation {date}-{str(m).zfill(2)}'
+                     ) as t:
+                with torch.no_grad():
+                    for j in range(0, target.size()[0]):
+                        output[j:j+1, :, :, :] = net(data[j:j+1, :, :, :]).to('cpu').detach().numpy()
+                        
+                    test_loss = loss_fn(target, output)
+                    
+                    t.set_postfix_str(
+                        'test_loss: {:.4f}'.format(test_loss.item()),
+                        refresh=False,
+                    )                   
+                    
+                    test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output,
+                                 val_months[val_months==m], val_days[val_months==m]]
 
-            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output,
-                         val_months[val_months==m], val_days[val_months==m]]
-
-            # Open a file and use dump()
-            with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
-                pickle.dump(test_save, file)
+                    # Open a file and use dump()
+                    with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
+                        pickle.dump(test_save, file)
+                        
     if dist.get_rank() == 0:
         print("#### Validation done!! ####")     
     # ===============================================================================
