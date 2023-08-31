@@ -206,20 +206,29 @@ def make_sampler_and_loader(args, train_dataset):
     kwargs: dict[str, Any] = (
         {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
     )
-    kwargs['prefetch_factor'] = 8
-    kwargs['persistent_workers'] = True
-
-    train_sampler = DistributedSampler(
-        train_dataset,
-        num_replicas=dist.get_world_size(),
-        rank=dist.get_rank(),
-    )
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        sampler=train_sampler,
-        **kwargs,
-    )
+    
+    if args.cuda:
+        kwargs['prefetch_factor'] = 8
+        kwargs['persistent_workers'] = True
+        train_sampler = DistributedSampler(
+            train_dataset,
+            num_replicas=dist.get_world_size(),
+            rank=dist.get_rank(),
+        )
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            sampler=train_sampler,
+            **kwargs,
+        )
+    else:
+        train_sampler = DistributedSampler(train_dataset)
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            sampler=train_sampler,
+            **kwargs,
+        )
     # val_sampler = DistributedSampler(
     #     val_dataset,
     #     num_replicas=dist.get_world_size(),
