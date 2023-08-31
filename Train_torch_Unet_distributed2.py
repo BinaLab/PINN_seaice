@@ -629,8 +629,8 @@ def main() -> None:
             target = val_output[val_months==m, :, :, :]
             output = np.zeros(target.size())
             
-            for j in range(target.size()[0]):
-                output[j] = net(data[i]).to('cpu').detach().numpy()
+            for j in tqdm(range(target.size()[0])):
+                output[j] = net(data[j]).to('cpu').detach().numpy()
 
             test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output,
                          val_months[val_months==m], val_days[val_months==m]]
