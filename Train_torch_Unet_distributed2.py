@@ -634,11 +634,12 @@ def main() -> None:
             
             with tqdm(total=target.size()[0],
                       bar_format='{l_bar}{bar:10}|{postfix}',
-                      desc=f'Validation {date}-{str(m).zfill(2)}'
+                      desc=f'Validation {date}-{str(int(m)).zfill(2)}'
                      ) as t:
                 with torch.no_grad():
                     for j in range(0, target.size()[0]):
                         output[j:j+1, :, :, :] = net(data[j:j+1, :, :, :]).to('cpu').detach().numpy()
+                        t.update(1)
                         
                     test_loss = loss_fn(target, output)
                     
