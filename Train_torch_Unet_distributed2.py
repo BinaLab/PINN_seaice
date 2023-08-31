@@ -521,7 +521,7 @@ def main() -> None:
         n_samples, in_channels, row, col = train_input.size()
         _, out_channels, _, _ = train_output.size()
     
-    print(np.shape(train_input), np.shape(train_output), np.shape(val_input), np.shape(val_output)) 
+    print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     
     train_dataset = TensorDataset(train_input, train_output)
     val_dataset = TensorDataset(val_input, val_output)
@@ -552,10 +552,13 @@ def main() -> None:
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
-        if args.predict== "all":
-            loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
+        if args.model_type == "fc":
+            loss_fn = nn.L1Loss()
         else:
-            loss_fn = single_loss(landmask)
+            if args.predict== "all":
+                loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
+            else:
+                loss_fn = single_loss(landmask)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)
