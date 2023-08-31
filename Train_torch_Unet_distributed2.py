@@ -605,6 +605,8 @@ def main() -> None:
     
     torch.cuda.empty_cache()
     
+    del train_dataset, train_loader, train_sampler
+    
     # Test the model with the trained model ========================================
     val_months = months[mask1]
     val_days = days[mask1]
