@@ -424,8 +424,8 @@ def main() -> None:
 
     if args.verbose:
         print('Collecting env info...')
-        print(collect_env.get_pretty_env_info())
-        print()
+        # print(collect_env.get_pretty_env_info())
+        # print()
 
     for r in range(torch.distributed.get_world_size()):
         if r == torch.distributed.get_rank():
