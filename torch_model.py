@@ -150,7 +150,7 @@ class MultiTaskLossWrapper(nn.Module):
         return loss0+loss1+loss2
     
 ### MAKE INPUT DATASETS #########################################################
-def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3, forecast = 3, exact = True):
+def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3, forecast = 3, exact = False):
     # dayint: days before forecast (use as input features)
     # forecast: lead day for forecasting (output features)
     # exact: if True, only that exact date is forecasted; if False, all days before the lead day is forecasted
