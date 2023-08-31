@@ -872,6 +872,112 @@ class UNet(nn.Module):
         out = self.outconv(xd42)
 
         return out
+    
+# UNET model
+class MT_UNet(nn.Module):
+    def __init__(self, n_inputs, n_outputs, k=3):
+        super().__init__()
+        
+        self.activation = nn.Tanh()
+        
+        # Encoder
+        # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
+        # input: 320x320x3
+        self.e11 = nn.Conv2d(n_inputs, 64, kernel_size=k, padding="same") # output: 320x320x32
+        self.e12 = nn.Conv2d(64, 64, kernel_size=k, padding="same") # output: 320x320x32
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x32
+
+        # input: 160x160x32
+        self.e21 = nn.Conv2d(64, 128, kernel_size=k, padding="same") # output: 160x160x64
+        self.e22 = nn.Conv2d(128, 128, kernel_size=k, padding="same") # output: 160x160x64
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 80x80x64
+
+        # input: 80x80x64
+        self.e31 = nn.Conv2d(128, 256, kernel_size=k, padding="same") # output: 80x80x128
+        self.e32 = nn.Conv2d(256, 256, kernel_size=k, padding="same") # output: 80x80x128
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 40x40x128
+
+        # input: 20x20x256
+        self.e41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 20x20x512
+        self.e42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 20x20x512
+
+        # Decoder
+        self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.d11 = nn.Conv2d(512, 256, kernel_size=k, padding="same")
+        self.d12 = nn.Conv2d(256, 256, kernel_size=k, padding="same")
+
+        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.d21 = nn.Conv2d(256, 128, kernel_size=k, padding="same")
+        self.d22 = nn.Conv2d(128, 128, kernel_size=k, padding="same")
+
+        self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.d31 = nn.Conv2d(128, 64, kernel_size=k, padding="same")
+        self.d32 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+
+
+        # Output layer
+        self.outconv = nn.Conv2d(64, n_outputs, kernel_size=k, padding="same")
+        # self.sidconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        # self.sidconv2 = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        # self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        # self.sicconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        # self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        # self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        
+    def forward(self, x):
+        # Encoder
+        # xe11 = self.activation(self.e11(x))
+        xe12 = self.activation(self.e12(self.activation(self.e11(x))))
+        xp1 = self.pool1(xe12)
+
+        # xe21 = self.activation(self.e21(xp1))
+        xe22 = self.activation(self.e22(self.activation(self.e21(xp1))))
+        xp2 = self.pool2(xe22)
+
+        # xe31 = self.activation(self.e31(xp2))
+        xe32 = self.activation(self.e32(self.activation(self.e31(xp2))))
+        xp3 = self.pool3(xe32)
+
+        # xe41 = self.activation(self.e41(xp3))
+        xe42 = self.activation(self.e42(self.activation(self.e41(xp3))))
+        xp4 = self.pool4(xe42)
+
+        # xe51 = self.activation(self.e51(xp4))
+        xe52 = self.activation(self.e52(self.activation(self.e51(xp4))))
+        
+        # Decoder
+        # xu1 = self.upconv1(xe52)
+        xu11 = torch.cat([self.upconv1(xe52), xe42], dim=1)
+        # xd11 = self.activation(self.d11(xu11))
+        xd12 = self.activation(self.d12(self.activation(self.d11(xu11))))
+
+        # xu2 = self.upconv2(xd12)
+        xu22 = torch.cat([self.upconv2(xd12), xe32], dim=1)
+        # xd21 = self.activation(self.d21(xu22))
+        xd22 = self.activation(self.d22(self.activation(self.d21(xu22))))
+
+        # xu3 = self.upconv3(xd22)
+        xu33 = torch.cat([self.upconv3(xd22), xe22], dim=1)
+        # xd31 = self.activation(self.d31(xu33))
+        xd32 = self.activation(self.d32(self.activation(self.d31(xu33))))
+
+        # xu4 = self.upconv4(xd32)
+        xu44 = torch.cat([self.upconv4(xd32), xe12], dim=1)
+        # xd41 = self.activation(self.d41(xu44))
+        xd42 = self.activation(self.d42(self.activation(self.d41(xu44))))
+
+        # Output layer
+        
+        # sid = self.sidconv1(xd42)
+        # sid = self.sidconv2(sid)
+        # sic = self.sicconv1(xd42)
+        # sic = self.sicconv2(sic)
+        # # sit = self.sitconv1(xd42)
+        # # sit = self.sitconv2(sit)        
+        # out = torch.cat([sid, sic], dim=1)
+        out = self.outconv(xd42)
+
+        return out
 
 # Graph convolutional LSTM
 class GConvLSTM(torch.nn.Module):
