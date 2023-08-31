@@ -23,7 +23,7 @@ from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
  
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 from torch_model import *
 
@@ -449,7 +449,8 @@ def main() -> None:
 
     os.makedirs(args.log_dir, exist_ok=True)
     args.checkpoint_format = os.path.join(args.log_dir, args.checkpoint_format)
-    args.log_writer = SummaryWriter(args.log_dir) if args.verbose else None   
+    # args.log_writer = SummaryWriter(args.log_dir) if args.verbose else None  
+    args.log_writer = None if args.verbose else None  
     
     data_path = args.data_dir
     data_file = args.data_file
