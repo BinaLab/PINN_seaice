@@ -554,10 +554,11 @@ def main() -> None:
     # print(device)
     net.to(device)
     
-    net = torch.nn.parallel.DistributedDataParallel(
-        net,
-        device_ids=[args.local_rank],
-    )
+    if args.no_cuda == False:
+        net = torch.nn.parallel.DistributedDataParallel(
+            net,
+            device_ids=[args.local_rank],
+        )
 
     if phy == "phy":
         loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
@@ -622,12 +623,15 @@ def main() -> None:
     val_days = days[mask1]
     
     for m in np.unique(val_months):
-        if m % 3 == dist.get_rank():            
+        if m % 3 == dist.get_rank():      
             data = val_input[val_months==m, :, :, :]
             target = val_output[val_months==m, :, :, :]
-            output = net(data)
+            output = np.zeros(target.size())
+            
+            for j in range(target.size()[0]):
+                output[j] = net(data[i]).to('cpu').detach().numpy()
 
-            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
+            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output,
                          val_months[val_months==m], val_days[val_months==m]]
 
             # Open a file and use dump()
