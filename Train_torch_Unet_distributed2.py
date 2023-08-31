@@ -473,7 +473,7 @@ def main() -> None:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
     if data_ver == 'v5':
-        cnn_input = cnn_input[:,:,:,:-1]
+        cnn_input = cnn_input[:,:,:,[0,1,2,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
         
     if args.predict == "sic":
