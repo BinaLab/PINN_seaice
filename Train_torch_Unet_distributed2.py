@@ -524,10 +524,11 @@ def main() -> None:
     print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     
     train_dataset = TensorDataset(train_input, train_output)
-    # val_dataset = TensorDataset(val_input, val_output)
+    val_dataset = TensorDataset(val_input, val_output)
     # test_dataset = TensorDataset(test_input, test_output)
     
-    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset)   
+    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset) 
+    val_sampler, val_loader = make_sampler_and_loader(args, val_dataset)
     
     del cnn_input, cnn_output, train_input, train_output, xx_n, yy_n
     
@@ -605,7 +606,7 @@ def main() -> None:
     
     torch.cuda.empty_cache()
     
-    del train_dataset, train_loader, train_sampler
+    del train_dataset, train_loader, train_sampler, val_dataset, val_loader, val_sampler
     
     # Test the model with the trained model ========================================
     val_months = months[mask1]
