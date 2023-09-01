@@ -874,7 +874,7 @@ class UNet(nn.Module):
         return out
     
 class TCL_block(nn.Module):
-    def __init__(self, row, col, ch, k=3):
+    def __init__(self, ch, row, col, k=3):
         super(TCL_block,self).__init__()
         
         self.a11 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
