@@ -877,18 +877,18 @@ class TCL_block(nn.Module):
     def __init__(self, row, col, ch, k=3):
         super(TCL_block,self).__init__()
         
-        self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)/0.5)
-        self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)/0.5)
+        self.a11 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
+        self.a12 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)/0.5)
-        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)/0.5)
+        self.a21 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
+        self.a22 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
 
     def forward(self, x1, x2):
-        x = self.a11*x1 + self.a12*x2
+        x = self.a11.repeat(x1.size()[0], 1, 1, 1)*x1 + self.a12.repeat(x2.size()[0], 1, 1, 1)*x2
         x = self.conv2(self.conv1(x))
-        x1 = self.a21*x
-        x2 = self.a22*x
+        x1 = self.a21.repeat(x1.size()[0], 1, 1, 1)*x
+        x2 = self.a22.repeat(x2.size()[0], 1, 1, 1)*x
         return x1, x2
     
 # UNET model
