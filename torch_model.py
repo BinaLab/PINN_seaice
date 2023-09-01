@@ -973,7 +973,7 @@ class MT_UNet(nn.Module):
         self.tcl3 = TCL_block(256, 40, 40, k)
         self.tcl4 = TCL_block(512, 40, 40, k)
         self.tcl5 = TCL_block(256, 80, 80, k)
-        self.tcl6 = TCL_block(256, 160, 160, k)
+        self.tcl6 = TCL_block(128, 160, 160, k)
 
         # Output layer
         self.sid_conv = nn.Conv2d(32, 2, kernel_size=k, padding="same")
