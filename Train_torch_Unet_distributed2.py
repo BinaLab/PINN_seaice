@@ -570,7 +570,7 @@ def main() -> None:
             if args.predict== "all":
                 loss_fn = custom_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
             else:
-                loss_fn = nn.L1Loss() #single_loss(landmask)
+                loss_fn = single_loss(landmask)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     scheduler = ExponentialLR(optimizer, gamma=0.98)

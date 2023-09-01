@@ -43,9 +43,9 @@ class single_loss(nn.Module):
         n_outputs = obs.size()[1]
         err_sum = 0
         for i in range(0, n_outputs):
-            err = torch.abs(obs[:, i, :, :] - prd[:, i, :, :])
-            # err0 = torch.mean(err, dim=0) #[torch.where(self.landmask == 0)]
-            err_sum += torch.mean(err)*100
+            err = torch.square(obs[:, i, :, :] - prd[:, i, :, :])
+            # err = torch.mean(err, dim=0)[self.landmask == 0]
+            err_sum += torch.mean(err)**0.5*100
         return err_sum
 
 class custom_loss(nn.Module):
@@ -764,7 +764,7 @@ class UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
-        self.activation = nn.LeakyReLU(negative_slope=1.0)
+        self.activation = nn.LeakyReLU(1.0)
         
         # Encoder
         # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
