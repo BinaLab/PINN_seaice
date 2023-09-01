@@ -764,7 +764,7 @@ class UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
-        self.activation = nn.LeakyReLU(1.0)
+        self.activation = nn.Tanh() #nn.LeakyReLU(1.0)
         
         # Encoder
         # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
