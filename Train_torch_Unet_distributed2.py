@@ -545,6 +545,8 @@ def main() -> None:
     #############################################################################   
     if args.model_type == "unet":
         net = UNet(in_channels, out_channels)
+    if args.model_type == "mtunet":
+        net = MT_UNet(in_channels, out_channels)
     elif args.model_type == "cnn":
         net = Net(in_channels, out_channels)
     elif args.model_type == "fc":
