@@ -1070,7 +1070,7 @@ class MT_UNet(nn.Module):
         xd32_sic = self.activation(self.sic_d32(xd31_sic))
 
         sid = self.sid_conv(xd32_sid)
-        sic = self.sid_conv(xd32_sic)
+        sic = self.sic_conv(xd32_sic)
         
         out = torch.cat([sid, sic], dim=1)
 
