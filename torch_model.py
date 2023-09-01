@@ -44,8 +44,8 @@ class single_loss(nn.Module):
         err_sum = 0
         for i in range(0, n_outputs):
             err = torch.abs(obs[:, i, :, :] - prd[:, i, :, :])
-            err0 = torch.mean(err, dim=0)[torch.where(self.landmask == 0)]
-            err_sum += torch.mean(err0)*100
+            # err0 = torch.mean(err, dim=0) #[torch.where(self.landmask == 0)]
+            err_sum += torch.mean(err)*100
         return err_sum
 
 class custom_loss(nn.Module):

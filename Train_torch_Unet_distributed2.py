@@ -630,7 +630,7 @@ def main() -> None:
             
             data = val_input[val_months==m, :, :, :]
             target = val_output[val_months==m, :, :, :]
-            output = np.zeros(target.size())
+            output = torch.zeros(target.size())
             
             with tqdm(total=target.size()[0],
                       bar_format='{l_bar}{bar:10}|{postfix}',
@@ -638,7 +638,7 @@ def main() -> None:
                      ) as t:
                 with torch.no_grad():
                     for j in range(0, target.size()[0]):
-                        output[j:j+1, :, :, :] = net(data[j:j+1, :, :, :]).to('cpu').detach().numpy()
+                        output[j:j+1, :, :, :] = net(data[j:j+1, :, :, :])
                         t.update(1)
                         
                     test_loss = loss_fn(target, output)
@@ -648,7 +648,7 @@ def main() -> None:
                         refresh=False,
                     )                   
                     
-                    test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output,
+                    test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
                                  val_months[val_months==m], val_days[val_months==m]]
 
                     # Open a file and use dump()
