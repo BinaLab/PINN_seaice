@@ -931,7 +931,7 @@ class MT_UNet(nn.Module):
 
         self.sid_upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2) # output: 320x320x64
         self.sid_d31 = nn.Conv2d(128, 64, kernel_size=k, padding="same") # output: 320x320x64
-        self.sid_d32 = nn.Conv2d(64, 64, kernel_size=k, padding="same") # output: 320x320x64     
+        self.sid_d32 = nn.Conv2d(64, 32, kernel_size=k, padding="same") # output: 320x320x64     
         
         
         ##### SIC BRANCH #####
@@ -965,7 +965,7 @@ class MT_UNet(nn.Module):
 
         self.sic_upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2) # output: 320x320x64
         self.sic_d31 = nn.Conv2d(128, 64, kernel_size=k, padding="same") # output: 320x320x64
-        self.sic_d32 = nn.Conv2d(64, 64, kernel_size=k, padding="same") # output: 320x320x64
+        self.sic_d32 = nn.Conv2d(64, 32, kernel_size=k, padding="same") # output: 320x320x64
         
         ##### Task Consistency Learning (TCL) Block #####
         self.tcl1 = TCL_block(64, 160, 160, k)        
