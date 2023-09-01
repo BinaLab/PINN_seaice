@@ -476,6 +476,9 @@ def main() -> None:
         cnn_input = cnn_input[:,:,:,[0,1,2,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
         
+    if args.model_type == "mtunet":
+        args.predict = "all"
+        
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
     elif args.predict == "sit":

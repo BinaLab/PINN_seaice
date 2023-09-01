@@ -885,10 +885,10 @@ class TCL_block(nn.Module):
         self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)/0.5)
 
     def forward(self, x1, x2):
-        x = self.a11(x1) + self.a12(x2)
+        x = self.a11*x1 + self.a12*x2
         x = self.conv2(self.conv1(x))
-        x1 = self.a21(x)
-        x2 = self.a22(x)
+        x1 = self.a21*x
+        x2 = self.a22*x
         return x1, x2
     
 # UNET model
