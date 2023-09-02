@@ -544,7 +544,7 @@ def main() -> None:
     train_sampler, train_loader = make_sampler_and_loader(args, train_dataset) 
     val_sampler, val_loader = make_sampler_and_loader(args, val_dataset)
     
-    del cnn_input, cnn_output, train_input, train_output, xx_n, yy_n
+    del cnn_input, cnn_output, train_input, train_output
     
     #############################################################################   
     if args.model_type == "unet":
