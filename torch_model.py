@@ -212,13 +212,20 @@ class FC(nn.Module):
         return x
 
 class linear_regression(torch.nn.Module):
-    def __init__(self, inputSize, outputSize):
+    def __init__(self, inputSize, outputSize, row, col):
         super(linear_regression, self).__init__()        
-        self.a = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
-        self.b = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
+        self.asiu = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
+        self.bsiu = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
+        self.asiv = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
+        self.bsiv = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
+        self.asic = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
+        self.bsic = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
 
     def forward(self, x):
-        out = self.linear(x)
+        out = torch.ones(x.size()[0], 3, x.size()[2], x.size()[3])
+        out[:, 0, :, :] = torch.sum(self.asiu.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiu
+        out[:, 1, :, :] = torch.sum(self.asiv.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiv
+        out[:, 2, :, :] = torch.sum(self.asic.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsic
         return out
     
 # class Linear_regression(nn.Module):

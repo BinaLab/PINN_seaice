@@ -498,10 +498,11 @@ def main() -> None:
     cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
     ## Add x y coordinates as inputs
-    xx_n = (xx - xx.min())/(xx.max() - xx.min()).astype(np.float16)
-    yy_n = (yy - yy.min())/(yy.max() - yy.min()).astype(np.float16)
-    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
-    cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
+    if args.model_type != "lg":
+        xx_n = (xx - xx.min())/(xx.max() - xx.min()).astype(np.float16)
+        yy_n = (yy - yy.min())/(yy.max() - yy.min()).astype(np.float16)
+        cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
+        cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
     
     ## Convert numpy array into torch tensor
     cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
@@ -554,6 +555,8 @@ def main() -> None:
         net = Net(in_channels, out_channels)
     elif args.model_type == "fc":
         net = FC(in_channels, out_channels)
+    elif args.model_type == "lg": # linear regression
+        net = linear_regression(in_channels, out_channels, row, col)
 
     model_name = f"torch_{args.model_type}_{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
