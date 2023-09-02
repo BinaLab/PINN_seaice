@@ -211,6 +211,32 @@ class FC(nn.Module):
         
         return x
 
+class linear_regression(torch.nn.Module):
+    def __init__(self, inputSize, outputSize):
+        super(linear_regression, self).__init__()        
+        self.a = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
+        self.b = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
+
+    def forward(self, x):
+        out = self.linear(x)
+        return out
+    
+# class Linear_regression(nn.Module):
+#     def __init__(self, n_inputs, n_outputs):
+#         super().__init__()
+#         self.activation = nn.Tanh()
+#         self.fc1 = nn.Linear(n_inputs, 128)  # 5*5 from image dimension
+#         self.fc2 = nn.Linear(128, 128)
+#         self.fc3 = nn.Linear(128, n_outputs)
+
+#     def forward(self, x):
+        
+#         x = self.activation(self.fc1(x))
+#         x = self.activation(self.fc2(x))
+#         x = self.activation(self.fc3(x))
+        
+#         return x
+
 # CNN model
 class Net(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5):
@@ -877,12 +903,12 @@ class TCL_block(nn.Module):
     def __init__(self, ch, row, col, k=3):
         super(TCL_block,self).__init__()
         
-        self.a11 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
-        self.a12 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
+        self.a11 = torch.nn.Parameter(torch.ones(1, ch, row, col)/2)
+        self.a12 = torch.nn.Parameter(torch.ones(1, ch, row, col)/2)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.a21 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
-        self.a22 = torch.nn.Parameter(torch.ones(1, ch, row, col)/0.5)
+        self.a21 = torch.nn.Parameter(torch.ones(1, ch, row, col)/2)
+        self.a22 = torch.nn.Parameter(torch.ones(1, ch, row, col)/2)
 
     def forward(self, x1, x2):
         x = self.a11.repeat(x1.size()[0], 1, 1, 1)*x1 + self.a12.repeat(x2.size()[0], 1, 1, 1)*x2

@@ -534,6 +534,14 @@ def make_cnn_input2D(data_input, data_output, days = 3):
 def MAE(obs, prd):
     return np.nanmean(abs(obs-prd))
 
+def RMSE(obs, prd):
+    err = np.square(obs-prd)
+    return np.nanmean(err)**0.5
+
+def skill(obs, prd):
+    err = np.mean(np.square(obs-prd))**0.5/(np.square(obs-np.mean(obs)))**0.5
+    return 1-err
+
 def corr(prd, obs):
     prd = prd.flatten()
     obs = obs.flatten()
