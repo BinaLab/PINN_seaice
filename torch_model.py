@@ -222,10 +222,10 @@ class linear_regression(torch.nn.Module):
         self.bsic = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
 
     def forward(self, x):
-        out = torch.ones(x.size()[0], 3, x.size()[2], x.size()[3])
-        out[:, 0, :, :] = torch.sum(self.asiu.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiu
-        out[:, 1, :, :] = torch.sum(self.asiv.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiv
-        out[:, 2, :, :] = torch.sum(self.asic.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsic
+        siu = torch.sum(self.asiu.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiu
+        siv = torch.sum(self.asiv.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiv
+        sic = torch.sum(self.asic.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsic
+        out = torch.cat([siu.unsqueeze(1), siv.unsqueeze(1), sic.unsqueeze(1)], dim=1)
         return out
     
 # class Linear_regression(nn.Module):
