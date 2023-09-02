@@ -215,16 +215,16 @@ class linear_regression(torch.nn.Module):
     def __init__(self, inputSize, outputSize, row, col):
         super(linear_regression, self).__init__()        
         self.asiu = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
-        self.bsiu = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
+        self.bsiu = torch.nn.Parameter(torch.ones(1, row, col)*0.5)
         self.asiv = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
-        self.bsiv = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
+        self.bsiv = torch.nn.Parameter(torch.ones(1, row, col)*0.5)
         self.asic = torch.nn.Parameter(torch.ones(1, inputSize, row, col)*0.5)
-        self.bsic = torch.nn.Parameter(torch.ones(1, 1, row, col)*0.5)
+        self.bsic = torch.nn.Parameter(torch.ones(1, row, col)*0.5)
 
     def forward(self, x):
-        siu = torch.sum(self.asiu.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiu
-        siv = torch.sum(self.asiv.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsiv
-        sic = torch.sum(self.asic.repeat(x.size()[0], 1, 1, 1)*x, dim=1) + self.bsic
+        siu = torch.sum(self.asiu.repeat*x, dim=1) + self.bsiu
+        siv = torch.sum(self.asiv.repeat*x, dim=1) + self.bsiv
+        sic = torch.sum(self.asic.repeat*x, dim=1) + self.bsic
         out = torch.cat([siu.unsqueeze(1), siv.unsqueeze(1), sic.unsqueeze(1)], dim=1)
         return out
     

@@ -646,7 +646,7 @@ def main() -> None:
                      ) as t:
                 with torch.no_grad():
                     for j in range(0, target.size()[0]):
-                        output[j:j+1, :, :, :] = net(data[j:j+1, :, :, :])
+                        output[j, :, :, :] = net(data[j:j+1, :, :, :])
                         t.update(1)
                         
                     test_loss = loss_fn(target, output)
