@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2018_2022_v5.pkl',
+        default='train_cnn_2018_2022_v6.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -474,6 +474,9 @@ def main() -> None:
     
     if data_ver == 'v5':
         cnn_input = cnn_input[:,:,:,[0,1,2,4,5]]
+        cnn_output = cnn_output[:,:,:,:-1]
+    if data_ver == 'v6':
+        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
         
     if args.model_type == "mtunet":

@@ -179,7 +179,7 @@ def retrieve_ERA5(year, region = "NH"):
                 '31',
                    ],
             'grid': [1, 0.5],
-            'area': [90, -180, 50, 180]
+            'area': [90, -180, 40, 180]
             }
     
     elif region == "SH":
@@ -285,7 +285,7 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
         grid_input[i, :, :, 0] = grid_u / 50
         grid_input[i, :, :, 1] = grid_v / 50
         grid_input[i, :, :, 2] = grid_sic
-        grid_input[i, :, :, 3] = (grid_t2m - 240)/(320 - 240) #Max temp = 320 K, Min temp = 240 K)
+        grid_input[i, :, :, 3] = (grid_t2m - 210)/(310 - 210) #Max temp = 320 K, Min temp = 240 K)
         grid_input[i, :, :, 4] = grid_u10 / 50
         grid_input[i, :, :, 5] = grid_v10 / 50
 
@@ -539,8 +539,11 @@ def RMSE(obs, prd):
     return np.nanmean(err)**0.5
 
 def skill(obs, prd):
-    err = np.mean(np.square(obs-prd))**0.5/(np.square(obs-np.mean(obs)))**0.5
+    err = np.nanmean(np.square(prd-obs))**0.5/np.nanmean(np.square(obs-np.nanmean(obs)))**0.5
     return 1-err
+
+def MBE(obs, prd):
+    return np.nanmean(prd-obs)
 
 def corr(prd, obs):
     prd = prd.flatten()
@@ -578,3 +581,7 @@ def float_to_int(input0, output0):
             output1[:, :, :, c] = sub_op
     
     return input1, output1
+
+def nanmask(array, mask):
+    array[mask] = np.nan
+    return array
