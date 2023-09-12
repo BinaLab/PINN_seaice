@@ -531,18 +531,28 @@ def make_cnn_input2D(data_input, data_output, days = 3):
             cnn_output[n, :, :, v] = (data_output[n+days, :, :, v])
     return cnn_input, cnn_output
 
-def MAE(obs, prd):
+def MAE(prd, obs):
     return np.nanmean(abs(obs-prd))
 
-def RMSE(obs, prd):
+def RMSE(prd, obs):
     err = np.square(obs-prd)
     return np.nanmean(err)**0.5
 
-def skill(obs, prd):
+def RMSE_grid(prd, obs):
+    err = np.square(obs-prd)
+    return np.nanmean(err, axis=0)**0.5
+
+def corr_grid(prd, obs):
+    r1 = np.nansum((prd-np.nanmean(prd))*(obs-np.nanmean(obs)),axis=0)
+    r2 = np.nansum(np.square(prd-np.nanmean(prd)), axis=0)*np.nansum(np.square(obs-np.nanmean(obs)),axis=0)
+    r = r1/r2**0.5
+    return r
+
+def skill(prd, obs):
     err = np.nanmean(np.square(prd-obs))**0.5/np.nanmean(np.square(obs-np.nanmean(obs)))**0.5
     return 1-err
 
-def MBE(obs, prd):
+def MBE(prd, obs):
     return np.nanmean(prd-obs)
 
 def corr(prd, obs):
