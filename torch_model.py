@@ -1359,7 +1359,7 @@ class IS_UNet(nn.Module):
         xu22_sic = torch.cat([xu2_sic, xe21_sic], dim=1)
         xd21_sic = self.activation(self.sic_d21(xu22_sic))
         # TCL block
-        tcl6, tcl6_sic = self.tcl6(xd21_sid, xd21_sic) 
+        tcl6_sid, tcl6_sic = self.tcl6(xd21_sid, xd21_sic) 
         
         ##### Decoder 3 #####
         # SID
