@@ -1363,12 +1363,12 @@ class IS_UNet(nn.Module):
         
         ##### Decoder 3 #####
         # SID
-        xu3_sid = self.sid_upconv3(xd22_sid+tcl6_sid)
-        xu33_sid = torch.cat([xu3_sid, xe12_sid], dim=1)
+        xu3_sid = self.sid_upconv3(xd21_sid+tcl6_sid)
+        xu33_sid = torch.cat([xu3_sid, xe11_sid], dim=1)
         xd31_sid = self.activation(self.sid_d31(xu33_sid))
         # SIC
-        xu3_sic = self.sic_upconv3(xd22_sic+tcl6_sic)
-        xu33_sic = torch.cat([xu3_sic, xe12_sic], dim=1)
+        xu3_sic = self.sic_upconv3(xd21_sic+tcl6_sic)
+        xu33_sic = torch.cat([xu3_sic, xe11_sic], dim=1)
         xd31_sic = self.activation(self.sic_d31(xu33_sic))
 
         sid = self.sid_conv(xd31_sid)
