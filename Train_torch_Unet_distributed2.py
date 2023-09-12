@@ -553,7 +553,9 @@ def main() -> None:
     if args.model_type == "unet":
         net = UNet(in_channels, out_channels)
     elif args.model_type == "mtunet":
-        net = MT_UNet(in_channels, out_channels)
+        net = HF_UNet(in_channels, out_channels)
+    elif args.model_type == "isunet":
+        net = IS_UNet(in_channels, out_channels) # information sharing
     elif args.model_type == "bunet":
         net = BUNet(in_channels, out_channels)
     elif args.model_type == "cnn":

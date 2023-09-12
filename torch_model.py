@@ -1223,7 +1223,7 @@ class HF_UNet(nn.Module):
         return out
     
 # UNET model
-class MT_UNet(nn.Module):
+class IS_UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
@@ -1339,24 +1339,24 @@ class MT_UNet(nn.Module):
         
         ##### Decoder 1 #####
         # SID
-        xu1_sid = self.sid_upconv1(xe42_sid+tcl4_sid)
-        xu11_sid = torch.cat([xu1_sid, xe32_sid], dim=1)
+        xu1_sid = self.sid_upconv1(xe41_sid+tcl4_sid)
+        xu11_sid = torch.cat([xu1_sid, xe31_sid], dim=1)
         xd11_sid = self.activation(self.sid_d11(xu11_sid))
         # SIC
-        xu1_sic = self.sic_upconv1(xe42_sic+tcl4_sic)
-        xu11_sic = torch.cat([xu1_sic, xe32_sic], dim=1)
+        xu1_sic = self.sic_upconv1(xe41_sic+tcl4_sic)
+        xu11_sic = torch.cat([xu1_sic, xe31_sic], dim=1)
         xd11_sic = self.activation(self.sic_d11(xu11_sic))
         # TCL block
         tcl5_sid, tcl5_sic = self.tcl5(xd11_sid, xd11_sic) 
         
         ##### Decoder 2 #####
         # SID
-        xu2_sid = self.sid_upconv2(xd12_sid+tcl5_sid)
-        xu22_sid = torch.cat([xu2_sid, xe22_sid], dim=1)
+        xu2_sid = self.sid_upconv2(xd11_sid+tcl5_sid)
+        xu22_sid = torch.cat([xu2_sid, xe21_sid], dim=1)
         xd21_sid = self.activation(self.sid_d21(xu22_sid))
         # SIC
-        xu2_sic = self.sic_upconv2(xd12_sic+tcl5_sic)
-        xu22_sic = torch.cat([xu2_sic, xe22_sic], dim=1)
+        xu2_sic = self.sic_upconv2(xd11_sic+tcl5_sic)
+        xu22_sic = torch.cat([xu2_sic, xe21_sic], dim=1)
         xd21_sic = self.activation(self.sic_d21(xu22_sic))
         # TCL block
         tcl6, tcl6_sic = self.tcl6(xd21_sid, xd21_sic) 
