@@ -1284,12 +1284,12 @@ class IS_UNet(nn.Module):
         self.sic_d31 = nn.Conv2d(128, 64, kernel_size=k, padding="same") # output: 320x320x64
         
         ##### Task Consistency Learning (TCL) Block #####
-        self.tcl1 = TCL_block(64, 160, 160, k=3, w=0)        
-        self.tcl2 = TCL_block(128, 80, 80, k=3, w=0)
-        self.tcl3 = TCL_block(256, 40, 40, k=3, w=0)
-        self.tcl4 = TCL_block(512, 40, 40, k=3, w=0)
-        self.tcl5 = TCL_block(256, 80, 80, k=3, w=0)
-        self.tcl6 = TCL_block(128, 160, 160, k=3, w=0)
+        self.tcl1 = TCL_block(64, 160, 160, k=3, w=0.5)        
+        self.tcl2 = TCL_block(128, 80, 80, k=3, w=0.5)
+        self.tcl3 = TCL_block(256, 40, 40, k=3, w=0.5)
+        self.tcl4 = TCL_block(512, 40, 40, k=3, w=0.5)
+        self.tcl5 = TCL_block(256, 80, 80, k=3, w=0.5)
+        self.tcl6 = TCL_block(128, 160, 160, k=3, w=0.5)
 
         # Output layer
         self.sid_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
@@ -1311,39 +1311,39 @@ class IS_UNet(nn.Module):
         
         ##### Encoder 2 #####
         # SID 
-        xe21_sid = self.activation(self.sid_e21(xp1_sid+tcl1_sid))
+        xe21_sid = self.activation(self.sid_e21(tcl1_sid))
         xp2_sid = self.sid_pool2(xe21_sid) # 80*80*128
         # SIC
-        xe21_sic = self.activation(self.sic_e21(xp1_sic+tcl1_sic))
+        xe21_sic = self.activation(self.sic_e21(tcl1_sic))
         xp2_sic = self.sic_pool2(xe21_sic) # 80*80*128
         # TCL block
         tcl2_sid, tcl2_sic = self.tcl2(xp2_sid, xp2_sic)        
         
         ##### Encoder 3 #####
         # SID 
-        xe31_sid = self.activation(self.sid_e31(xp2_sid+tcl2_sid))
+        xe31_sid = self.activation(self.sid_e31(tcl2_sid))
         xp3_sid = self.sid_pool3(xe31_sid) # 40*40*256
         # SIC
-        xe31_sic = self.activation(self.sic_e31(xp2_sic+tcl2_sic))
+        xe31_sic = self.activation(self.sic_e31(tcl2_sic))
         xp3_sic = self.sic_pool3(xe31_sic) # 40*40*256
         # TCL block
         tcl3_sid, tcl3_sic = self.tcl3(xp3_sid, xp3_sic) 
         
         ##### Encoder 4 #####
         # SID
-        xe41_sid = self.activation(self.sid_e41(xp3_sid+tcl3_sid))
+        xe41_sid = self.activation(self.sid_e41(tcl3_sid))
         # SIC
-        xe41_sic = self.activation(self.sic_e41(xp3_sic+tcl3_sic))
+        xe41_sic = self.activation(self.sic_e41(tcl3_sic))
         # TCL block
         tcl4_sid, tcl4_sic = self.tcl4(xe41_sid, xe41_sic) 
         
         ##### Decoder 1 #####
         # SID
-        xu1_sid = self.sid_upconv1(xe41_sid+tcl4_sid)
+        xu1_sid = self.sid_upconv1(tcl4_sid)
         xu11_sid = torch.cat([xu1_sid, xe31_sid], dim=1)
         xd11_sid = self.activation(self.sid_d11(xu11_sid))
         # SIC
-        xu1_sic = self.sic_upconv1(xe41_sic+tcl4_sic)
+        xu1_sic = self.sic_upconv1(tcl4_sic)
         xu11_sic = torch.cat([xu1_sic, xe31_sic], dim=1)
         xd11_sic = self.activation(self.sic_d11(xu11_sic))
         # TCL block
@@ -1351,11 +1351,11 @@ class IS_UNet(nn.Module):
         
         ##### Decoder 2 #####
         # SID
-        xu2_sid = self.sid_upconv2(xd11_sid+tcl5_sid)
+        xu2_sid = self.sid_upconv2(tcl5_sid)
         xu22_sid = torch.cat([xu2_sid, xe21_sid], dim=1)
         xd21_sid = self.activation(self.sid_d21(xu22_sid))
         # SIC
-        xu2_sic = self.sic_upconv2(xd11_sic+tcl5_sic)
+        xu2_sic = self.sic_upconv2(tcl5_sic)
         xu22_sic = torch.cat([xu2_sic, xe21_sic], dim=1)
         xd21_sic = self.activation(self.sic_d21(xu22_sic))
         # TCL block
@@ -1363,11 +1363,11 @@ class IS_UNet(nn.Module):
         
         ##### Decoder 3 #####
         # SID
-        xu3_sid = self.sid_upconv3(xd21_sid+tcl6_sid)
+        xu3_sid = self.sid_upconv3(tcl6_sid)
         xu33_sid = torch.cat([xu3_sid, xe11_sid], dim=1)
         xd31_sid = self.activation(self.sid_d31(xu33_sid))
         # SIC
-        xu3_sic = self.sic_upconv3(xd21_sic+tcl6_sic)
+        xu3_sic = self.sic_upconv3(tcl6_sic)
         xu33_sic = torch.cat([xu3_sic, xe11_sic], dim=1)
         xd31_sic = self.activation(self.sic_d31(xu33_sic))
 
