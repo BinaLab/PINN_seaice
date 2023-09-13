@@ -43,7 +43,7 @@ class single_loss(nn.Module):
         n_outputs = obs.size()[1]
         err_sum = 0
         for i in range(0, n_outputs):
-            err = torch.square(obs[:, i, :, :] - prd[:, i, :, :])
+            err = torch.abs(obs[:, i, :, :] - prd[:, i, :, :])
             # err = torch.mean(err, dim=0)[self.landmask == 0]
             err_sum += torch.mean(err)**0.5*100
         return err_sum
@@ -1227,7 +1227,7 @@ class IS_UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
-        self.activation = nn.LeakyReLU(0.1) #nn.Tanh()
+        self.activation = nn.LeakyReLU(0.2)
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
