@@ -1227,7 +1227,7 @@ class IS_UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
-        self.activation = nn.nn.LeakyReLU(0.1)
+        self.activation = nn.LeakyReLU(0.1)
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
