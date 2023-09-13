@@ -43,7 +43,7 @@ class single_loss(nn.Module):
         n_outputs = obs.size()[1]
         err_sum = 0
         for i in range(0, n_outputs):
-            err = torch.abs(obs[:, i, :, :] - prd[:, i, :, :])
+            err = torch.square(obs[:, i, :, :] - prd[:, i, :, :])
             # err = torch.mean(err, dim=0)[self.landmask == 0]
             err_sum += torch.mean(err)**0.5*100
         return err_sum
