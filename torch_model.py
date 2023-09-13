@@ -1167,10 +1167,10 @@ class HF_UNet(nn.Module):
         
         ##### Encoder 4 #####
         # SID
-        xe41_sid = self.activation(self.sid_e41(xp3_sid + tcl2_sid))
+        xe41_sid = self.activation(self.sid_e41(xp3_sid + tcl3_sid))
         xe42_sid = self.activation(self.sid_e42(xe41_sid))
         # SIC
-        xe41_sic = self.activation(self.sic_e41(xp3_sic + tcl2_sic))
+        xe41_sic = self.activation(self.sic_e41(xp3_sic + tcl3_sic))
         xe42_sic = self.activation(self.sic_e42(xe41_sic))
         # TCL block
         tcl4_sid, tcl4_sic = self.tcl4(xe42_sid, xe42_sic) 
