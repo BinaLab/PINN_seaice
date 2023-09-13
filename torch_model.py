@@ -1023,7 +1023,7 @@ class BUNet(nn.Module):
 class TCL_block(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
         super(TCL_block,self).__init__()
-        
+        self.activation = nn.Tanh()
         self.a11 = torch.nn.Parameter(torch.ones(1, ch, row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(1, ch, row, col)*w)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
@@ -1032,7 +1032,7 @@ class TCL_block(nn.Module):
 
     def forward(self, x1, x2):
         x = self.a11.repeat(x1.size()[0], 1, 1, 1)*x1 + self.a12.repeat(x2.size()[0], 1, 1, 1)*x2
-        x = self.conv1(x)
+        x = self.activation(self.conv1(x))
         x1 = self.a21.repeat(x1.size()[0], 1, 1, 1)*x
         x2 = self.a22.repeat(x2.size()[0], 1, 1, 1)*x
         return x1, x2
@@ -1227,7 +1227,7 @@ class IS_UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
-        self.activation = nn.LeakyReLU(0.2)
+        self.activation = nn.Tanh() #nn.LeakyReLU(0.2)
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
