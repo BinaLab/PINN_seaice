@@ -1187,7 +1187,7 @@ class HF_UNet(nn.Module):
         xd11_sic = self.activation(self.sic_d11(xu11_sic))
         xd12_sic = self.activation(self.sic_d12(xd11_sic))
         # TCL block
-        tcl5_sid, xd12_sic = self.tcl5(xd12_sid, xd12_sic) 
+        tcl5_sid, tcl5_sic = self.tcl5(xd12_sid, xd12_sic) 
         
         ##### Decoder 2 #####
         # SID
