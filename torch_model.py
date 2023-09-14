@@ -63,15 +63,16 @@ class custom_loss(nn.Module):
         theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
         theta = torch.where(torch.isnan(theta), 0, theta)
 
-        err_u = torch.abs(u_o - u_p) #[sic > 0]
-        err_v = torch.abs(v_o - v_p) #[sic > 0]
+        err_u = torch.square(u_o - u_p) #[sic > 0]
+        err_v = torch.square(v_o - v_p) #[sic > 0]
         err_vel = torch.abs(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
         err_sum = torch.mean(err1)*1000 
 
-        err_sic = torch.abs(obs[:, 2, :, :]-prd[:, 2, :, :])
+        err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
+        
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
         err_sum += torch.mean(err2)*1000
