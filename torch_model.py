@@ -1174,16 +1174,16 @@ class TS_UNet(nn.Module):
         wb1_siu, wb1_siu, wb1_sic = self.wb1(xe1_siu, xe1_siv, xe1_sic)
         
         ##### Encoder 2 #####
-        xe2_siu = self.siu_ec2(x + wb1_siu) # SIU
-        xe2_siv = self.siv_ec2(x + wb1_siv) # SIV
-        xe2_sic = self.sic_ec2(x + wb1_sic) # SIC
+        xe2_siu = self.siu_ec2(xe1_siu + wb1_siu) # SIU
+        xe2_siv = self.siv_ec2(xe1_siv + wb1_siv) # SIV
+        xe2_sic = self.sic_ec2(xe1_sic + wb1_sic) # SIC
         # Weighting block 2
         wb2_siu, wb2_siu, wb2_sic = self.wb2(xe2_siu, xe2_siv, xe2_sic)
         
         ##### Encoder 3 #####
-        xe3_siu = self.siu_ec3(x + wb2_siu) # SIU
-        xe3_siv = self.siv_ec3(x + wb2_siu) # SIV
-        xe3_sic = self.sic_ec3(x + wb2_siu) # SIC
+        xe3_siu = self.siu_ec3(xe2_siu + wb2_siu) # SIU
+        xe3_siv = self.siv_ec3(xe2_siv + wb2_siu) # SIV
+        xe3_sic = self.sic_ec3(xe2_sic + wb2_siu) # SIC
         # Weighting block 3
         wb3_siu, wb3_siu, wb3_sic = self.wb3(xe3_siu, xe3_siv, xe3_sic)
         
