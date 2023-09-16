@@ -1189,14 +1189,14 @@ class TS_UNet(nn.Module):
         
         ##### Bottom bridge #####
         # SID
-        xe41_siu = self.activation(self.siu_e41(xe3_siu + wb3_siu))
-        xe42_siu = self.activation(self.siu_e42(xe41_siu))
+        xe41_siu = self.activation(self.siu_ec41(xe3_siu + wb3_siu))
+        xe42_siu = self.activation(self.siu_ec42(xe41_siu))
         # SIV
-        xe41_siv = self.activation(self.siv_e41(xe3_siv + wb3_siv))
-        xe42_siv = self.activation(self.siv_e42(xe41_siv))
+        xe41_siv = self.activation(self.siv_ec41(xe3_siv + wb3_siv))
+        xe42_siv = self.activation(self.siv_ec42(xe41_siv))
         # SIC
-        xe41_sic = self.activation(self.sic_e41(xe3_sic + wb3_sic))
-        xe42_sic = self.activation(self.sic_e42(xe41_sic))
+        xe41_sic = self.activation(self.sic_ec41(xe3_sic + wb3_sic))
+        xe42_sic = self.activation(self.sic_ec42(xe41_sic))
         # Weighting block 4
         wb4_siu, wb4_siv, wb4_sic = self.wb4(xe42_siu, xe42_siv, xe42_sic) 
         
