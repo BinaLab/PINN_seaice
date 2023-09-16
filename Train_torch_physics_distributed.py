@@ -472,9 +472,7 @@ def main() -> None:
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    if data_ver == 'v1':
-        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
-        cnn_output = cnn_output[:,:,:,:-1] # does not consider SIT
+    cnn_output = cnn_output[:,:,:,:-1] # does not consider SIT
         
     if args.model_type == "mtunet":
         args.predict = "all"
