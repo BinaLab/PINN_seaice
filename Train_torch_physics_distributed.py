@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_physics_2018_2022_v1.pkl',
+        default='train_physics_2018_2022_v2.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
