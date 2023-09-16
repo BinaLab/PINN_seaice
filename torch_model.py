@@ -1069,9 +1069,9 @@ class encoder(nn.Module):
 
     def forward(self, x):
         x = self.activation(self.e11(x))
-        x = self.activation(self.e12(x))
-        x = self.pool1(x)
-        return x
+        xb = self.activation(self.e12(x))
+        x = self.pool1(xb)
+        return x, xb
     
 class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
@@ -1168,23 +1168,23 @@ class TS_UNet(nn.Module):
         x = self.first_conv(x)        
         
         ##### Encoder 1 #####
-        xe1_siu = self.siu_ec1(x) # SIU
-        xe1_siv = self.siv_ec1(x) # SIV
-        xe1_sic = self.sic_ec1(x) # SIC
+        xe1_siu, xe1b_siu = self.siu_ec1(x) # SIU
+        xe1_siv, xe1b_siv = self.siv_ec1(x) # SIV
+        xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
         # Weighting block 1
         wb1_siu, wb1_siv, wb1_sic = self.wb1(xe1_siu, xe1_siv, xe1_sic)
         
         ##### Encoder 2 #####
-        xe2_siu = self.siu_ec2(xe1_siu + wb1_siu) # SIU
-        xe2_siv = self.siv_ec2(xe1_siv + wb1_siv) # SIV
-        xe2_sic = self.sic_ec2(xe1_sic + wb1_sic) # SIC
+        xe2_siu, xe2b_siu = self.siu_ec2(xe1_siu + wb1_siu) # SIU
+        xe2_siv, xe2b_siv = self.siv_ec2(xe1_siv + wb1_siv) # SIV
+        xe2_sic, xe2b_sic = self.sic_ec2(xe1_sic + wb1_sic) # SIC
         # Weighting block 2
         wb2_siu, wb2_siv, wb2_sic = self.wb2(xe2_siu, xe2_siv, xe2_sic)
         
         ##### Encoder 3 #####
-        xe3_siu = self.siu_ec3(xe2_siu + wb2_siu) # SIU
-        xe3_siv = self.siv_ec3(xe2_siv + wb2_siu) # SIV
-        xe3_sic = self.sic_ec3(xe2_sic + wb2_siu) # SIC
+        xe3_siu, xe3b_siu = self.siu_ec3(xe2_siu + wb2_siu) # SIU
+        xe3_siv, xe3b_siv = self.siv_ec3(xe2_siv + wb2_siu) # SIV
+        xe3_sic, xe3b_sic = self.sic_ec3(xe2_sic + wb2_siu) # SIC
         # Weighting block 3
         wb3_siu, wb3_siv, wb3_sic = self.wb3(xe3_siu, xe3_siv, xe3_sic)
         
@@ -1204,32 +1204,32 @@ class TS_UNet(nn.Module):
         
         ##### Decoder 1 #####
         # SIU
-        xd1_siu = self.siu_dc1(xe42_siu + wb4_siu, xe3_siu)
+        xd1_siu = self.siu_dc1(xe42_siu + wb4_siu, xe3b_siu)
         # SIV
-        xd1_siv = self.siv_dc1(xe42_siv + wb4_siv, xe3_siv)
+        xd1_siv = self.siv_dc1(xe42_siv + wb4_siv, xe3b_siv)
         # SIC
-        xd1_sic = self.sic_dc1(xe42_sic + wb4_sic, xe3_sic)
+        xd1_sic = self.sic_dc1(xe42_sic + wb4_sic, xe3b_sic)
         # Weighting block 5
         wb5_siu, wb5_siv, wb5_sic = self.wb5(xd1_siu, xd1_siv, xd1_sic) 
         
         ##### Decoder 2 #####
         # SIU
-        xd2_siu = self.siu_dc2(xd1_siu + wb5_siu, xe2_siu)
+        xd2_siu = self.siu_dc2(xd1_siu + wb5_siu, xe2b_siu)
         # SIV
-        xd2_siv = self.siv_dc2(xd1_siv + wb5_siv, xe2_siv)
+        xd2_siv = self.siv_dc2(xd1_siv + wb5_siv, xe2b_siv)
         # SIC
-        xd2_sic = self.sic_dc2(xd1_sic + wb5_sic, xe2_sic)
+        xd2_sic = self.sic_dc2(xd1_sic + wb5_sic, xe2b_sic)
         # Weighting block 6
         wb6_siu, wb6_siv, wb6_sic = self.wb6(xd2_siu, xd2_siv, xd2_sic) 
         
         
         ##### Decoder 3 #####
         # SIU
-        xd3_siu = self.siu_dc3(xd2_siu + wb6_siu, xe1_siu)
+        xd3_siu = self.siu_dc3(xd2_siu + wb6_siu, xe1b_siu)
         # SIV
-        xd3_siv = self.siv_dc3(xd2_siv + wb6_siv, xe1_siv)
+        xd3_siv = self.siv_dc3(xd2_siv + wb6_siv, xe1b_siv)
         # SIC
-        xd3_sic = self.sic_dc3(xd2_sic + wb6_sic, xe1_sic)
+        xd3_sic = self.sic_dc3(xd2_sic + wb6_sic, xe1b_sic)
 
         siu = self.siu_conv(xd3_siu)
         siv = self.siv_conv(xd3_siv)
