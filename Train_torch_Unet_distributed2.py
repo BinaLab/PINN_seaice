@@ -558,8 +558,10 @@ def main() -> None:
         net = TS_UNet(in_channels, out_channels) # Triple sharing
     elif args.model_type == "isunet":
         net = IS_UNet(in_channels, out_channels) # information sharing
-    elif args.model_type == "bunet":
-        net = BUNet(in_channels, out_channels)
+    elif args.model_type == "lbunet":
+        net = LB_UNet(in_channels, out_channels)
+    elif args.model_type == "ebunet":
+        net = EB_UNet(in_channels, out_channels)
     elif args.model_type == "cnn":
         net = Net(in_channels, out_channels)
     elif args.model_type == "fc":
