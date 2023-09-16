@@ -554,6 +554,8 @@ def main() -> None:
         net = UNet(in_channels, out_channels)
     elif args.model_type == "mtunet":
         net = HF_UNet(in_channels, out_channels)
+    elif args.model_type == "tsunet":
+        net = TS_UNet(in_channels, out_channels) # Triple sharing
     elif args.model_type == "isunet":
         net = IS_UNet(in_channels, out_channels) # information sharing
     elif args.model_type == "bunet":
