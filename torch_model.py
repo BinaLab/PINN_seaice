@@ -1083,6 +1083,7 @@ class decoder(nn.Module):
 
     def forward(self, x, x0):
         x = self.upconv1(x)
+        print(x.size(), x0.size())
         x = torch.cat([x, x0], dim=1)
         x = self.activation(self.d11(x))
         x = self.activation(self.d12(x))
@@ -1197,6 +1198,7 @@ class TS_UNet(nn.Module):
         # SIC
         xe41_sic = self.activation(self.sic_ec41(xe3_sic + wb3_sic))
         xe42_sic = self.activation(self.sic_ec42(xe41_sic))
+        # output: 40x40x512
         # Weighting block 4
         wb4_siu, wb4_siv, wb4_sic = self.wb4(xe42_siu, xe42_siv, xe42_sic) 
         
