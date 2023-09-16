@@ -1083,7 +1083,6 @@ class decoder(nn.Module):
 
     def forward(self, x, x0):
         x = self.upconv1(x)
-        print(x.size(), x0.size())
         x = torch.cat([x, x0], dim=1)
         x = self.activation(self.d11(x))
         x = self.activation(self.d12(x))
