@@ -1062,7 +1062,7 @@ class WB(nn.Module):
 class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
-        self.activation = nn.ReLu() #nn.Tanh()
+        self.activation = nn.ReLU() #nn.Tanh()
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
