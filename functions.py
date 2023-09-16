@@ -215,17 +215,20 @@ def retrieve_ERA5(year, region = "NH"):
 
     return ds
 
-def rotate_vector(u, v, lon):
-    angle = lon*np.pi/180 # rotation angle (radian)
+def rotate_vector(u, v, lon, ref_lon):
+    angle = (lon-ref_lon)*np.pi/180 # rotation angle (radian)
     u2 = u*np.cos(angle) - v*np.sin(angle)
     v2 = u*np.sin(angle) + v*np.cos(angle)
     return u2, v2
 
-def get_ERA5(ds, i, xx, yy, region = "NH"):
+def get_ERA5(ds, i, xx, yy, region = "NH", ref_lon = 0):
     lat3, lon3 = np.meshgrid(ds.latitude, ds.longitude)
     inProj = Proj('epsg:4326')
     if region == "NH":
-        outProj = Proj('epsg:3408')
+        if ref_lon == 0:
+            outProj = Proj('epsg:3408')
+        elif ref_lon == -45:
+            outProj = Proj('proj4: +proj=stere +lon_0=-45 +lat_0=90 +k=1 +R=6378273 +no_defs')
     elif region == "SH":
         outProj = Proj('epsg:3409')
         
@@ -235,7 +238,7 @@ def get_ERA5(ds, i, xx, yy, region = "NH"):
     v10 = np.array(ds.v10[i]).transpose()
     sic = np.array(ds.siconc[i]).transpose()
     
-    u10, v10 = rotate_vector(u10, v10, lon3)
+    u10, v10 = rotate_vector(u10, v10, lon3, ref_lon)
     
     grid_t2m = griddata((xx3.flatten(), yy3.flatten()), np.array(t2m).flatten(), (xx, yy), method='linear')
     grid_u10 = griddata((xx3.flatten(), yy3.flatten()), np.array(u10).flatten(), (xx, yy), method='linear')
@@ -498,6 +501,100 @@ def make_dataset_wsit(year, n_samples, ds, w = 1, datatype = "entire", region = 
     
     return xx1, yy1, conv_input, conv_output, valid
 
+def get_hycom(ncfile):
+    
+    with netCDF4.Dataset(ncfile, 'r') as nc:
+        ## Adjust the number of training datasets ===========================
+        days = np.array(nc.variables['time']).astype(float)[:]
+        row, col = np.shape(np.array(nc.variables['latitude']))
+
+        x = np.array(nc.variables['x'])*100*1000
+        y = np.array(nc.variables['y'])*100*1000
+        xx, yy = np.meshgrid(x, y)
+        lat = np.array(nc.variables['latitude'])
+        lon = np.array(nc.variables['longitude'])
+        
+        sia = np.array(nc.variables['siconc'])[0]   
+        sia[sia <= -10000] = 0
+
+        sivx = np.array(nc.variables['vxsi'])[0]*3600*24/1000 # m/s to km/day
+        sivx[sivx <= -10000] = 0
+
+        sivy = np.array(nc.variables['vysi'])[0]*3600*24/1000 # m/s to km/day
+        sivy[sivy <= -10000] = 0
+
+        sit = np.array(nc.variables['sithick'])[0]
+        sit[sit <= -10000] = 0
+        
+        return xx, yy, lat, lon, sia, sivx, sivy, sit    
+
+
+def make_hycom_dataset(year, month, ds, w = 1, region = "NH"):
+    # ncfile = glob.glob("F:\\2022_Ross\\ERA5\\icemotion_daily_sh_25km_{0}*.nc".format(year))[0]
+    ncfiles = glob.glob(data_path + f"/{region}/HYCOM/{year}/{month}/{year}{month}*.nc")
+    
+    n_samples = len(ncfiles)
+    
+    # Initialize grid input ==========================================
+    
+    var_ip = 7 #np.shape(grid_input)[3]
+    var_op = 4 #np.shape(grid_output)[3]
+    grid_input = np.zeros([n_samples, 881, 609, var_ip])
+    grid_output = np.zeros([n_samples, 881, 609, var_op])
+    
+    valid = []
+    first = True
+    
+    for i, ncfile in tqdm(enumerate(ncfiles)):
+        t1 = os.path.basename(ncfile)[:8]
+        idx = int(dt.datetime.strptime(t1, "%Y%m%d").strftime("%j"))-1
+        xx, yy, lat, lon, grid_sic, grid_u, grid_v, grid_sit = get_hycom(ncfile)
+        t2 = dt.datetime.strptime(t1, "%Y%m%d") + dt.timedelta(days = 1)
+        y2 = str(int(t2.year))
+        m2 = str(int(t2.month)).zfill(2)
+        t2 = dt.datetime.strftime(t2, "%Y%m%d")
+        ncfile2 = glob.glob(data_path + f"/{region}/HYCOM/{y2}/{m2}/{t2}*.nc")
+        
+        if len(ncfile2) > 0:
+            valid.append(i)
+            _, _, _, _, grid_sic2, grid_u2, grid_v2, grid_sit2 = get_hycom(ncfile2[0])
+
+            ## Read ERA5 data =================================================
+            grid_t2m, grid_u10, grid_v10, _ = get_ERA5(ds, idx, xx, yy, region = region, ref_lon = -45)
+
+            grid_input[i, :, :, 0] = grid_u / 50
+            grid_input[i, :, :, 1] = grid_v / 50
+            grid_input[i, :, :, 2] = grid_sic
+            grid_input[i, :, :, 3] = grid_sit / 8
+            grid_input[i, :, :, 4] = (grid_t2m - 210)/(310 - 210) #Max temp = 320 K, Min temp = 240 K)
+            grid_input[i, :, :, 5] = grid_u10 / 50
+            grid_input[i, :, :, 6] = grid_v10 / 50
+            
+
+            grid_output[i, :, :, 0] = grid_u2 / 50
+            grid_output[i, :, :, 1] = grid_v2 / 50
+            grid_output[i, :, :, 2] = grid_sic2
+            grid_output[i, :, :, 3] = grid_sit2 / 8
+
+            # Masking ======================================
+            mask1 = (grid_sic == 0) #(np.isnan(grid_u))
+            mask2 = (grid_sic2 == 0) #(np.isnan(grid_u2))
+
+            grid_input[i, mask1, :] = 0
+            grid_output[i, mask2, :] = 0
+
+    grid_input = grid_input[np.array(valid).astype(int), :, :, :]
+    grid_output = grid_output[np.array(valid).astype(int), :, :, :]
+    
+    return xx, yy, grid_input, grid_output, valid
+
+def lookupNearest(x0, y0, xx, yy):
+    ## xx - original x cooridnate
+    ## yy - original y coordinate
+    ## x0, y0: the coordinate you want to get index
+    xi = np.abs(xx-x0).argmin()
+    yi = np.abs(yy-y0).argmin()
+    return xi, yi
 
 def make_lstm_input2D(data_input, data_output, days = 7):
     # Input & output should be entire images for CNN
