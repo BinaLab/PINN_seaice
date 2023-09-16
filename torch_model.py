@@ -1158,9 +1158,9 @@ class TS_UNet(nn.Module):
         self.wb6 = WB(128, 160, 160, k, 0)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(32, 1, kernel_size=k, padding="same")
-        self.siv_conv = nn.Conv2d(32, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(32, 1, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
