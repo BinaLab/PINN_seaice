@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2018_2022_v5.pkl',
+        default='train_physics_2018_2022_v1.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -472,12 +472,9 @@ def main() -> None:
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    if data_ver == 'v5':
-        cnn_input = cnn_input[:,:,:,[0,1,2,4,5]]
-        cnn_output = cnn_output[:,:,:,:-1]
-    if data_ver == 'v6':
+    if data_ver == 'v1':
         cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
-        cnn_output = cnn_output[:,:,:,:-1]
+        cnn_output = cnn_output[:,:,:,:-1] # does not consider SIT
         
     if args.model_type == "mtunet":
         args.predict = "all"
@@ -493,7 +490,7 @@ def main() -> None:
         cnn_output = cnn_output[:,:,:,0:2]     
         
     # Read landmask data
-    with open(data_path + f"landmask_320.pkl", 'rb') as file:
+    with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
         landmask = pickle.load(file) 
     landmask = torch.tensor(landmask) # Land = 1; Ocean = 0;
     
@@ -569,7 +566,7 @@ def main() -> None:
     elif args.model_type == "lg": # linear regression
         net = linear_regression(in_channels, out_channels, row, col)
 
-    model_name = f"torch_{args.model_type}_{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_p{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
