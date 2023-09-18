@@ -303,7 +303,7 @@ def train(
                 data, target = data.cuda(), target.cuda()
                 
             output = model(data)
-            loss = loss_func(output, target, data[:, :, :, 2].cuda())
+            loss = loss_func(output, target, data[:, 2, :, :].cuda())
 
             with torch.no_grad():
                 step_loss += loss
@@ -362,7 +362,7 @@ def validate(
                 if args.cuda:
                     data, target = data.cuda(), target.cuda()
                 output = model(data)
-                val_loss.update(loss_func(output, target, data[:, :, :, 2].cuda()))
+                val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
 
                 t.update(1)
                 if i + 1 == len(val_loader):
