@@ -494,8 +494,10 @@ def main() -> None:
         
     # Read landmask data
     with open(data_path + f"landmask_320.pkl", 'rb') as file:
-        landmask = pickle.load(file) 
-    landmask = torch.tensor(landmask) # Land = 1; Ocean = 0;
+        landmask = pickle.load(file)
+    landmask = torch.tensor(landmask)
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
