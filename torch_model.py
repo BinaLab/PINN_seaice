@@ -149,6 +149,8 @@ class physics_loss(nn.Module):
         divc = dx/3 + dy/3
         divc = divc*sic_p[:, 1:-1, 1:-1]/25
         
+        dsic = sic_p - sic0
+        
         residual = dsic - advc
         r = corrcoef(dsic, advc)
         
