@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_physics_2018_2022_v2.pkl',
+        default='train_cnn_2018_2022_v5.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -136,7 +136,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--phy',
         type=str,
-        default='nophy',
+        default='phy',
         help='filename of dataset',
     )
     parser.add_argument(
@@ -303,7 +303,10 @@ def train(
                 data, target = data.cuda(), target.cuda()
                 
             output = model(data)
-            loss = loss_func(output, target)
+            if args.phy == "phy":
+                loss = loss_func(output, target, data[:, 2, :, :].cuda())
+            else:
+                loss = loss_func(output, target)
 
             with torch.no_grad():
                 step_loss += loss
@@ -362,7 +365,11 @@ def validate(
                 if args.cuda:
                     data, target = data.cuda(), target.cuda()
                 output = model(data)
-                val_loss.update(loss_func(output, target))
+                
+                if args.phy == "phy":
+                    val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
+                else:
+                    val_loss.update(loss_func(output, target))
 
                 t.update(1)
                 if i + 1 == len(val_loader):
@@ -472,7 +479,12 @@ def main() -> None:
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    cnn_output = cnn_output[:,:,:,:-1] # does not consider SIT
+    if data_ver == 'v5':
+        cnn_input = cnn_input[:,:,:,[0,1,2,4,5]]
+        cnn_output = cnn_output[:,:,:,:-1]
+    if data_ver == 'v6':
+        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:,:,:,:-1]
         
     if args.model_type == "mtunet":
         args.predict = "all"
@@ -488,9 +500,11 @@ def main() -> None:
         cnn_output = cnn_output[:,:,:,0:2]     
         
     # Read landmask data
-    with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
+    with open(data_path + f"landmask_320.pkl", 'rb') as file:
         landmask = pickle.load(file) 
     landmask = torch.tensor(landmask) # Land = 1; Ocean = 0;
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
@@ -564,7 +578,7 @@ def main() -> None:
     elif args.model_type == "lg": # linear regression
         net = linear_regression(in_channels, out_channels, row, col)
 
-    model_name = f"torch_{args.model_type}_p{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
@@ -576,7 +590,7 @@ def main() -> None:
         )
 
     if phy == "phy":
-        loss_fn = physics_loss() # nn.L1Loss() #nn.CrossEntropyLoss()
+        loss_fn = physics_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
         if args.model_type == "fc":
             loss_fn = nn.L1Loss()
@@ -653,14 +667,7 @@ def main() -> None:
                 with torch.no_grad():
                     for j in range(0, target.size()[0]):
                         output[j, :, :, :] = net(data[j:j+1, :, :, :])
-                        t.update(1)
-                        
-                    test_loss = loss_fn(target, output)
-                    
-                    t.set_postfix_str(
-                        'test_loss: {:.4f}'.format(test_loss.item()),
-                        refresh=False,
-                    )                   
+                        t.update(1)                  
                     
                     test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
                                  val_months[val_months==m], val_days[val_months==m]]
