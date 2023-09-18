@@ -88,23 +88,6 @@ class custom_loss(nn.Module):
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum   
 
-def calculate_adv(u, v, sic):
-        dx = torch.zeros(u.size())
-        dy = torch.zeros(v.size())
-        dx[:, 1:-1, 1:-1] = (sic[:, 1:-1, 2:]-sic[:, 1:-1, :-2]) + (sic[:, 2:, 2:]-sic[:, 2:, :-2]) + (sic[:, :-2, 2:]-sic[:, :-2, :-2])
-        dy[:, 1:-1, 1:-1] = (sic[:, 2:, 1:-1]-sic[:, :-2, 1:-1]) + (sic[:, 2:, 2:]-sic[:, :-2, 2:]) + (sic[:, 2:, :-2]-sic[:, :-2, :-2])    
-        adv = u*dx/3 + v*dy/3
-        return adv/25
-
-def calculate_div(u, v, sic):
-    dx = torch.zeros(u.size())
-    dy = torch.zeros(v.size())
-    dx[:, 1:-1, 1:-1] = (u[:, 1:-1, 2:]-u[:, 1:-1, :-2]) + (u[:, 2:, 2:]-u[:, 2:, :-2]) + (u[:, :-2, 2:]-u[:, :-2, :-2])
-    dy[:, 1:-1, 1:-1] = (v[:, 1:-1, 2:]-v[:, 1:-1, :-2]) + (v[:, 2:, 2:]-v[:, 2:, :-2]) + (v[:, :-2, 2:]-v[:, :-2, :-2])
-    div = dx/3 + dy/3
-
-    return div*sic/25   
-
 def corrcoef(x, y):
     x = prd.flatten()
     y = obs.flatten()
@@ -123,13 +106,10 @@ class physics_loss(nn.Module):
 
     def forward(self, obs, prd, sic0):
         
-        scaling = [50, 50, 100, 50, 8]
-        offset = [0, 0, 0, 0, 0]
-        
         sic_p = prd[:, 2, :, :]
         sic_o = obs[:, 2, :, :]
-        u_o = obs[:, 0, :, :]*scaling[0]; v_o = obs[:, 1, :, :]*scaling[1]
-        u_p = prd[:, 0, :, :]*scaling[0]; v_p = prd[:, 1, :, :]*scaling[1]   
+        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
+        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50  
         
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
@@ -158,9 +138,16 @@ class physics_loss(nn.Module):
             err_sum += torch.mean(err3)*1000
         
         # physics loss ===============================================
-        advc = calculate_adv(u_p, v_p, sic_p)
-        divc = calculate_div(u_p, v_p, sic_p)
-        dsic = sic_p - sic0
+        # advection
+        dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
+        dy = (sic_p[:, 2:, 1:-1]-sic_p[:, :-2, 1:-1]) + (sic_p[:, 2:, 2:]-sic_p[:, :-2, 2:]) + (sic_p[:, 2:, :-2]-sic_p[:, :-2, :-2])    
+        advc = (u[:, 1:-1, 1:-1]*dx/3 + v[:, 1:-1, 1:-1]*dy/3)/25
+        
+        # divergence
+        dx[:, 1:-1, 1:-1] = (u[:, 1:-1, 2:]-u[:, 1:-1, :-2]) + (u[:, 2:, 2:]-u[:, 2:, :-2]) + (u[:, :-2, 2:]-u[:, :-2, :-2])
+        dy[:, 1:-1, 1:-1] = (v[:, 1:-1, 2:]-v[:, 1:-1, :-2]) + (v[:, 2:, 2:]-v[:, 2:, :-2]) + (v[:, :-2, 2:]-v[:, :-2, :-2])
+        divc = dx/3 + dy/3
+        divc = divc*sic_p[:, 1:-1, 1:-1]/25
         
         residual = dsic - advc
         r = corrcoef(dsic, advc)
@@ -174,8 +161,7 @@ class physics_loss(nn.Module):
         w = torch.tensor(10.0)
         err_sum += w*err_phy
         
-        return err_sum
-    
+        return err_sum    
     
     
 class MultiTaskLossWrapper(nn.Module):
