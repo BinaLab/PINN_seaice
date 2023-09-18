@@ -109,7 +109,7 @@ class physics_loss(nn.Module):
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
         
-        sicmask = torch.max(sic_o, dim=0)
+        sicmask = torch.max(sic_o, dim=0)[0]
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0) & (sicmask > 0))]
         err_sum = torch.mean(err1)*100
 
@@ -135,7 +135,7 @@ class physics_loss(nn.Module):
         dsic = sic_p - sic0
         
         residual = dsic - advc
-        r = corr(dsic, advc)
+        r = corrcoef(dsic, advc)
         
         # SIC change
         err_phy = torch.mean(torch.where(abs(residual) > 2, abs(residual), 0))
@@ -163,7 +163,18 @@ class physics_loss(nn.Module):
         dy[:, 1:-1, 1:-1] = (v[:, 1:-1, 2:]-v[:, 1:-1, :-2]) + (v[:, 2:, 2:]-v[:, 2:, :-2]) + (v[:, :-2, 2:]-v[:, :-2, :-2])
         div = dx/3 + dy/3
 
-        return div*sic/25
+        return div*sic/25   
+    
+    def corrcoef(x, y):
+        x = prd.flatten()
+        y = obs.flatten()
+        xm = torch.mean(x)
+        ym = torch.mean(y)
+        
+        r1 = torch.sum((x-xm)*(y-ym))
+        r2 = torch.sum(torch.square(x-xm))*torch.sum(torch.square(y-ym))
+        r = r1/(r2**0.5)
+        return r
     
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num):
