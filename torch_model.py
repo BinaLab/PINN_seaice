@@ -155,7 +155,7 @@ class physics_loss(nn.Module):
         r = corrcoef(dsic, advc)
         
         # SIC change
-        err_phy = torch.mean(torch.where(abs(residual) > 2, abs(residual)-2, 0))
+        # err_phy = torch.mean(torch.where(abs(residual) > 2, abs(residual)-2, 0))
         if r > 0:
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
