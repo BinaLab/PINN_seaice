@@ -89,8 +89,8 @@ class custom_loss(nn.Module):
         return err_sum   
 
 def corrcoef(x, y):
-    x = prd.flatten()
-    y = obs.flatten()
+    x = x.flatten()
+    y = y.flatten()
     xm = torch.mean(x)
     ym = torch.mean(y)
 
