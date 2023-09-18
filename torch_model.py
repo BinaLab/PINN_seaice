@@ -92,6 +92,34 @@ class physics_loss(nn.Module):
     def __init__(self, landmask):
         super(physics_loss, self).__init__();
         self.landmask = landmask
+        
+    def calculate_adv(u, v, sic):
+        dx = torch.zeros(u.size())
+        dy = torch.zeros(v.size())
+        dx[:, 1:-1, 1:-1] = (sic[:, 1:-1, 2:]-sic[:, 1:-1, :-2]) + (sic[:, 2:, 2:]-sic[:, 2:, :-2]) + (sic[:, :-2, 2:]-sic[:, :-2, :-2])
+        dy[:, 1:-1, 1:-1] = (sic[:, 2:, 1:-1]-sic[:, :-2, 1:-1]) + (sic[:, 2:, 2:]-sic[:, :-2, 2:]) + (sic[:, 2:, :-2]-sic[:, :-2, :-2])    
+        adv = u*dx/3 + v*dy/3
+        return adv/25
+
+    def calculate_div(u, v, sic):
+        dx = torch.zeros(u.size())
+        dy = torch.zeros(v.size())
+        dx[:, 1:-1, 1:-1] = (u[:, 1:-1, 2:]-u[:, 1:-1, :-2]) + (u[:, 2:, 2:]-u[:, 2:, :-2]) + (u[:, :-2, 2:]-u[:, :-2, :-2])
+        dy[:, 1:-1, 1:-1] = (v[:, 1:-1, 2:]-v[:, 1:-1, :-2]) + (v[:, 2:, 2:]-v[:, 2:, :-2]) + (v[:, :-2, 2:]-v[:, :-2, :-2])
+        div = dx/3 + dy/3
+
+        return div*sic/25   
+    
+    def corrcoef(x, y):
+        x = prd.flatten()
+        y = obs.flatten()
+        xm = torch.mean(x)
+        ym = torch.mean(y)
+        
+        r1 = torch.sum((x-xm)*(y-ym))
+        r2 = torch.sum(torch.square(x-xm))*torch.sum(torch.square(y-ym))
+        r = r1/(r2**0.5)
+        return r
 
     def forward(self, obs, prd, sic0):
         
@@ -148,33 +176,7 @@ class physics_loss(nn.Module):
         
         return err_sum
     
-    def calculate_adv(u, v, sic):
-        dx = torch.zeros(u.size())
-        dy = torch.zeros(v.size())
-        dx[:, 1:-1, 1:-1] = (sic[:, 1:-1, 2:]-sic[:, 1:-1, :-2]) + (sic[:, 2:, 2:]-sic[:, 2:, :-2]) + (sic[:, :-2, 2:]-sic[:, :-2, :-2])
-        dy[:, 1:-1, 1:-1] = (sic[:, 2:, 1:-1]-sic[:, :-2, 1:-1]) + (sic[:, 2:, 2:]-sic[:, :-2, 2:]) + (sic[:, 2:, :-2]-sic[:, :-2, :-2])    
-        adv = u*dx/3 + v*dy/3
-        return adv/25
-
-    def calculate_div(u, v, sic):
-        dx = torch.zeros(u.size())
-        dy = torch.zeros(v.size())
-        dx[:, 1:-1, 1:-1] = (u[:, 1:-1, 2:]-u[:, 1:-1, :-2]) + (u[:, 2:, 2:]-u[:, 2:, :-2]) + (u[:, :-2, 2:]-u[:, :-2, :-2])
-        dy[:, 1:-1, 1:-1] = (v[:, 1:-1, 2:]-v[:, 1:-1, :-2]) + (v[:, 2:, 2:]-v[:, 2:, :-2]) + (v[:, :-2, 2:]-v[:, :-2, :-2])
-        div = dx/3 + dy/3
-
-        return div*sic/25   
     
-    def corrcoef(x, y):
-        x = prd.flatten()
-        y = obs.flatten()
-        xm = torch.mean(x)
-        ym = torch.mean(y)
-        
-        r1 = torch.sum((x-xm)*(y-ym))
-        r2 = torch.sum(torch.square(x-xm))*torch.sum(torch.square(y-ym))
-        r = r1/(r2**0.5)
-        return r
     
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num):
