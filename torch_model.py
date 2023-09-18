@@ -119,9 +119,9 @@ class physics_loss(nn.Module):
         
         sicmask = torch.max(sic_o, dim=0)[0]
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0) & (sicmask > 0))]
-        err_sum = torch.mean(err1)
+        err_sum = torch.mean(err1)*10
 
-        err_sic = torch.square(sic_o - sic_p)*50
+        err_sic = torch.square(sic_o - sic_p)*500
         
         neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
         pos_sic = torch.where(sic_p > 1, abs(sic_p-1), 0)
