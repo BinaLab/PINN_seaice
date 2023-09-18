@@ -89,34 +89,81 @@ class custom_loss(nn.Module):
         return err_sum   
     
 class physics_loss(nn.Module):
-    def __init__(self, landmask):
+    def __init__(self, landmask, sic0):
         super(physics_loss, self).__init__();
+        self.landmask = landmask
+        self.sic0 = sic0 #reference sic
 
     def forward(self, obs, prd):
-        err_u = torch.abs(obs[:, 0, 1:-1, 1:-1]-prd[:, 0, 1:-1, 1:-1])
-        err_v = torch.abs(obs[:, 1, 1:-1, 1:-1]-prd[:, 1, 1:-1, 1:-1])
-        err_sic = torch.abs(obs[:, 2, 1:-1, 1:-1]-prd[:, 2, 1:-1, 1:-1])
         
-        err_sum = torch.mean((err_u + err_v) + err_sic)
-        # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
+        scaling = [50, 50, 100, 50, 8]
+        offset = [0, 0, 0, 0, 0]
         
-        u = prd[:, 0, :, :]
-        v = prd[:, 1, :, :]
-        d_sic = prd[:, 2, 1:-1, 1:-1]
+        sic_p = prd[:, 2, :, :]
+        sic_o = obs[:, 2, :, :]
+        u_o = obs[:, 0, :, :]*scaling[0]; v_o = obs[:, 1, :, :]*scaling[1]
+        u_p = prd[:, 0, :, :]*scaling[0]; v_p = prd[:, 1, :, :]*scaling[1]   
         
-        dy = v[:, 2:, 1:-1] - v[:, :-2, 1:-1]      
-        dx = u[:, 1:-1, 2:] - u[:, 1:-1, :-2]
-         
-        div = dx + dy
+        vel_o = (u_o**2 + v_o**2)**0.5
+        vel_p = (u_p**2 + v_p**2)**0.5
+        
+        err_u = torch.square(u_o - u_p) #[sic > 0]
+        err_v = torch.square(v_o - v_p) #[sic > 0]
+        
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0) & (sic_o > 0))]
+        err_sum = torch.mean(err1)*100
+
+        err_sic = torch.square(sic_o - sic_p)
+        
+        neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
+        pos_sic = torch.where(sic_p > 1, abs(1-sic_p), 0)
+        
+        err2 = torch.mean(err_sic + neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_sum += torch.mean(err2)*1000
+        
+        if obs.size()[1] > 3:
+            sit_p = prd[:, 3, :, :]
+            sit_o = obs[:, 3, :, :]
+            err_sit = torch.square(sit_o - sit_p)
+            neg_sit = torch.where(sit_p < 0, abs(sit_p), 0)
+            err3 = torch.mean(err_sit + neg_sit, dim=0)[torch.where(self.landmask == 0)]   
+            err_sum += torch.mean(err3)*1000
+        
+        # physics loss ===============================================
+        advc = calculate_adv(u_p, v_p, sic_p)
+        divc = calculate_div(u_p, v_p, sic_p)
+        dsic = sic_p - self.sic0
+        
+        residual = dsic - advc
+        r = corr(dsic, advc)
         
         # SIC change
-        err_phy = torch.mean(torch.where((div > 0.03) & (d_sic > 0.1), div * d_sic, 0))
+        err_phy = torch.mean(torch.where(abs(residual) > 2, abs(residual), 0))
+        if r > 0:
+            err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
         w = torch.tensor(10.0)
         err_sum += w*err_phy
         
-        return err_sum*100
+        return err_sum
+    
+    def calculate_adv(u, v, sic):
+        dx = torch.zeros(u.size())
+        dy = torch.zeros(v.size())
+        dx[:, 1:-1, 1:-1] = (sic[:, 1:-1, 2:]-sic[:, 1:-1, :-2]) + (sic[:, 2:, 2:]-sic[:, 2:, :-2]) + (sic[:, :-2, 2:]-sic[:, :-2, :-2])
+        dy[:, 1:-1, 1:-1] = (sic[:, 2:, 1:-1]-sic[:, :-2, 1:-1]) + (sic[:, 2:, 2:]-sic[:, :-2, 2:]) + (sic[:, 2:, :-2]-sic[:, :-2, :-2])    
+        adv = u*dx/3 + v*dy/3
+        return adv/25
+
+    def calculate_div(u, v, sic):
+        dx = torch.zeros(u.size())
+        dy = torch.zeros(v.size())
+        dx[:, 1:-1, 1:-1] = (u[:, 1:-1, 2:]-u[:, 1:-1, :-2]) + (u[:, 2:, 2:]-u[:, 2:, :-2]) + (u[:, :-2, 2:]-u[:, :-2, :-2])
+        dy[:, 1:-1, 1:-1] = (v[:, 1:-1, 2:]-v[:, 1:-1, :-2]) + (v[:, 2:, 2:]-v[:, 2:, :-2]) + (v[:, :-2, 2:]-v[:, :-2, :-2])
+        div = dx/3 + dy/3
+
+        return div*sic/25
     
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num):
