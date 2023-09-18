@@ -119,15 +119,15 @@ class physics_loss(nn.Module):
         
         sicmask = torch.max(sic_o, dim=0)[0]
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0) & (sicmask > 0))]
-        err_sum = torch.mean(err1)*100
+        err_sum = torch.mean(err1)
 
-        err_sic = torch.square(sic_o - sic_p)
+        err_sic = torch.square(sic_o - sic_p)*50
         
         neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
         pos_sic = torch.where(sic_p > 1, abs(sic_p-1), 0)
         
         err2 = torch.mean(err_sic + neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2)*1000
+        err_sum += torch.mean(err2)
         
         if obs.size()[1] > 3:
             sit_p = prd[:, 3, :, :]
@@ -135,7 +135,7 @@ class physics_loss(nn.Module):
             err_sit = torch.square(sit_o - sit_p)
             neg_sit = torch.where(sit_p < 0, abs(sit_p), 0)
             err3 = torch.mean(err_sit + neg_sit, dim=0)[torch.where(self.landmask == 0)]   
-            err_sum += torch.mean(err3)*1000
+            err_sum += torch.mean(err3)*50
         
         # physics loss ===============================================
         # advection
@@ -151,12 +151,12 @@ class physics_loss(nn.Module):
         
         dsic = sic_p[:, 1:-1, 1:-1] - sic0[:, 1:-1, 1:-1]
         
-        residual = dsic - advc
+        residual = dsic + advc
         r = corrcoef(dsic, advc)
         
         # SIC change
         err_phy = 0
-        # err_phy += torch.mean(torch.where(abs(residual) > 2, abs(residual)-2, 0))
+        err_phy += torch.mean(torch.where(abs(residual) > 2, abs(residual)-2, 0))
         if r > 0:
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
