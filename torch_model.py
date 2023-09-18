@@ -89,12 +89,11 @@ class custom_loss(nn.Module):
         return err_sum   
     
 class physics_loss(nn.Module):
-    def __init__(self, landmask, sic0):
+    def __init__(self, landmask):
         super(physics_loss, self).__init__();
         self.landmask = landmask
-        self.sic0 = sic0 #reference sic
 
-    def forward(self, obs, prd):
+    def forward(self, obs, prd, sic0):
         
         scaling = [50, 50, 100, 50, 8]
         offset = [0, 0, 0, 0, 0]
@@ -132,7 +131,7 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         advc = calculate_adv(u_p, v_p, sic_p)
         divc = calculate_div(u_p, v_p, sic_p)
-        dsic = sic_p - self.sic0
+        dsic = sic_p - sic0
         
         residual = dsic - advc
         r = corr(dsic, advc)

@@ -136,7 +136,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--phy',
         type=str,
-        default='nophy',
+        default='phy',
         help='filename of dataset',
     )
     parser.add_argument(
@@ -303,7 +303,7 @@ def train(
                 data, target = data.cuda(), target.cuda()
                 
             output = model(data)
-            loss = loss_func(output, target)
+            loss = loss_func(output, target, data[:, :, :, 2])
 
             with torch.no_grad():
                 step_loss += loss
@@ -362,7 +362,7 @@ def validate(
                 if args.cuda:
                     data, target = data.cuda(), target.cuda()
                 output = model(data)
-                val_loss.update(loss_func(output, target))
+                val_loss.update(loss_func(output, target, data[:, :, :, 2]))
 
                 t.update(1)
                 if i + 1 == len(val_loader):
@@ -658,14 +658,7 @@ def main() -> None:
                 with torch.no_grad():
                     for j in range(0, target.size()[0]):
                         output[j, :, :, :] = net(data[j:j+1, :, :, :])
-                        t.update(1)
-                        
-                    test_loss = loss_fn(target, output)
-                    
-                    t.set_postfix_str(
-                        'test_loss: {:.4f}'.format(test_loss.item()),
-                        refresh=False,
-                    )                   
+                        t.update(1)                  
                     
                     test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
                                  val_months[val_months==m], val_days[val_months==m]]
