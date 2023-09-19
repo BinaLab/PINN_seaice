@@ -156,7 +156,7 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_phy = 0
-        err_phy += torch.mean(torch.where(abs(residual) > 2, abs(residual)-2, 0))
+        err_phy += torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0))
         if r > 0:
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
@@ -675,14 +675,14 @@ class CNN_hydra(nn.Module):
     
     
 class GCNet(torch.nn.Module):
-    def __init__(self, hidden_channels = 32):
+    def __init__(self, ch_input, ch_output, hidden_channels = 32):
         super().__init__()
         # torch.manual_seed(1234567)
-        self.conv1 = GCNConv(8, hidden_channels)
+        self.conv1 = GCNConv(ch_input, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
         self.conv4 = GCNConv(hidden_channels, hidden_channels)
-        self.conv5 = GCNConv(hidden_channels, 3)
+        self.conv5 = GCNConv(hidden_channels, ch_output)
 
     def forward(self, x, edge_index):
         x = F.leaky_relu(self.conv1(x, edge_index), negative_slope=1); #self.conv1(x)
@@ -1111,7 +1111,7 @@ class WB(nn.Module):
 class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
-        self.activation = nn.ReLU() #nn.Tanh()
+        self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh()
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -1125,7 +1125,7 @@ class encoder(nn.Module):
 class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
-        self.activation = nn.ReLU()
+        self.activation = nn.Tanh() #nn.ReLU()
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
