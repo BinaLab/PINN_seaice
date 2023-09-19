@@ -152,13 +152,14 @@ class physics_loss(nn.Module):
         dsic = sic_p[:, 1:-1, 1:-1] - sic0[:, 1:-1, 1:-1]
         
         residual = dsic + advc
-        r = corrcoef(dsic, advc)
         
         # SIC change
         err_phy = 0
-        err_phy += torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0))
-        if r > 0:
-            err_phy += r
+        err_phy += torch.mean(torch.where(abs(residual[:, self.landmask==0]) > 1, abs(residual)-1, 0))
+        for k in range(0, dsic.size()[0]):
+            r = corrcoef(dsic[k][self.landmask==0], advc[k][self.landmask==0])
+            if r > 0:
+                err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
         w = torch.tensor(10.0)
@@ -1095,6 +1096,7 @@ class WB(nn.Module):
         self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.a13 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.conv1 = nn.Conv2d(ch, ch, kernel_size=1, padding="same") # output: 160x160x64
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.a21 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.a22 = torch.nn.Parameter(torch.ones(row, col)*w)
