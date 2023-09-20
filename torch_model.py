@@ -155,7 +155,8 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_phy = 0
-        err_phy += torch.mean(torch.where(abs(residual[:, self.landmask==0]) > 1, abs(residual)-1, 0))
+        err_res = torch.sum(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err_res)
         for k in range(0, dsic.size()[0]):
             r = corrcoef(dsic[k][self.landmask==0], advc[k][self.landmask==0])
             if r > 0:
