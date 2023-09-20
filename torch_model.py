@@ -129,13 +129,13 @@ class physics_loss(nn.Module):
         err2 = torch.mean(err_sic + neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
         err_sum += torch.mean(err2)*2500
         
-        if obs.size()[1] > 3:
-            sit_p = prd[:, 3, :, :]
-            sit_o = obs[:, 3, :, :]
-            err_sit = torch.square(sit_o - sit_p)
-            neg_sit = torch.where(sit_p < 0, abs(sit_p), 0)
-            err3 = torch.mean(err_sit + neg_sit, dim=0)[torch.where(self.landmask == 0)]   
-            err_sum += torch.mean(err3)*50
+        # if obs.size()[1] > 3:
+        #     sit_p = prd[:, 3, :, :]
+        #     sit_o = obs[:, 3, :, :]
+        #     err_sit = torch.square(sit_o - sit_p)
+        #     neg_sit = torch.where(sit_p < 0, abs(sit_p), 0)
+        #     err3 = torch.mean(err_sit + neg_sit, dim=0)[torch.where(self.landmask == 0)]   
+        #     err_sum += torch.mean(err3)*50
         
         # physics loss ===============================================
         # advection
@@ -163,7 +163,7 @@ class physics_loss(nn.Module):
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(2.0)
+        w = torch.tensor(5.0)
         err_sum += w*err_phy
         
         return err_sum    
@@ -1145,7 +1145,8 @@ class TS_UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, k=3):
         super().__init__()
         
-        self.activation = nn.Tanh()
+        self.activation1 = nn.Tanh()
+        self.activation2 = nn.ReLU()
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
@@ -1241,14 +1242,14 @@ class TS_UNet(nn.Module):
         
         ##### Bottom bridge #####
         # SID
-        xe41_siu = self.activation(self.siu_ec41(xe3_siu + wb3_siu))
-        xe42_siu = self.activation(self.siu_ec42(xe41_siu))
+        xe41_siu = self.activation1(self.siu_ec41(xe3_siu + wb3_siu))
+        xe42_siu = self.activation1(self.siu_ec42(xe41_siu))
         # SIV
-        xe41_siv = self.activation(self.siv_ec41(xe3_siv + wb3_siv))
-        xe42_siv = self.activation(self.siv_ec42(xe41_siv))
+        xe41_siv = self.activation1(self.siv_ec41(xe3_siv + wb3_siv))
+        xe42_siv = self.activation1(self.siv_ec42(xe41_siv))
         # SIC
-        xe41_sic = self.activation(self.sic_ec41(xe3_sic + wb3_sic))
-        xe42_sic = self.activation(self.sic_ec42(xe41_sic))
+        xe41_sic = self.activation2(self.sic_ec41(xe3_sic + wb3_sic))
+        xe42_sic = self.activation2(self.sic_ec42(xe41_sic))
         # output: 40x40x512
         # Weighting block 4
         wb4_siu, wb4_siv, wb4_sic = self.wb4(xe42_siu, xe42_siv, xe42_sic) 
