@@ -106,10 +106,15 @@ class physics_loss(nn.Module):
 
     def forward(self, obs, prd, sic0):
         
+        sic_th = 0.005
+        
         sic_p = prd[:, 2, :, :]
         sic_o = obs[:, 2, :, :]
         u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
         u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50  
+        
+        u_p[sic_p <= sic_th] = 0
+        v_p[sic_p <= sic_th] = 0
         
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
@@ -123,10 +128,7 @@ class physics_loss(nn.Module):
 
         err_sic = torch.square(sic_o - sic_p)
         
-        neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
-        pos_sic = torch.where(sic_p > 1, abs(sic_p-1), 0)
-        
-        err2 = torch.mean(err_sic + neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
         err_sum += torch.mean(err2)*2500
         
         # if obs.size()[1] > 3:
@@ -140,8 +142,14 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
-        err4 = torch.where(sic_p < 0.01, vel_p + err_sic, 0)
+        err4 = torch.where(sic_p < sic_th, vel_p + err_sic, 0)
         err_phy += torch.mean(err4[torch.where(err4 != 0)])
+        
+        ## Negative or positive SIC
+        neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
+        pos_sic = torch.where(sic_p > 1, abs(sic_p-1), 0)        
+        err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err5)
         
         # advection
         dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
