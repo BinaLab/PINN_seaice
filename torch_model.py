@@ -157,10 +157,9 @@ class physics_loss(nn.Module):
         err_phy = 0
         err_res = torch.sum(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
         err_phy += torch.mean(err_res)
-        for k in range(0, dsic.size()[0]):
-            r = corrcoef(dsic[k], advc[k])
-            if r > 0:
-                err_phy += r
+        r = corrcoef(dsic, advc)
+        if r > 0:
+            err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
         w = torch.tensor(2.0)
