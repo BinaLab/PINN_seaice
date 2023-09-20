@@ -140,7 +140,7 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
-        err4 = torch.where(sic_p < 0.01, vel_p, 0)
+        err4 = torch.where(sic_p < 0.01, vel_p + err_sic, 0)
         err_phy += torch.mean(err4[torch.where(err4 != 0)])
         
         # advection
@@ -159,15 +159,15 @@ class physics_loss(nn.Module):
         residual = dsic + advc
         
         # SIC change
-        err_res = torch.sum(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)
-        err_phy += torch.mean(err_res)
+        err_res = torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0)) # dim = 0)
+        err_phy += err_res
         
         r = corrcoef(dsic, advc)
         if r > 0:
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(5.0)
+        w = torch.tensor(10.0)
         err_sum += w*err_phy
         
         return err_sum    
