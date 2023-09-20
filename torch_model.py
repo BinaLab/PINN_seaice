@@ -138,6 +138,11 @@ class physics_loss(nn.Module):
         #     err_sum += torch.mean(err3)*50
         
         # physics loss ===============================================
+        ## Where SIC < 0 ==> sea ice drift = 0!
+        err_phy = 0
+        err4 = torch.where(sic_p < 0.01, vel_p, 0)
+        err_phy += torch.mean(err4[torch.where(err4 != 0)])
+        
         # advection
         dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
         dy = (sic_p[:, 2:, 1:-1]-sic_p[:, :-2, 1:-1]) + (sic_p[:, 2:, 2:]-sic_p[:, :-2, 2:]) + (sic_p[:, 2:, :-2]-sic_p[:, :-2, :-2])    
@@ -154,7 +159,6 @@ class physics_loss(nn.Module):
         residual = dsic + advc
         
         # SIC change
-        err_phy = 0
         err_res = torch.sum(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)
         err_phy += torch.mean(err_res)
         
@@ -1114,7 +1118,7 @@ class WB(nn.Module):
 class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
-        self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh()
+        self.activation = nn.ReLU() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -1128,7 +1132,7 @@ class encoder(nn.Module):
 class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
-        self.activation = nn.Tanh() #nn.ReLU()
+        self.activation = nn.ReLU() #nn.ReLU()
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
