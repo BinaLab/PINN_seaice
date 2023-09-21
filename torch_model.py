@@ -106,7 +106,7 @@ class physics_loss(nn.Module):
 
     def forward(self, obs, prd, sic0):
         
-        sic_th = 0.005
+        sic_th = 0.001
         
         sic_p = prd[:, 2, :, :]
         sic_o = obs[:, 2, :, :]
@@ -354,6 +354,7 @@ class Net(nn.Module):
 class CNN_flatten(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5):
         super().__init__()
+        self.activation = nn.ReLU()
         self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
         self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
@@ -381,15 +382,15 @@ class CNN_flatten(nn.Module):
         # x = F.tanh(self.conv7(x)) #F.leaky_relu(self.conv7(x))
         # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
         
-        x = F.leaky_relu(self.conv1(x), negative_slope=0.1)
+        x = self.activation(self.conv1(x))
         x = self.pool1(x)
-        x = F.leaky_relu(self.conv2(x), negative_slope=0.1)
+        x = self.activation(self.conv2(x))
         x = self.pool2(x)
-        x = F.leaky_relu(self.conv3(x), negative_slope=0.1)
+        x = self.activation(self.conv3(x))
         x = self.pool3(x)
-        x = F.leaky_relu(self.conv4(x), negative_slope=0.1)
+        x = self.activation(self.conv4(x))
         x = self.pool4(x)
-        x = F.leaky_relu(self.conv5(x), negative_slope=0.1)
+        x = self.activation(self.conv5(x))
         x = self.pool5(x)
         x = self.flatten(x)
         x = F.leaky_relu(self.fc1(x), negative_slope=0.1)
@@ -1129,11 +1130,12 @@ class encoder(nn.Module):
         self.activation = nn.ReLU() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
+        self.dropout = nn.Dropout(0.25)
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
 
     def forward(self, x):
         x = self.activation(self.e11(x))
-        xb = self.activation(self.e12(x))
+        xb = self.dropout(self.activation(self.e12(x)))
         x = self.pool1(xb)
         return x, xb
     
