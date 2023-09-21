@@ -111,13 +111,13 @@ class physics_loss(nn.Module):
         sic_p = prd[:, 2, :, :]
         sic_o = obs[:, 2, :, :]
         u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
-        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50  
-        
-        u_p[sic_p <= sic_th] = 0
-        v_p[sic_p <= sic_th] = 0
+        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
         
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
+        
+        # u_p[sic_p <= sic_th] = 0
+        # v_p[sic_p <= sic_th] = 0
         
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
@@ -141,9 +141,9 @@ class physics_loss(nn.Module):
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
-        err_phy = 0
-        err4 = torch.where(sic_p < sic_th, vel_p + err_sic, 0)
-        err_phy += torch.mean(err4[torch.where(err4 != 0)])
+        # err_phy = 0
+        # err4 = torch.where(sic_p <= sic_th, err_u + err_v + err_sic, 0)
+        # err_phy += torch.mean(err4[torch.where(err4 != 0)])
         
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
