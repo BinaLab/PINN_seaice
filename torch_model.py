@@ -1110,11 +1110,11 @@ class WB(nn.Module):
         self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.a13 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.conv1 = nn.Conv2d(ch, ch, kernel_size=1, padding="same") # output: 160x160x64
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a23 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+        self.a21 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a22 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a23 = torch.nn.Parameter(torch.ones(row, col)*w)
 
     def forward(self, x1, x2, x3):
         x = x1*self.a11 + x2*self.a12 + x3*self.a13
