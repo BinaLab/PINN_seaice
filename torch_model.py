@@ -1309,7 +1309,7 @@ class TS_UNet(nn.Module):
         
         sic = torch.minimum(torch.maximum(self.sic_conv(xd3_sic), torch.tensor(0)), torch.tensor(1)) # ReLU
         siu = self.siu_conv(xd3_siu)
-        siv = self.siu_conv(xd3_siv)
+        siv = self.siv_conv(xd3_siv)
         
         siu[sic == 0] = 0
         siv[sic == 0] = 0
