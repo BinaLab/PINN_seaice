@@ -106,7 +106,7 @@ class physics_loss(nn.Module):
 
     def forward(self, obs, prd, sic0):
         
-        sic_th = 0.001
+        sic_th = 0.0
         
         sic_p = prd[:, 2, :, :]
         sic_o = obs[:, 2, :, :]
@@ -146,8 +146,8 @@ class physics_loss(nn.Module):
         err_phy += torch.mean(err4[torch.where(err4 != 0)])
         
         ## Negative or positive SIC
-        neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
-        pos_sic = torch.where(sic_p > 1, abs(sic_p-1), 0)        
+        neg_sic = torch.where(sic_p < 0, err_sic, 0)
+        pos_sic = torch.where(sic_p > 1, err_sic, 0)        
         err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
         err_phy += torch.mean(err5)
         
@@ -1107,14 +1107,14 @@ class WB(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
         super(WB,self).__init__()
         self.activation = nn.Tanh()
-        self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a13 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a13 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=1, padding="same") # output: 160x160x64
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.a21 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a22 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a23 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a23 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
 
     def forward(self, x1, x2, x3):
         x = x1*self.a11 + x2*self.a12 + x3*self.a13
