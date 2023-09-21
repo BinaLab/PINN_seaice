@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2018_2022_v5.pkl',
+        default='train_cnn_2018_2022_v6.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -214,6 +214,7 @@ def make_sampler_and_loader(args, train_dataset):
             train_dataset,
             num_replicas=dist.get_world_size(),
             rank=dist.get_rank(),
+            shuffle=True
         )
         train_loader = DataLoader(
             train_dataset,
@@ -480,11 +481,11 @@ def main() -> None:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
     if data_ver == 'v5':
-        cnn_input = cnn_input[:,:,:,[0,1,2,4,5]]
-        cnn_output = cnn_output[:,:,:,:-1]
+        cnn_input = cnn_input[:,30:286, 10:266, [0,1,2,4,5]]
+        cnn_output = cnn_output[:,30:286, 10:266, :-1]
     if data_ver == 'v6':
-        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
-        cnn_output = cnn_output[:,:,:,:-1]
+        cnn_input = cnn_input[:, 30:286, 10:266,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:, 30:286, 10:266,:-1]
         
     if args.model_type == "mtunet":
         args.predict = "all"
@@ -502,7 +503,7 @@ def main() -> None:
     # Read landmask data
     with open(data_path + f"landmask_320.pkl", 'rb') as file:
         landmask = pickle.load(file) 
-    landmask = torch.tensor(landmask) # Land = 1; Ocean = 0;
+    landmask = torch.tensor(landmask)[30:286, 10:266] # Land = 1; Ocean = 0;
     if args.cuda:
         landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
@@ -521,7 +522,7 @@ def main() -> None:
     cnn_output = torch.tensor(cnn_output, dtype=torch.float32)
     
     mask1 = (years == date) # Test samples
-    mask2 = (days % 7 == 2) # Validation samples
+    mask2 = (days % 5 == 2) # Validation samples
 
     val_input = cnn_input[mask1] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[mask1] #cnn_output[(~mask1)&(mask2), :, :, :]
@@ -642,6 +643,9 @@ def main() -> None:
 
                 with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
                     pickle.dump(history, file)
+                    
+            if epoch >= 50 and train_loss.item()*2 < val_loss.item():
+                break # over-fitting
     
     torch.cuda.empty_cache()
     

@@ -106,7 +106,7 @@ class physics_loss(nn.Module):
 
     def forward(self, obs, prd, sic0):
         
-        sic_th = 0.0
+        sic_th = 0.001
         
         sic_p = prd[:, 2, :, :]
         sic_o = obs[:, 2, :, :]
@@ -142,33 +142,35 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
-        err4 = torch.where(sic_p <= sic_th, abs(u_p) + abs(v_p), 0)
-        err_phy += torch.mean(err4)/50
+        err4 = torch.mean(torch.where(sic_p <= sic_th, abs(u_p) + abs(v_p) + abs(sic_p), 0), dim=0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err4)
         
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
-        pos_sic = torch.where(sic_p > 1, err_sic, 0)        
+        pos_sic = torch.where(sic_p > 1, err_sic, 0)     
         err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
         err_phy += torch.mean(err5)
         
         # advection
+        advc = sic_p*0
         dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
         dy = (sic_p[:, 2:, 1:-1]-sic_p[:, :-2, 1:-1]) + (sic_p[:, 2:, 2:]-sic_p[:, :-2, 2:]) + (sic_p[:, 2:, :-2]-sic_p[:, :-2, :-2])    
-        advc = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
+        advc[:, 1:-1, 1:-1] = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
         
         # divergence
+        divc = sic_p*0
         dx = (u_p[:, 1:-1, 2:]-u_p[:, 1:-1, :-2]) + (u_p[:, 2:, 2:]-u_p[:, 2:, :-2]) + (u_p[:, :-2, 2:]-u_p[:, :-2, :-2])
         dy = (v_p[:, 1:-1, 2:]-v_p[:, 1:-1, :-2]) + (v_p[:, 2:, 2:]-v_p[:, 2:, :-2]) + (v_p[:, :-2, 2:]-v_p[:, :-2, :-2])
         divc = dx/3 + dy/3
-        divc = divc*sic_p[:, 1:-1, 1:-1]/25
+        divc[:, 1:-1, 1:-1] = divc*sic_p[:, 1:-1, 1:-1]/25
         
-        dsic = sic_p[:, 1:-1, 1:-1] - sic0[:, 1:-1, 1:-1]
+        dsic = sic_p - sic0
         
         residual = dsic + advc
         
         # SIC change
-        err_res = torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0)) # dim = 0)
-        err_phy += err_res
+        err_res = torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err_res)
         
         r = corrcoef(dsic, advc)
         if r > 0:
