@@ -109,6 +109,8 @@ class physics_loss(nn.Module):
         sic_th = 0.001
         
         sic_p = prd[:, 2, :, :]
+        # sic_p[sic_p > 1] = 1
+        # sic_p[sic_p < 0] = 0
         sic_o = obs[:, 2, :, :]
         u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
         u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
