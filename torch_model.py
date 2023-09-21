@@ -1223,12 +1223,12 @@ class TS_UNet(nn.Module):
         
         
         ##### Weighting Blocks #####
-        self.wb1 = WB(64, 160, 160, k, 0)        
-        self.wb2 = WB(128, 80, 80, k, 0)
-        self.wb3 = WB(256, 40, 40, k, 0)
-        self.wb4 = WB(512, 40, 40, k, 0)
-        self.wb5 = WB(256, 80, 80, k, 0)
-        self.wb6 = WB(128, 160, 160, k, 0)
+        self.wb1 = WB(64, 128, 128, k, 0)        
+        self.wb2 = WB(128, 64, 64, k, 0)
+        self.wb3 = WB(256, 32, 32, k, 0)
+        self.wb4 = WB(512, 32, 32, k, 0)
+        self.wb5 = WB(256, 64, 64, k, 0)
+        self.wb6 = WB(128, 128, 128, k, 0)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
