@@ -1308,8 +1308,11 @@ class TS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(xd2_sic + wb6_sic, xe1b_sic)
         
         sic = torch.minimum(torch.maximum(self.sic_conv(xd3_sic), torch.tensor(0)), torch.tensor(1)) # ReLU
-        siu = self.siu_conv(xd3_siu) * torch.heaviside(sic, torch.tensor(0.))
-        siv = self.siu_conv(xd3_siv) * torch.heaviside(sic, torch.tensor(0.))        
+        siu = self.siu_conv(xd3_siu)
+        siv = self.siu_conv(xd3_siv)
+        
+        siu[sic == 0] = 0
+        siv[sic == 0] = 0
         
         out = torch.cat([siu, siv, sic], dim=1)
         out = out * (self.landmask == 0)
