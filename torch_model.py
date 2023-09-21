@@ -175,7 +175,7 @@ class physics_loss(nn.Module):
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(1.0)
+        w = torch.tensor(10.0)
         err_sum += w*err_phy
         
         return err_sum    
@@ -1128,14 +1128,15 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.ReLU() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
+        self.dropout = nn.Dropout(0.3)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
-        self.dropout = nn.Dropout(0.25)
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
 
     def forward(self, x):
+        x = self.dropout(x)
         x = self.activation(self.e11(x))
-        xb = self.dropout(self.activation(self.e12(x)))
+        xb = self.activation(self.e12(x))
         x = self.pool1(xb)
         return x, xb
     
@@ -1143,6 +1144,7 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.ReLU() #nn.ReLU()
+        self.dropout = nn.Dropout(0.3)
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
@@ -1150,6 +1152,7 @@ class decoder(nn.Module):
     def forward(self, x, x0):
         x = self.upconv1(x)
         x = torch.cat([x, x0], dim=1)
+        x = self.dropout(x)
         x = self.activation(self.d11(x))
         x = self.activation(self.d12(x))
         return x
@@ -1161,6 +1164,7 @@ class TS_UNet(nn.Module):
         
         self.activation1 = nn.Tanh()
         self.activation2 = nn.ReLU()
+        self.dropout = nn.Dropout(0.3)
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
@@ -1256,12 +1260,15 @@ class TS_UNet(nn.Module):
         
         ##### Bottom bridge #####
         # SID
+        xe3_siu = self.dropout(xe3_siu)
         xe41_siu = self.activation1(self.siu_ec41(xe3_siu + wb3_siu))
         xe42_siu = self.activation1(self.siu_ec42(xe41_siu))
         # SIV
+        xe3_siv = self.dropout(xe3_siv)
         xe41_siv = self.activation1(self.siv_ec41(xe3_siv + wb3_siv))
         xe42_siv = self.activation1(self.siv_ec42(xe41_siv))
         # SIC
+        xe3_sic = self.dropout(xe3_sic)
         xe41_sic = self.activation2(self.sic_ec41(xe3_sic + wb3_sic))
         xe42_sic = self.activation2(self.sic_ec42(xe41_sic))
         # output: 40x40x512
