@@ -144,8 +144,6 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
-        # err4 = torch.mean(torch.where(sic_p <= sic_th, abs(u_p) + abs(v_p) + abs(sic_p), 0), dim=0)[torch.where(self.landmask == 0)]
-        # err_phy += torch.mean(err4)
         
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
@@ -179,7 +177,7 @@ class physics_loss(nn.Module):
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(100.0)
+        w = torch.tensor(1000.0)
         err_sum += w*err_phy
         
         return err_sum    
@@ -1307,10 +1305,10 @@ class TS_UNet(nn.Module):
         xd3_siv = self.siv_dc3(xd2_siv + wb6_siv, xe1b_siv)
         # SIC
         xd3_sic = self.sic_dc3(xd2_sic + wb6_sic, xe1b_sic)
-
-        siu = self.siu_conv(xd3_siu)
-        siv = self.siv_conv(xd3_siv)
-        sic = self.sic_conv(xd3_sic)
+        
+        sic = torch.minimum(torch.maximum(self.sic_conv(xd3_sic), torch.tensor(0)), torch.tensor(1)) # ReLU
+        siu = self.siu_conv(xd3_siu) * torch.heaviside(sic, torch.tensor(0.))
+        siv = self.siu_conv(xd3_siv) * torch.heaviside(sic, torch.tensor(0.))        
         
         out = torch.cat([siu, siv, sic], dim=1)
 
