@@ -1312,7 +1312,7 @@ class TS_UNet(nn.Module):
         siv = self.siu_conv(xd3_siv) * torch.heaviside(sic, torch.tensor(0.))        
         
         out = torch.cat([siu, siv, sic], dim=1)
-        out = out * (1-self.landmask)
+        out = out * (self.landmask == 0)
 
         return out
     
@@ -1444,7 +1444,7 @@ class EB_UNet(nn.Module):
         sic = self.sic_conv(xd3_sic)
         
         out = torch.cat([siu, siv, sic], dim=1)
-        out = out * (1-self.landmask)
+        out = out * (self.landmask == 0)
 
         return out
     
@@ -1518,7 +1518,7 @@ class LB_UNet(nn.Module):
         sic = self.sic_conv(xd3_siu)
         
         out = torch.cat([siu, siv, sic], dim=1)
-        out = out * (1-self.landmask)
+        out = out * (self.landmask == 0)
 
         return out
     
