@@ -1161,12 +1161,13 @@ class decoder(nn.Module):
     
 # Triple-sharing UNET model
 class TS_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
         super().__init__()
         
         self.activation1 = nn.Tanh()
         self.activation2 = nn.ReLU()
         self.dropout = nn.Dropout(0.2)
+        self.landmask = landmask
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
@@ -1311,15 +1312,17 @@ class TS_UNet(nn.Module):
         siv = self.siu_conv(xd3_siv) * torch.heaviside(sic, torch.tensor(0.))        
         
         out = torch.cat([siu, siv, sic], dim=1)
+        out = out * (1-self.landmask)
 
         return out
     
 # Early branch UNET model
 class EB_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
         super().__init__()
         
         self.activation = nn.Tanh()
+        self.landmask = landmask
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
@@ -1441,15 +1444,17 @@ class EB_UNet(nn.Module):
         sic = self.sic_conv(xd3_sic)
         
         out = torch.cat([siu, siv, sic], dim=1)
+        out = out * (1-self.landmask)
 
         return out
     
 # Early branch UNET model
 class LB_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
         super().__init__()
         
         self.activation = nn.Tanh()
+        self.landmask = landmask
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
@@ -1513,15 +1518,17 @@ class LB_UNet(nn.Module):
         sic = self.sic_conv(xd3_siu)
         
         out = torch.cat([siu, siv, sic], dim=1)
+        out = out * (1-self.landmask)
 
         return out
     
 # Information sharing UNET model
 class IS_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
         super().__init__()
         
         self.activation = nn.Tanh() #nn.LeakyReLU(0.1)
+        self.landmask = landmask
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
@@ -1698,6 +1705,7 @@ class IS_UNet(nn.Module):
         sic = self.sic_conv(xd32_sic)
         
         out = torch.cat([sid, sic], dim=1)
+        out = out * (1-self.landmask)
 
         return out
 

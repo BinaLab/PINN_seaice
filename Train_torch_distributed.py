@@ -568,13 +568,13 @@ def main() -> None:
     elif args.model_type == "mtunet":
         net = HF_UNet(in_channels, out_channels)
     elif args.model_type == "tsunet":
-        net = TS_UNet(in_channels, out_channels) # Triple sharing
+        net = TS_UNet(in_channels, out_channels, landmask) # Triple sharing
     elif args.model_type == "isunet":
-        net = IS_UNet(in_channels, out_channels) # information sharing
+        net = IS_UNet(in_channels, out_channels, landmask) # information sharing
     elif args.model_type == "lbunet":
-        net = LB_UNet(in_channels, out_channels)
+        net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":
-        net = EB_UNet(in_channels, out_channels)
+        net = EB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "cnn":
         net = Net(in_channels, out_channels)
     elif args.model_type == "fc":
