@@ -142,14 +142,14 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
-        err4 = torch.where(sic_p <= sic_th, err_sic, 0)
-        err_phy += torch.mean(err4[torch.where(err4 != 0)])
+        err4 = torch.where(sic_p <= sic_th, abs(u_p) + abs(v_p), 0)
+        err_phy += torch.mean(err4)/50
         
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
         pos_sic = torch.where(sic_p > 1, err_sic, 0)        
-        # err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
-        # err_phy += torch.mean(err5)
+        err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err5)
         
         # advection
         dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
@@ -175,7 +175,7 @@ class physics_loss(nn.Module):
             err_phy += r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(10.0)
+        w = torch.tensor(1.0)
         err_sum += w*err_phy
         
         return err_sum    
@@ -1128,7 +1128,7 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.ReLU() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.2)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -1144,15 +1144,15 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.ReLU() #nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.2)
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
 
-    def forward(self, x, x0):
-        x = self.dropout(x)
+    def forward(self, x, x0):        
         x = self.upconv1(x)        
-        x = torch.cat([x, x0], dim=1)        
+        x = torch.cat([x, x0], dim=1) 
+        x = self.dropout(x)
         x = self.activation(self.d11(x))
         x = self.activation(self.d12(x))
         return x
@@ -1164,7 +1164,7 @@ class TS_UNet(nn.Module):
         
         self.activation1 = nn.Tanh()
         self.activation2 = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.2)
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
         
