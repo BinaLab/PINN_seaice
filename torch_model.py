@@ -142,14 +142,14 @@ class physics_loss(nn.Module):
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
-        err4 = torch.mean(torch.where(sic_p <= sic_th, abs(u_p) + abs(v_p) + abs(sic_p), 0), dim=0)[torch.where(self.landmask == 0)]
-        err_phy += torch.mean(err4)
+        # err4 = torch.mean(torch.where(sic_p <= sic_th, abs(u_p) + abs(v_p) + abs(sic_p), 0), dim=0)[torch.where(self.landmask == 0)]
+        # err_phy += torch.mean(err4)
         
         ## Negative or positive SIC
-        neg_sic = torch.where(sic_p < 0, err_sic, 0)
-        pos_sic = torch.where(sic_p > 1, err_sic, 0)     
-        err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_phy += torch.mean(err5)
+        # neg_sic = torch.where(sic_p < 0, err_sic, 0)
+        # pos_sic = torch.where(sic_p > 1, err_sic, 0)     
+        # err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        # err_phy += torch.mean(err5)
         
         # advection
         advc = sic_p*0
