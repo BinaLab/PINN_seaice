@@ -141,7 +141,7 @@ class physics_loss(nn.Module):
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
-        # err_phy = 0
+        err_phy = 0
         # err4 = torch.where(sic_p <= sic_th, err_u + err_v + err_sic, 0)
         # err_phy += torch.mean(err4[torch.where(err4 != 0)])
         
