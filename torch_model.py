@@ -169,14 +169,14 @@ class physics_loss(nn.Module):
         residual = dsic + advc
         
         # SIC change
-        err_res = torch.sum(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_res = torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
         err_phy += torch.mean(err_res)
         
         r = corrcoef(dsic, advc)
         # err_phy += 1-r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(1.0)
+        w = torch.tensor(10.0)
         err_sum += w*err_phy
         
         return err_sum    
@@ -1128,7 +1128,7 @@ class WB(nn.Module):
 class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
-        self.activation = nn.ReLU() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
+        self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
         self.dropout = nn.Dropout(0.2)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
