@@ -136,7 +136,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--phy',
         type=str,
-        default='phy',
+        default='nophy',
         help='filename of dataset',
     )
     parser.add_argument(
