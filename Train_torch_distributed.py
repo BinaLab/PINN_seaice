@@ -491,11 +491,11 @@ def main() -> None:
         cnn_input = cnn_input[:,:,:, [0,1,2,4,5]]
         cnn_output = cnn_output[:,:,:, :-1]
     if data_ver == 'v6':
-        cnn_input = cnn_input[:, :,:,[0,1,2,3,4,5]]
-        cnn_output = cnn_output[:, :,:,:-1]
+        cnn_input = cnn_input[:, 30:286, 10:266,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:, 30:286, 10:266,:-1]
         
-#     xx = xx[30:286, 10:266]
-#     yy = yy[30:286, 10:266]
+    xx = xx[30:286, 10:266]
+    yy = yy[30:286, 10:266]
         
     if args.model_type == "mtunet":
         args.predict = "all"
@@ -509,13 +509,6 @@ def main() -> None:
             print(f"SIT prediction is not available with {data_ver} data >>> Proceed with all prediction")
     elif args.predict == "uv":
         cnn_output = cnn_output[:,:,:,0:2]     
-        
-    # Read landmask data
-    with open(data_path + f"landmask_320.pkl", 'rb') as file:
-        landmask = pickle.load(file) 
-    landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
-    if args.cuda:
-        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
@@ -568,6 +561,17 @@ def main() -> None:
     val_sampler, val_loader = make_sampler_and_loader(args, val_dataset)
     
     del cnn_input, cnn_output, train_input, train_output
+    
+    # Read landmask data
+    with open(data_path + f"landmask_320.pkl", 'rb') as file:
+        landmask = pickle.load(file)
+    if row == 320:
+        landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
+    else:
+        landmask = torch.tensor(landmask)[30:286, 10:266]
+        
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     #############################################################################   
     if args.model_type == "unet":
