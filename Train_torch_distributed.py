@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2018_2022_v6.pkl',
+        default='train_cnn_2018_2022_v5.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -488,11 +488,11 @@ def main() -> None:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
     if data_ver == 'v5':
-        cnn_input = cnn_input[:,30:286, 10:266, [0,1,2,4,5]]
-        cnn_output = cnn_output[:,30:286, 10:266, :-1]
+        cnn_input = cnn_input[:,:,:, [0,1,2,4,5]]
+        cnn_output = cnn_output[:,:,:, :-1]
     if data_ver == 'v6':
-        cnn_input = cnn_input[:, 30:286, 10:266,[0,1,2,3,4,5]]
-        cnn_output = cnn_output[:, 30:286, 10:266,:-1]
+        cnn_input = cnn_input[:, :,:,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:, :,:,:-1]
         
     xx = xx[30:286, 10:266]
     yy = yy[30:286, 10:266]
@@ -513,7 +513,7 @@ def main() -> None:
     # Read landmask data
     with open(data_path + f"landmask_320.pkl", 'rb') as file:
         landmask = pickle.load(file) 
-    landmask = torch.tensor(landmask)[30:286, 10:266] # Land = 1; Ocean = 0;
+    landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
     if args.cuda:
         landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
