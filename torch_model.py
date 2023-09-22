@@ -146,10 +146,10 @@ class physics_loss(nn.Module):
         err_phy = 0
         
         ## Negative or positive SIC
-        neg_sic = torch.where(sic_p < 0, err_sic, 0)
-        pos_sic = torch.where(sic_p > 1, err_sic, 0)     
-        err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_phy += torch.mean(err5)
+        # neg_sic = torch.where(sic_p < 0, err_sic, 0)
+        # pos_sic = torch.where(sic_p > 1, err_sic, 0)     
+        # err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        # err_phy += torch.mean(err5)
         
         # advection
         advc = sic_p*0
@@ -176,7 +176,7 @@ class physics_loss(nn.Module):
         # err_phy += 1-r
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(10.0)
+        w = torch.tensor(1.0)
         err_sum += w*err_phy
         
         return err_sum    
