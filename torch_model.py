@@ -1708,7 +1708,7 @@ class IS_UNet(nn.Module):
         sic = self.sic_conv(xd32_sic)
         
         out = torch.cat([sid, sic], dim=1)
-        out = out * (1-self.landmask)
+        out = out * (self.landmask == 0)
 
         return out
 
