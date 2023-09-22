@@ -26,7 +26,6 @@ from torch.utils.data.distributed import DistributedSampler
 # from torch.utils.tensorboard import SummaryWriter
 
 from torch_model import *
-from functions import RMSE
 
 import argparse
 import os    
@@ -244,6 +243,10 @@ def make_sampler_and_loader(args, train_dataset):
     # )
 
     return train_sampler, train_loader
+
+def RMSE(prd, obs):
+    err = torch.square(obs-prd)
+    return torch.mean(err)**0.5
 
 # def init_processes(backend):
 #     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
