@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2018_2022_v5.pkl',
+        default='train_cnn_2018_2022_v6.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -575,9 +575,9 @@ def main() -> None:
     elif args.model_type == "mtunet":
         net = HF_UNet(in_channels, out_channels)
     elif args.model_type == "tsunet":
-        net = TS_UNet(in_channels, out_channels, landmask) # Triple sharing
+        net = TS_UNet(in_channels, out_channels, landmask, row) # Triple sharing
     elif args.model_type == "isunet":
-        net = IS_UNet(in_channels, out_channels, landmask) # information sharing
+        net = IS_UNet(in_channels, out_channels, landmask, row) # information sharing
     elif args.model_type == "lbunet":
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":

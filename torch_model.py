@@ -314,6 +314,7 @@ class linear_regression(torch.nn.Module):
 class Net(nn.Module):
     def __init__(self, n_inputs, n_outputs, n_filters=32, kernel = 5):
         super().__init__()
+        self.activation = nn.Tanh()
         self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
         self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
         self.conv3 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
@@ -324,32 +325,15 @@ class Net(nn.Module):
         self.conv8 = nn.Conv2d(n_filters, n_outputs, kernel, padding = "same")
 
     def forward(self, x):
-        # x = F.tanh(self.conv1(x)) #F.leaky_relu(self.conv1(x))
-        # x = F.tanh(self.conv2(x)) #F.leaky_relu(self.conv2(x))
-        # x = F.tanh(self.conv3(x)) #F.leaky_relu(self.conv3(x))
-        # x = F.tanh(self.conv4(x)) #F.leaky_relu(self.conv4(x))
-        # x = F.tanh(self.conv5(x)) #F.leaky_relu(self.conv5(x))
-        # x = F.tanh(self.conv6(x)) #F.leaky_relu(self.conv6(x))
-        # x = F.tanh(self.conv7(x)) #F.leaky_relu(self.conv7(x))
-        # x = F.tanh(self.conv8(x)) #F.leaky_relu(self.conv8(x))
         
-        x = F.leaky_relu(self.conv1(x), negative_slope=1)
-        x = F.leaky_relu(self.conv2(x), negative_slope=1)
-        x = F.leaky_relu(self.conv3(x), negative_slope=1)
-        x = F.leaky_relu(self.conv4(x), negative_slope=1)
-        x = F.leaky_relu(self.conv5(x), negative_slope=1)
-        x = F.leaky_relu(self.conv6(x), negative_slope=1)
-        x = F.leaky_relu(self.conv7(x), negative_slope=1)
-        x = F.leaky_relu(self.conv8(x), negative_slope=1)
-        
-        # x = F.linear(self.conv1(x), weight = 1)
-        # x = F.linear(self.conv2(x), weight = 1)
-        # x = F.linear(self.conv3(x), weight = 1)
-        # x = F.linear(self.conv4(x), weight = 1)
-        # x = F.linear(self.conv5(x), weight = 1)
-        # x = F.linear(self.conv6(x), weight = 1)
-        # x = F.linear(self.conv7(x), weight = 1)
-        # x = F.linear(self.conv8(x), weight = 1)
+        x = self.activation(self.conv1(x))
+        x = self.activation(self.conv2(x))
+        x = self.activation(self.conv3(x))
+        x = self.activation(self.conv4(x))
+        x = self.activation(self.conv5(x))
+        x = self.activation(self.conv6(x))
+        x = self.activation(self.conv7(x))
+        x = self.activation(self.conv8(x))
         
         return x
     
@@ -859,233 +843,73 @@ class EncoderDecoderConvLSTM(nn.Module):
 
         return outputs
 
-# UNET model
+# Early branch UNET model
 class UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
         super().__init__()
         
-        self.activation = nn.Tanh() #nn.LeakyReLU(0.1) #nn.Tanh() #
+        self.activation = nn.Tanh()
+        self.landmask = landmask
         
-        # Encoder
-        # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
-        # input: 320x320x3
-        self.e11 = nn.Conv2d(n_inputs, 64, kernel_size=k, padding="same") # output: 320x320x32
-        self.e12 = nn.Conv2d(64, 64, kernel_size=k, padding="same") # output: 320x320x32
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x32
+        self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
+        
+        # input: 320x320x64
+        self.siu_ec1 = encoder(32, 64) # output: 160x160x64
+        # input: 160x160x64
+        self.siu_ec2 = encoder(64, 128) # output: 80x80x128
+        # input: 80x80x128
+        self.siu_ec3 = encoder(128, 256) # output: 40x40x256
 
-        # input: 160x160x32
-        self.e21 = nn.Conv2d(64, 128, kernel_size=k, padding="same") # output: 160x160x64
-        self.e22 = nn.Conv2d(128, 128, kernel_size=k, padding="same") # output: 160x160x64
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 80x80x64
-
-        # input: 80x80x64
-        self.e31 = nn.Conv2d(128, 256, kernel_size=k, padding="same") # output: 80x80x128
-        self.e32 = nn.Conv2d(256, 256, kernel_size=k, padding="same") # output: 80x80x128
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 40x40x128
-
-        # input: 40x40x128
-        self.e41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x256
-        self.e42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x256
-        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 20x20x256
-
-        # input: 20x20x256
-        self.e51 = nn.Conv2d(512, 1024, kernel_size=k, padding="same") # output: 20x20x512
-        self.e52 = nn.Conv2d(1024, 1024, kernel_size=k, padding="same") # output: 20x20x512
+        # input: 40x40x256
+        self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
-        self.upconv1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
-        self.d11 = nn.Conv2d(1024, 512, kernel_size=k, padding="same")
-        self.d12 = nn.Conv2d(512, 512, kernel_size=k, padding="same")
-
-        self.upconv2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
-        self.d21 = nn.Conv2d(512, 256, kernel_size=k, padding="same")
-        self.d22 = nn.Conv2d(256, 256, kernel_size=k, padding="same")
-
-        self.upconv3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
-        self.d31 = nn.Conv2d(256, 128, kernel_size=k, padding="same")
-        self.d32 = nn.Conv2d(128, 128, kernel_size=k, padding="same")
-
-        self.upconv4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.d41 = nn.Conv2d(128, 64, kernel_size=k, padding="same")
-        self.d42 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
+        self.siu_dc1 = decoder(512, 256) # output: 80x80x256
+        self.siu_dc2 = decoder(256, 128) # output: 160x160x128
+        self.siu_dc3 = decoder(128, 64) # output: 320x320x64     
 
         # Output layer
-        self.outconv = nn.Conv2d(64, n_outputs, kernel_size=k, padding="same")
-        # self.sidconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        # self.sidconv2 = nn.Conv2d(64, 2, kernel_size=k, padding="same")
-        # self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        # self.sicconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        # self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        # self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.out_conv = nn.Conv2d(64, n_outputs, kernel_size=k, padding="same")
         
     def forward(self, x):
-        # Encoder
-        # xe11 = self.activation(self.e11(x))
-        xe12 = self.activation(self.e12(self.activation(self.e11(x))))
-        xp1 = self.pool1(xe12)
-
-        # xe21 = self.activation(self.e21(xp1))
-        xe22 = self.activation(self.e22(self.activation(self.e21(xp1))))
-        xp2 = self.pool2(xe22)
-
-        # xe31 = self.activation(self.e31(xp2))
-        xe32 = self.activation(self.e32(self.activation(self.e31(xp2))))
-        xp3 = self.pool3(xe32)
-
-        # xe41 = self.activation(self.e41(xp3))
-        xe42 = self.activation(self.e42(self.activation(self.e41(xp3))))
-        xp4 = self.pool4(xe42)
-
-        # xe51 = self.activation(self.e51(xp4))
-        xe52 = self.activation(self.e52(self.activation(self.e51(xp4))))
+        # First convolution
+        x = self.first_conv(x)        
         
-        # Decoder
-        # xu1 = self.upconv1(xe52)
-        xu11 = torch.cat([self.upconv1(xe52), xe42], dim=1)
-        # xd11 = self.activation(self.d11(xu11))
-        xd12 = self.activation(self.d12(self.activation(self.d11(xu11))))
-
-        # xu2 = self.upconv2(xd12)
-        xu22 = torch.cat([self.upconv2(xd12), xe32], dim=1)
-        # xd21 = self.activation(self.d21(xu22))
-        xd22 = self.activation(self.d22(self.activation(self.d21(xu22))))
-
-        # xu3 = self.upconv3(xd22)
-        xu33 = torch.cat([self.upconv3(xd22), xe22], dim=1)
-        # xd31 = self.activation(self.d31(xu33))
-        xd32 = self.activation(self.d32(self.activation(self.d31(xu33))))
-
-        # xu4 = self.upconv4(xd32)
-        xu44 = torch.cat([self.upconv4(xd32), xe12], dim=1)
-        # xd41 = self.activation(self.d41(xu44))
-        xd42 = self.activation(self.d42(self.activation(self.d41(xu44))))
-
-        # Output layer
+        ##### Encoder 1 #####
+        xe1_siu, xe1b_siu = self.siu_ec1(x) # SIU
         
-        # sid = self.sidconv1(xd42)
-        # sid = self.sidconv2(sid)
-        # sic = self.sicconv1(xd42)
-        # sic = self.sicconv2(sic)
-        # # sit = self.sitconv1(xd42)
-        # # sit = self.sitconv2(sit)        
-        # out = torch.cat([sid, sic], dim=1)
-        out = self.outconv(xd42)
+        ##### Encoder 2 #####
+        xe2_siu, xe2b_siu = self.siu_ec2(xe1_siu) # SIU
+
+        ##### Encoder 3 #####
+        xe3_siu, xe3b_siu = self.siu_ec3(xe2_siu) # SIU
+        
+        ##### Bottom bridge #####
+        # SID
+        xe41_siu = self.activation(self.siu_ec41(xe3_siu))
+        xe42_siu = self.activation(self.siu_ec42(xe41_siu))
+        # output: 40x40x512
+        
+        ##### Decoder 1 #####
+        # SIU
+        xd1_siu = self.siu_dc1(xe42_siu, xe3b_siu)
+        # Weighting block 5
+        
+        ##### Decoder 2 #####
+        # SIU
+        xd2_siu = self.siu_dc2(xd1_siu, xe2b_siu)
+        # Weighting block 6        
+        
+        ##### Decoder 3 #####
+        # SIU
+        xd3_siu = self.siu_dc3(xd2_siu, xe1b_siu)
+        out = self.out_conv(xd3_siu)
+
+        out = out * (self.landmask == 0)
 
         return out
-    
-# Branch UNET model
-class BUNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, k=3):
-        super().__init__()
-        
-        self.activation = nn.Tanh() #nn.LeakyReLU(0.1)
-        
-        # Encoder
-        # In the encoder, convolutional layers with the Conv2d function are used to extract features from the input image. 
-        # input: 320x320x3
-        self.e11 = nn.Conv2d(n_inputs, 64, kernel_size=k, padding="same") # output: 320x320x32
-        self.e12 = nn.Conv2d(64, 64, kernel_size=k, padding="same") # output: 320x320x32
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x32
 
-        # input: 160x160x32
-        self.e21 = nn.Conv2d(64, 128, kernel_size=k, padding="same") # output: 160x160x64
-        self.e22 = nn.Conv2d(128, 128, kernel_size=k, padding="same") # output: 160x160x64
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 80x80x64
-
-        # input: 80x80x64
-        self.e31 = nn.Conv2d(128, 256, kernel_size=k, padding="same") # output: 80x80x128
-        self.e32 = nn.Conv2d(256, 256, kernel_size=k, padding="same") # output: 80x80x128
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 40x40x128
-
-        # input: 40x40x128
-        self.e41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x256
-        self.e42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x256
-        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 20x20x256
-
-        # input: 20x20x256
-        self.e51 = nn.Conv2d(512, 1024, kernel_size=k, padding="same") # output: 20x20x512
-        self.e52 = nn.Conv2d(1024, 1024, kernel_size=k, padding="same") # output: 20x20x512
-
-        # Decoder
-        self.upconv1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
-        self.d11 = nn.Conv2d(1024, 512, kernel_size=k, padding="same")
-        self.d12 = nn.Conv2d(512, 512, kernel_size=k, padding="same")
-
-        self.upconv2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
-        self.d21 = nn.Conv2d(512, 256, kernel_size=k, padding="same")
-        self.d22 = nn.Conv2d(256, 256, kernel_size=k, padding="same")
-
-        self.upconv3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
-        self.d31 = nn.Conv2d(256, 128, kernel_size=k, padding="same")
-        self.d32 = nn.Conv2d(128, 128, kernel_size=k, padding="same")
-
-        self.upconv4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.d41 = nn.Conv2d(128, 64, kernel_size=k, padding="same")
-        self.d42 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-
-        # Output layer
-        # self.outconv = nn.Conv2d(64, n_outputs, kernel_size=k, padding="same")
-        # self.sidconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        self.sidconv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
-        # self.sicconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        self.sicconv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        # self.sitconv1 = nn.Conv2d(64, 64, kernel_size=k, padding="same")
-        # self.sitconv2 = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        
-    def forward(self, x):
-        # Encoder
-        # xe11 = self.activation(self.e11(x))
-        xe12 = self.activation(self.e12(self.activation(self.e11(x))))
-        xp1 = self.pool1(xe12)
-
-        # xe21 = self.activation(self.e21(xp1))
-        xe22 = self.activation(self.e22(self.activation(self.e21(xp1))))
-        xp2 = self.pool2(xe22)
-
-        # xe31 = self.activation(self.e31(xp2))
-        xe32 = self.activation(self.e32(self.activation(self.e31(xp2))))
-        xp3 = self.pool3(xe32)
-
-        # xe41 = self.activation(self.e41(xp3))
-        xe42 = self.activation(self.e42(self.activation(self.e41(xp3))))
-        xp4 = self.pool4(xe42)
-
-        # xe51 = self.activation(self.e51(xp4))
-        xe52 = self.activation(self.e52(self.activation(self.e51(xp4))))
-        
-        # Decoder
-        # xu1 = self.upconv1(xe52)
-        xu11 = torch.cat([self.upconv1(xe52), xe42], dim=1)
-        # xd11 = self.activation(self.d11(xu11))
-        xd12 = self.activation(self.d12(self.activation(self.d11(xu11))))
-
-        # xu2 = self.upconv2(xd12)
-        xu22 = torch.cat([self.upconv2(xd12), xe32], dim=1)
-        # xd21 = self.activation(self.d21(xu22))
-        xd22 = self.activation(self.d22(self.activation(self.d21(xu22))))
-
-        # xu3 = self.upconv3(xd22)
-        xu33 = torch.cat([self.upconv3(xd22), xe22], dim=1)
-        # xd31 = self.activation(self.d31(xu33))
-        xd32 = self.activation(self.d32(self.activation(self.d31(xu33))))
-
-        # xu4 = self.upconv4(xd32)
-        xu44 = torch.cat([self.upconv4(xd32), xe12], dim=1)
-        # xd41 = self.activation(self.d41(xu44))
-        xd42 = self.activation(self.d42(self.activation(self.d41(xu44))))
-
-        # Output layer
-        
-        sid = self.sidconv(xd42)
-        # sid = self.sidconv2(sid)
-        sic = self.sicconv(xd42)
-        # sic = self.sicconv2(sic)
-        # # sit = self.sitconv1(xd42)
-        # # sit = self.sitconv2(sit)        
-        out = torch.cat([sid, sic], dim=1)
-        # out = self.outconv(xd42)
-
-        return out
     
 class TCL_block(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
@@ -1161,7 +985,7 @@ class decoder(nn.Module):
     
 # Triple-sharing UNET model
 class TS_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, landmask, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, extent, k=3):
         super().__init__()
         
         self.activation1 = nn.Tanh()
@@ -1224,12 +1048,12 @@ class TS_UNet(nn.Module):
         
         
         ##### Weighting Blocks #####
-        self.wb1 = WB(64, 128, 128, k, 0)        
-        self.wb2 = WB(128, 64, 64, k, 0)
-        self.wb3 = WB(256, 32, 32, k, 0)
-        self.wb4 = WB(512, 32, 32, k, 0)
-        self.wb5 = WB(256, 64, 64, k, 0)
-        self.wb6 = WB(128, 128, 128, k, 0)
+        self.wb1 = WB(64, int(extent/2), int(extent/2), k, 0)        
+        self.wb2 = WB(128, int(extent/4), int(extent/4), k, 0)
+        self.wb3 = WB(256, int(extent/8), int(extent/8), k, 0)
+        self.wb4 = WB(512, int(extent/8), int(extent/8), k, 0)
+        self.wb5 = WB(256, int(extent/4), int(extent/4), k, 0)
+        self.wb6 = WB(128, int(extent/2), int(extent/2), k, 0)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
@@ -1527,7 +1351,7 @@ class LB_UNet(nn.Module):
     
 # Information sharing UNET model
 class IS_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, landmask, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, extent, k=3):
         super().__init__()
         
         self.activation = nn.Tanh() #nn.LeakyReLU(0.1)
@@ -1603,12 +1427,12 @@ class IS_UNet(nn.Module):
         self.sic_d32 = nn.Conv2d(64, 32, kernel_size=k, padding="same") # output: 320x320x64
         
         ##### Task Consistency Learning (TCL) Block #####
-        self.tcl1 = TCL_block(64, 160, 160, k=3, w=0.5)        
-        self.tcl2 = TCL_block(128, 80, 80, k=3, w=0.5)
-        self.tcl3 = TCL_block(256, 40, 40, k=3, w=0.5)
-        self.tcl4 = TCL_block(512, 40, 40, k=3, w=0.5)
-        self.tcl5 = TCL_block(256, 80, 80, k=3, w=0.5)
-        self.tcl6 = TCL_block(128, 160, 160, k=3, w=0.5)
+        self.tcl1 = TCL_block(64, int(extent/2), int(extent/2), k=3, w=0.5)        
+        self.tcl2 = TCL_block(128, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.tcl3 = TCL_block(256, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.tcl4 = TCL_block(512, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.tcl5 = TCL_block(256, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.tcl6 = TCL_block(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
         self.sid_conv = nn.Conv2d(32, 2, kernel_size=k, padding="same")
@@ -1711,6 +1535,8 @@ class IS_UNet(nn.Module):
         out = out * (self.landmask == 0)
 
         return out
+    
+
 
 # Graph convolutional LSTM
 class GConvLSTM(torch.nn.Module):
