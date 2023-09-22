@@ -26,6 +26,7 @@ from torch.utils.data.distributed import DistributedSampler
 # from torch.utils.tensorboard import SummaryWriter
 
 from torch_model import *
+from functions import RMSE
 
 import argparse
 import os    
@@ -353,6 +354,7 @@ def validate(
 ):
     """Test the model."""
     model.eval()
+    rmse = 0
     val_loss = Metric('val_loss')
 
     with tqdm(
@@ -371,11 +373,13 @@ def validate(
                     val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
                 else:
                     val_loss.update(loss_func(output, target))
+                    
+                rmse += RMSE(target, output)*100
 
                 t.update(1)
                 if i + 1 == len(val_loader):
                     t.set_postfix_str(
-                        'val_loss: {:.4f}'.format(val_loss.avg),
+                        'val_loss: {:.4f}'.format(rmse), #val_loss.avg
                         refresh=False,
                     )
 
@@ -605,7 +609,7 @@ def main() -> None:
                 loss_fn = single_loss(landmask)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    scheduler = ExponentialLR(optimizer, gamma=0.98)
+    scheduler = ExponentialLR(optimizer, gamma=0.99)
 
     history = {'loss': [], 'val_loss': [], 'time': []}
 
