@@ -575,7 +575,7 @@ def main() -> None:
     
     #############################################################################   
     if args.model_type == "unet":
-        net = UNet(in_channels, out_channels)
+        net = UNet(in_channels, out_channels, landmask)
     elif args.model_type == "mtunet":
         net = HF_UNet(in_channels, out_channels)
     elif args.model_type == "tsunet":
