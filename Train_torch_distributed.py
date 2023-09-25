@@ -660,8 +660,8 @@ def main() -> None:
                 with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
                     pickle.dump(history, file)
                     
-            if epoch >= 50 and train_loss.item()*2 < val_loss.item():
-                break # over-fitting
+        if epoch >= 50 and train_loss.item()*3 < val_loss.item():
+            break # over-fitting
     
     torch.cuda.empty_cache()
     
