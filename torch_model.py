@@ -65,17 +65,17 @@ class custom_loss(nn.Module):
 
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
-        err_vel = torch.abs(vel_o - vel_p) #[sic > 0]
+        err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err1 = torch.mean(err_u**2 + err_v**2 + err_vel**2, dim=0)[torch.where(self.landmask == 0)]
         err_sum = torch.mean(err1)*1000 
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2)*1000
+        err_sum += torch.mean(err2**2)*1000
         
         if obs.size()[1] > 3:
             err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
