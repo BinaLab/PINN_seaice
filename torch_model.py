@@ -54,9 +54,9 @@ class custom_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
-        sic = prd[:, 2, :, :]
-        u_o = obs[:, 0, :, :]; v_o = obs[:, 1, :, :]
-        u_p = prd[:, 0, :, :]; v_p = prd[:, 1, :, :]
+        sic = prd[:, 2, :, :]*100
+        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
+        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
@@ -68,14 +68,14 @@ class custom_loss(nn.Module):
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u**2 + err_v**2 + err_vel**2, dim=0)[torch.where(self.landmask == 0)]
+        err1 = torch.mean(err_u + err_v + err_vel, dim=0)[torch.where(self.landmask == 0)]
         err_sum = torch.mean(err1)*1000 
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
         err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2**2)*1000
+        err_sum += torch.mean(err2)*1000
         
         if obs.size()[1] > 3:
             err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
