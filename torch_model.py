@@ -54,7 +54,7 @@ class custom_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
-        sic = prd[:, 2, :, :]*100
+        sic = prd[:, 2, :, :]*10
         u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
         u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
         vel_o = (u_o**2 + v_o**2)**0.5
@@ -922,12 +922,13 @@ class TCL_block(nn.Module):
         self.a11 = torch.nn.Parameter(torch.ones(1, ch, row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(1, ch, row, col)*w)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+        self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.a21 = torch.nn.Parameter(torch.ones(1, ch, row, col)*w)
         self.a22 = torch.nn.Parameter(torch.ones(1, ch, row, col)*w)
 
     def forward(self, x1, x2):
         x = self.a11.repeat(x1.size()[0], 1, 1, 1)*x1 + self.a12.repeat(x2.size()[0], 1, 1, 1)*x2
-        x = self.activation(self.conv1(x))
+        x = self.activation(self.conv2(self.conv1(x)))
         x1 = self.a21.repeat(x1.size()[0], 1, 1, 1)*x
         x2 = self.a22.repeat(x2.size()[0], 1, 1, 1)*x
         return x1, x2    
