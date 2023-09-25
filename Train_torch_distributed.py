@@ -588,6 +588,8 @@ def main() -> None:
         net = EB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "cnn":
         net = Net(in_channels, out_channels)
+    elif args.model_type == "flatten":
+        net = CNN_flatten(in_channels, out_channels, landmask, row)
     elif args.model_type == "fc":
         net = FC(in_channels, out_channels)
     elif args.model_type == "lg": # linear regression
