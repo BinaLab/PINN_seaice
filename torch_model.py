@@ -1137,8 +1137,8 @@ class TS_UNet(nn.Module):
         siu = self.siu_conv(xd3_siu)
         siv = self.siv_conv(xd3_siv)
         
-        siu[sic == 0] = 0
-        siv[sic == 0] = 0
+        # siu[sic == 0] = 0
+        # siv[sic == 0] = 0
         
         out = torch.cat([siu, siv, sic], dim=1)
         out = out * (self.landmask == 0)
@@ -1429,12 +1429,12 @@ class IS_UNet(nn.Module):
         self.sic_d32 = nn.Conv2d(64, 32, kernel_size=k, padding="same") # output: 320x320x64
         
         ##### Task Consistency Learning (TCL) Block #####
-        self.tcl1 = TCL_block(64, int(extent/2), int(extent/2), k=3, w=0.5)        
-        self.tcl2 = TCL_block(128, int(extent/4), int(extent/4), k=3, w=0.5)
-        self.tcl3 = TCL_block(256, int(extent/8), int(extent/8), k=3, w=0.5)
-        self.tcl4 = TCL_block(512, int(extent/8), int(extent/8), k=3, w=0.5)
-        self.tcl5 = TCL_block(256, int(extent/4), int(extent/4), k=3, w=0.5)
-        self.tcl6 = TCL_block(128, int(extent/2), int(extent/2), k=3, w=0.5)
+        self.tcl1 = TCL_block(64, int(extent/2), int(extent/2), k=3, w=0.0)        
+        self.tcl2 = TCL_block(128, int(extent/4), int(extent/4), k=3, w=0.0)
+        self.tcl3 = TCL_block(256, int(extent/8), int(extent/8), k=3, w=0.0)
+        self.tcl4 = TCL_block(512, int(extent/8), int(extent/8), k=3, w=0.0)
+        self.tcl5 = TCL_block(256, int(extent/4), int(extent/4), k=3, w=0.0)
+        self.tcl6 = TCL_block(128, int(extent/2), int(extent/2), k=3, w=0.0)
 
         # Output layer
         self.sid_conv = nn.Conv2d(32, 2, kernel_size=k, padding="same")
@@ -1458,11 +1458,11 @@ class IS_UNet(nn.Module):
         
         ##### Encoder 2 #####
         # SID 
-        xe21_sid = self.activation(self.sid_e21(tcl1_sid))
+        xe21_sid = self.activation(self.sid_e21(tcl1_sid + xp1_sid))
         xe22_sid = self.activation(self.sid_e22(xe21_sid))
         xp2_sid = self.sid_pool2(xe22_sid) # 80*80*128
         # SIC
-        xe21_sic = self.activation(self.sic_e21(tcl1_sic))
+        xe21_sic = self.activation(self.sic_e21(tcl1_sic + xp1_sic))
         xe22_sic = self.activation(self.sic_e22(xe21_sic))
         xp2_sic = self.sic_pool2(xe22_sic) # 80*80*128
         # TCL block 2
@@ -1470,11 +1470,11 @@ class IS_UNet(nn.Module):
         
         ##### Encoder 3 #####
         # SID 
-        xe31_sid = self.activation(self.sid_e31(tcl2_sid))
+        xe31_sid = self.activation(self.sid_e31(tcl2_sid + xp2_sid))
         xe32_sid = self.activation(self.sid_e32(xe31_sid))
         xp3_sid = self.sid_pool3(xe32_sid) # 40*40*256
         # SIC
-        xe31_sic = self.activation(self.sic_e31(tcl2_sic))
+        xe31_sic = self.activation(self.sic_e31(tcl2_sic + xp2_sic))
         xe32_sic = self.activation(self.sic_e32(xe31_sic))
         xp3_sic = self.sic_pool3(xe32_sic) # 40*40*256
         # TCL block
@@ -1482,22 +1482,22 @@ class IS_UNet(nn.Module):
         
         ##### Encoder 4 #####
         # SID
-        xe41_sid = self.activation(self.sid_e41(tcl3_sid))
+        xe41_sid = self.activation(self.sid_e41(tcl3_sid + xp3_sid))
         xe42_sid = self.activation(self.sid_e42(xe41_sid))
         # SIC
-        xe41_sic = self.activation(self.sic_e41(tcl3_sic))
+        xe41_sic = self.activation(self.sic_e41(tcl3_sic + xp3_sic))
         xe42_sic = self.activation(self.sic_e42(xe41_sic))
         # TCL block
         tcl4_sid, tcl4_sic = self.tcl4(xe42_sid, xe42_sic) 
         
         ##### Decoder 1 #####
         # SID
-        xu1_sid = self.sid_upconv1(tcl4_sid)
+        xu1_sid = self.sid_upconv1(tcl4_sid + xe42_sid)
         xu11_sid = torch.cat([xu1_sid, xe32_sid], dim=1)
         xd11_sid = self.activation(self.sid_d11(xu11_sid))
         xd12_sid = self.activation(self.sid_d12(xd11_sid))
         # SIC
-        xu1_sic = self.sic_upconv1(tcl4_sic)
+        xu1_sic = self.sic_upconv1(tcl4_sic + xe42_sic)
         xu11_sic = torch.cat([xu1_sic, xe32_sic], dim=1)
         xd11_sic = self.activation(self.sic_d11(xu11_sic))
         xd12_sic = self.activation(self.sic_d12(xd11_sic))
@@ -1506,12 +1506,12 @@ class IS_UNet(nn.Module):
         
         ##### Decoder 2 #####
         # SID
-        xu2_sid = self.sid_upconv2(tcl5_sid)
+        xu2_sid = self.sid_upconv2(tcl5_sid + xd12_sid)
         xu22_sid = torch.cat([xu2_sid, xe22_sid], dim=1)
         xd21_sid = self.activation(self.sid_d21(xu22_sid))
         xd22_sid = self.activation(self.sid_d22(xd21_sid))
         # SIC
-        xu2_sic = self.sic_upconv2(tcl5_sic)
+        xu2_sic = self.sic_upconv2(tcl5_sic + xd12_sic)
         xu22_sic = torch.cat([xu2_sic, xe22_sic], dim=1)
         xd21_sic = self.activation(self.sic_d21(xu22_sic))
         xd22_sic = self.activation(self.sic_d22(xd21_sic))
@@ -1520,12 +1520,12 @@ class IS_UNet(nn.Module):
         
         ##### Decoder 3 #####
         # SID
-        xu3_sid = self.sid_upconv3(tcl6_sid)
+        xu3_sid = self.sid_upconv3(tcl6_sid + xd22_sid)
         xu33_sid = torch.cat([xu3_sid, xe12_sid], dim=1)
         xd31_sid = self.activation(self.sid_d31(xu33_sid))
         xd32_sid = self.activation(self.sid_d32(xd31_sid))
         # SIC
-        xu3_sic = self.sic_upconv3(tcl6_sic)
+        xu3_sic = self.sic_upconv3(tcl6_sic + xd22_sic)
         xu33_sic = torch.cat([xu3_sic, xe12_sic], dim=1)
         xd31_sic = self.activation(self.sic_d31(xu33_sic))
         xd32_sic = self.activation(self.sic_d32(xd31_sic))
