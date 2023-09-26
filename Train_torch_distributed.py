@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cnn_2013_2022_v6.pkl',
+        default='train_cnn_2018_2022_v6.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
