@@ -54,7 +54,7 @@ class custom_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
-        sic = prd[:, 2, :, :]*20
+        sic = prd[:, 2, :, :]*50
         u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
         u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
         vel_o = (u_o**2 + v_o**2)**0.5
