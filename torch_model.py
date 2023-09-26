@@ -1432,12 +1432,12 @@ class IS_UNet(nn.Module):
         self.sic_d32 = nn.Conv2d(64, 32, kernel_size=k, padding="same") # output: 320x320x64
         
         ##### Task Consistency Learning (TCL) Block #####
-        self.tcl1 = TCL_block(64, int(extent/2), int(extent/2), k=3, w=0.0)        
-        self.tcl2 = TCL_block(128, int(extent/4), int(extent/4), k=3, w=0.0)
-        self.tcl3 = TCL_block(256, int(extent/8), int(extent/8), k=3, w=0.0)
-        self.tcl4 = TCL_block(512, int(extent/8), int(extent/8), k=3, w=0.0)
-        self.tcl5 = TCL_block(256, int(extent/4), int(extent/4), k=3, w=0.0)
-        self.tcl6 = TCL_block(128, int(extent/2), int(extent/2), k=3, w=0.0)
+        self.tcl1 = WB(64, int(extent/2), int(extent/2), k=3, w=0.0)        
+        self.tcl2 = WB(128, int(extent/4), int(extent/4), k=3, w=0.0)
+        self.tcl3 = WB(256, int(extent/8), int(extent/8), k=3, w=0.0)
+        self.tcl4 = WB(512, int(extent/8), int(extent/8), k=3, w=0.0)
+        self.tcl5 = WB(256, int(extent/4), int(extent/4), k=3, w=0.0)
+        self.tcl6 = WB(128, int(extent/2), int(extent/2), k=3, w=0.0)
 
         # Output layer
         self.sid_conv = nn.Conv2d(32, 2, kernel_size=k, padding="same")
