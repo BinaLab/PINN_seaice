@@ -55,8 +55,8 @@ class custom_loss(nn.Module):
 
     def forward(self, obs, prd):
         sic = prd[:, 2, :, :]*100
-        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
-        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
+        u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
+        u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
