@@ -491,11 +491,14 @@ def main() -> None:
         cnn_input = cnn_input[:,:,:, [0,1,2,4,5]]
         cnn_output = cnn_output[:,:,:, :-1]
     if data_ver == 'v6':
+        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:,:,:,:-1]
         if xx.shape[0] == 320:
-            cnn_input = cnn_input[:, 30:286, 10:266,[0,1,2,3,4,5]]
-            cnn_output = cnn_output[:, 30:286, 10:266,:-1]        
+            cnn_input = cnn_input[:, 30:286, 10:266,:]
+            cnn_output = cnn_output[:, 30:286, 10:266,:]        
             xx = xx[30:286, 10:266]
             yy = yy[30:286, 10:266]
+        
         
     if args.model_type == "mtunet":
         args.predict = "all"
