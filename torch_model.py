@@ -54,7 +54,7 @@ class custom_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
-        sic = prd[:, 2, :, :]*100
+        sic = prd[:, 2, :, :]*30
         u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
         u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         vel_o = (u_o**2 + v_o**2)**0.5
@@ -69,7 +69,7 @@ class custom_loss(nn.Module):
         err_theta = torch.abs(theta)
         
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err1)*500 
+        err_sum = torch.mean(err1)*1000 
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
