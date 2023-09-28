@@ -803,9 +803,9 @@ class TCL_block(nn.Module):
 
 # Attention blocks
 class AttBlock(nn.Module):
-    def __init__(self, ch, row, col, k=3, w=0.5):
+    def __init__(self, ch, row, col, k=1, w=0.5):
         super(AttBlock,self).__init__()
-        self.activation = nn.ReLU()
+        self.activation = nn.Tanh()
         self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
@@ -1475,12 +1475,12 @@ class HIS_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k, 0.2)        
-        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k, 0.2)
-        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k, 0.2)
-        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k, 0.2)
-        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k, 0.2)
-        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k, 0.2)
+        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k=1, w=0.1)        
+        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k=1, w=0.1)
+        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k=1, w=0.1)
+        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k=1, w=0.1)
+        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k=1, w=0.1)
+        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k=1, w=0.1)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
