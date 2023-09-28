@@ -585,6 +585,8 @@ def main() -> None:
         net = TS_UNet(in_channels, out_channels, landmask, row, k = 5) # Triple sharing
     elif args.model_type == "isunet":
         net = IS_UNet(in_channels, out_channels, landmask, row, k = 5) # information sharing
+    elif args.model_type == "hisunet":
+        net = HIS_UNet(in_channels, out_channels, landmask, row, k = 5) # hierarchical information sharing (attention blocks)
     elif args.model_type == "lbunet":
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":

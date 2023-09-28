@@ -129,9 +129,9 @@ def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
             with netCDF4.Dataset(ncfile, 'r') as nc:
                 xx0 = np.array(nc.variables['xgrid'])
                 yy0 = np.array(nc.variables['ygrid'])
-                sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
-                # bt = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
-                # nt = np.array(nc.variables['nsidc_nt_seaice_conc'])[0] # NT SIC
+                # sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
+                sic = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
+                # sic = np.array(nc.variables['nsidc_nt_seaice_conc'])[0] # NT SIC
 
                 sic[sic <= 0] = 0
                 sic[sic > 1] = 0
@@ -145,7 +145,7 @@ def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
                     outProj = Proj('epsg:3409')
                 xx1, yy1 = np.meshgrid(xx0, yy0)
                 xx2,yy2 = transform(inProj,outProj,xx1,yy1)
-                grid_sic = griddata((xx2.flatten(), yy2.flatten()), sic.flatten(), (xx, yy), method='linear')
+                grid_sic = griddata((xx2.flatten(), yy2.flatten()), sic.flatten(), (xx, yy), method='nearest')
                 grid_sic[np.isnan(grid_sic)] = 0
             return grid_sic
 
@@ -178,6 +178,7 @@ def retrieve_ERA5(year, region = "NH"):
                 '28', '29', '30',
                 '31',
                    ],
+            'time': ['23:00'],
             'grid': [1, 0.5],
             'area': [90, -180, 40, 180]
             }
@@ -215,7 +216,7 @@ def retrieve_ERA5(year, region = "NH"):
 
     return ds
 
-def rotate_vector(u, v, lon, ref_lon):
+def rotate_vector(u, v, lon, ref_lon = 0):
     angle = (lon-ref_lon)*np.pi/180 # rotation angle (radian)
     u2 = u*np.cos(angle) - v*np.sin(angle)
     v2 = u*np.sin(angle) + v*np.cos(angle)
@@ -283,20 +284,20 @@ def make_dataset(year, n_samples, ds, w = 1, datatype = "entire", region = "NH")
         grid_sic = get_SIC(t1, xx, yy, region = region)
 
         ## Read ERA5 data =================================================
-        grid_t2m, grid_u10, grid_v10, _ = get_ERA5(ds, idx, xx, yy, region = region)
+        grid_t2m, grid_u10, grid_v10, _ = get_ERA5(ds, idx+1, xx, yy, region = region)
 
-        grid_input[i, :, :, 0] = grid_u / 50
-        grid_input[i, :, :, 1] = grid_v / 50
+        grid_input[i, :, :, 0] = grid_u / 30
+        grid_input[i, :, :, 1] = grid_v / 30
         grid_input[i, :, :, 2] = grid_sic
         grid_input[i, :, :, 3] = (grid_t2m - 210)/(310 - 210) #Max temp = 320 K, Min temp = 240 K)
-        grid_input[i, :, :, 4] = grid_u10 / 50
-        grid_input[i, :, :, 5] = grid_v10 / 50
+        grid_input[i, :, :, 4] = grid_u10 / 30
+        grid_input[i, :, :, 5] = grid_v10 / 30
 
         _, _, _, _, u2, v2 = get_ice_motion(ncfile, idx+1, sampling_size)
         grid_u2 = np.mean(u2, axis = 0)
         grid_v2 = np.mean(v2, axis = 0) 
-        grid_output[i, :, :, 0] = grid_u2 / 50
-        grid_output[i, :, :, 1] = grid_v2 / 50
+        grid_output[i, :, :, 0] = grid_u2 / 30
+        grid_output[i, :, :, 1] = grid_v2 / 30
         grid_sic2 = get_SIC(t2, xx, yy, region = region)
         # _, _, _, grid_sic2 = get_ERA5(ds, idx+1, xx, yy, region = region)
         grid_output[i, :, :, 2] = grid_sic2

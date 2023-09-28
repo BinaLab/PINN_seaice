@@ -933,6 +933,24 @@ class TCL_block(nn.Module):
         x2 = self.a22.repeat(x2.size()[0], 1, 1, 1)*x
         return x1, x2    
 
+# Attention blocks
+class AttBlock(nn.Module):
+    def __init__(self, ch, row, col, k=3, w=0.5):
+        super(AttBlock,self).__init__()
+        self.activation = nn.ReLU()
+        self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+        self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+
+    def forward(self, x1, x2):
+        x = x1*self.a11 + x2*self.a12
+        x = self.activation(self.conv1(x))
+        x = self.conv2(x)
+        x1 = x1 + x
+        x2 = x2 + x
+        return x1, x2
+    
 # Weighting blocks
 class WB(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
@@ -942,7 +960,7 @@ class WB(nn.Module):
         self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.a13 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+        self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.a21 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.a22 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.a23 = torch.nn.Parameter(torch.ones(row, col)*w)
@@ -950,6 +968,7 @@ class WB(nn.Module):
     def forward(self, x1, x2, x3):
         x = x1*self.a11 + x2*self.a12 + x3*self.a13
         x = self.activation(self.conv1(x))
+        x = self.conv2(x)
         x1 = x*self.a21
         x2 = x*self.a22
         x3 = x*self.a23
@@ -1537,6 +1556,130 @@ class IS_UNet(nn.Module):
         sic = self.sic_conv(xd32_sic)
         
         out = torch.cat([sid, sic], dim=1)
+        out = out * (self.landmask == 0)
+
+        return out
+    
+# Hierarchical information sharing UNET model
+class HIS_UNet(nn.Module):
+    def __init__(self, n_inputs, n_outputs, landmask, extent, k=3):
+        super().__init__()
+        
+        self.activation1 = nn.Tanh()
+        self.activation2 = nn.ReLU()
+        self.dropout = nn.Dropout(0.2)
+        self.landmask = landmask
+        
+        self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
+        
+        ##### SIU BRANCH #####
+        # input: 320x320x64
+        self.siu_ec1 = encoder(32, 64) # output: 160x160x64
+        # input: 160x160x64
+        self.siu_ec2 = encoder(64, 128) # output: 80x80x128
+        # input: 80x80x128
+        self.siu_ec3 = encoder(128, 256) # output: 40x40x256
+
+        # input: 40x40x256
+        self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+
+        # Decoder
+        self.siu_dc1 = decoder(512, 256) # output: 80x80x256
+        self.siu_dc2 = decoder(256, 128) # output: 160x160x128
+        self.siu_dc3 = decoder(128, 64) # output: 320x320x64     
+        
+        ##### SIC BRANCH #####
+        # input: 320x320x64
+        self.sic_ec1 = encoder(32, 64) # output: 160x160x64
+        # input: 160x160x64
+        self.sic_ec2 = encoder(64, 128) # output: 80x80x128
+        # input: 80x80x128
+        self.sic_ec3 = encoder(128, 256) # output: 40x40x256
+
+        # input: 40x40x256
+        self.sic_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+
+        # Decoder
+        self.sic_dc1 = decoder(512, 256) # output: 80x80x256
+        self.sic_dc2 = decoder(256, 128) # output: 160x160x128
+        self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
+        
+        ##### Weighting Blocks #####
+        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k, 0.5)        
+        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k, 0.5)
+        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k, 0.5)
+        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k, 0.5)
+        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k, 0.5)
+        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k, 0.5)
+
+        # Output layer
+        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        
+    def forward(self, x):
+        # First convolution
+        x = self.first_conv(x)        
+        
+        ##### Encoder 1 #####
+        xe1_siu, xe1b_siu = self.siu_ec1(x) # SIU
+        xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
+        # Weighting block 1
+        wb1_siu, wb1_sic = self.wb1(xe1_siu, xe1_sic)
+        
+        ##### Encoder 2 #####
+        xe2_siu, xe2b_siu = self.siu_ec2(wb1_siu) # SIU
+        xe2_sic, xe2b_sic = self.sic_ec2(wb1_sic) # SIC
+        # Weighting block 2
+        wb2_siu, wb2_sic = self.wb2(xe2_siu, xe2_sic)
+        
+        ##### Encoder 3 #####
+        xe3_siu, xe3b_siu = self.siu_ec3(wb2_siu) # SIU
+        xe3_sic, xe3b_sic = self.sic_ec3(wb2_sic) # SIC
+        # Weighting block 3
+        wb3_siu, wb3_sic = self.wb3(xe3_siu, xe3_sic)
+        
+        ##### Bottom bridge #####
+        # SID
+        xe3_siu = self.dropout(xe3_siu)
+        xe41_siu = self.activation1(self.siu_ec41(wb3_siu))
+        xe42_siu = self.activation1(self.siu_ec42(xe41_siu))
+        # SIC
+        xe3_sic = self.dropout(xe3_sic)
+        xe41_sic = self.activation2(self.sic_ec41(wb3_sic))
+        xe42_sic = self.activation2(self.sic_ec42(xe41_sic))
+        # output: 40x40x512
+        # Weighting block 4
+        wb4_siu, wb4_sic = self.wb4(xe42_siu, xe42_sic) 
+        
+        ##### Decoder 1 #####
+        # SIU
+        xd1_siu = self.siu_dc1(wb4_siu, xe3b_siu)
+        # SIC
+        xd1_sic = self.sic_dc1(wb4_sic, xe3b_sic)
+        # Weighting block 5
+        wb5_siu, wb5_sic = self.wb5(xd1_siu, xd1_sic) 
+        
+        ##### Decoder 2 #####
+        # SIU
+        xd2_siu = self.siu_dc2(wb5_siu, xe2b_siu)
+        # SIC
+        xd2_sic = self.sic_dc2(wb5_sic, xe2b_sic)
+        # Weighting block 6
+        wb6_siu, wb6_sic = self.wb6(xd2_siu, xd2_sic) 
+        
+        
+        ##### Decoder 3 #####
+        # SIU
+        xd3_siu = self.siu_dc3(wb6_siu, xe1b_siu)
+        # SIC
+        xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
+        
+        siu = self.siu_conv(xd3_siu)
+        sic = self.sic_conv(xd3_sic)
+                
+        out = torch.cat([siu, sic], dim=1)
         out = out * (self.landmask == 0)
 
         return out
