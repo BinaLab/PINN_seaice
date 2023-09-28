@@ -1475,12 +1475,12 @@ class HIS_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k, 0.0)        
-        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k, 0.0)
-        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k, 0.0)
-        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k, 0.0)
-        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k, 0.0)
-        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k, 0.0)
+        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k, 0.2)        
+        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k, 0.2)
+        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k, 0.2)
+        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k, 0.2)
+        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k, 0.2)
+        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k, 0.2)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
