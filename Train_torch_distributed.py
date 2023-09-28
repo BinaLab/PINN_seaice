@@ -528,7 +528,7 @@ def main() -> None:
     cnn_output = torch.tensor(cnn_output, dtype=torch.float32)
     
     mask1 = (years == date) # Test samples
-    mask2 = (days % 7 == 2) # Validation samples
+    mask2 = (days % 7 == 8) # Validation samples
 
     val_input = cnn_input[mask1] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[mask1] #cnn_output[(~mask1)&(mask2), :, :, :]
@@ -623,7 +623,7 @@ def main() -> None:
                 loss_fn = single_loss(landmask)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    scheduler = ExponentialLR(optimizer, gamma=0.99)
+    scheduler = ExponentialLR(optimizer, gamma=0.98)
 
     history = {'loss': [], 'val_loss': [], 'time': []}
 
