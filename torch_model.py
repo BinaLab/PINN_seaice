@@ -54,7 +54,7 @@ class custom_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
-        sic = prd[:, 2, :, :]*30
+        sic = prd[:, 2, :, :]*100
         u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
         u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         vel_o = (u_o**2 + v_o**2)**0.5
@@ -345,17 +345,17 @@ class CNN_flatten(nn.Module):
         self.n_outputs = n_outputs
         self.extent = extent
         self.conv1 = nn.Conv2d(n_inputs, n_filters, kernel, padding = "same")
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 160*160
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 128*128
         self.conv2 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 80*80
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 64*64
         self.conv3 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 40*40
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 32*32
         self.conv4 = nn.Conv2d(n_filters, n_filters, kernel, padding = "same")
-        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 20*20
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 16*16
         self.conv5 = nn.Conv2d(n_filters, 4, kernel, padding = "same")
-        self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 10*10
+        self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2) # size: 8*8
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(in_features=int(4*(extent/2**5)**2), out_features=n_outputs* extent * extent)
+        self.fc1 = nn.Linear(in_features=int(4*(extent/(2**5))**2), out_features=n_outputs* extent * extent)
         # self.fc2 = nn.Linear(in_features=4*10 * 10, out_features=4 * 80 * 80)
         # self.upconv1 = nn.ConvTranspose2d(4, n_filters, kernel_size=2, stride=2) # 160*160
         # self.upconv2 = nn.ConvTranspose2d(n_filters, n_outputs, kernel_size=2, stride=2) # 320*320
@@ -808,15 +808,15 @@ class AttBlock(nn.Module):
         self.activation = nn.Tanh()
         self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.conv0 = nn.Conv2d(ch, ch, kernel_size=1, padding="same")
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
 
     def forward(self, x1, x2):
         x = x1*self.a11 + x2*self.a12
-        x = self.activation(self.conv1(x))
-        x = self.conv2(x)
-        x1 = x1 + x
-        x2 = x2 + x
+        x = self.activation(self.conv0(x))
+        x1 = x1 + self.conv1(x)
+        x2 = x2 + self.conv2(x)
         return x1, x2
     
 # Weighting blocks
@@ -1475,12 +1475,12 @@ class HIS_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k=1, w=0.1)        
-        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k=1, w=0.1)
-        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k=1, w=0.1)
-        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k=1, w=0.1)
-        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k=1, w=0.1)
-        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k=1, w=0.1)
+        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k=3, w=0.1)        
+        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k=3, w=0.1)
+        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k=3, w=0.1)
+        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k=3, w=0.1)
+        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k=3, w=0.1)
+        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k=3, w=0.1)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
