@@ -69,7 +69,7 @@ class custom_loss(nn.Module):
         err_theta = torch.abs(theta)
         
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err1)*1000 
+        err_sum = torch.mean(err1)*500
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
