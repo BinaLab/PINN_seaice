@@ -811,8 +811,8 @@ class AttBlock(nn.Module):
         self.conv0 = nn.Conv2d(ch, ch, kernel_size=1, padding="same")
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.a21 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a22 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
 
     def forward(self, x1, x2):
         x1_h = self.activation(self.conv0(x1))
@@ -850,7 +850,7 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.2)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -866,7 +866,7 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.2)
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
