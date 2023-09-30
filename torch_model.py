@@ -801,6 +801,71 @@ class TCL_block(nn.Module):
         x2 = self.a22.repeat(x2.size()[0], 1, 1, 1)*x
         return x1, x2    
 
+# # Attention blocks
+# class AttBlock(nn.Module):
+#     def __init__(self, ch, row, col, k=1, w=0.5):
+#         super(AttBlock,self).__init__()
+#         self.activation = nn.Tanh()
+#         # self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
+#         # self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
+#         self.conv0 = nn.Conv2d(ch, ch, kernel_size=1, padding="same")
+#         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+#         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+#         # self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+#         # self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+
+#     def forward(self, x1, x2):
+        
+#         x1_h = self.activation(self.conv0(x1))
+#         x2_h = self.activation(self.conv0(x2))
+#         x1_h = self.activation(self.conv1(x1_h))
+#         x2_h = self.activation(self.conv2(x2_h))
+#         x1 = x1 + x2_h*self.a21
+#         x2 = x2 + x1_h*self.a22
+#         return x1, x2
+
+# Attention blocks
+class AttModule(nn.Module):
+    def __init__(self, ch, row, col, k=1, w=0.5):
+        super(AttModule,self).__init__()
+        self.activation = nn.Tanh()
+        self.ch_att1_max = nn.Linear(ch, ch)
+        self.ch_att1_avg = nn.Linear(ch, ch)
+        self.sp_att1 = nn.Conv2d(2, 1, kernel_size=k, padding="same")
+        
+        self.ch_att2_max = nn.Linear(ch, ch)
+        self.ch_att2_avg = nn.Linear(ch, ch)
+        self.sp_att2 = nn.Conv2d(2, 1, kernel_size=k, padding="same")
+
+    def forward(self, x1, x2):
+        
+        _, ch, row, col = x1.shape
+        
+        x1_ch_max = torch.amax(x1, dim = (2,3))
+        x1_ch_avg = torch.mean(x1, dim = (2,3))
+        x1_ch_att = self.activation(self.ch_att1_max(x1_ch_max) + self.ch_att1_avg(x1_ch_avg))
+        x1_ch_att = x1_ch_att[:, None, None].expand([ch,row,col])
+        x1_sp_max = torch.reshape(torch.amax(x1, dim = 1), (-1, 1, row, col))
+        x1_sp_avg = torch.reshape(torch.mean(x1, dim = 1), (-1, 1, row, col))
+        x1_sp_att = self.activation(self.sp_att1(torch.cat([x1_sp_max, x1_sp_avg], dim=1)))
+        
+        x1_att = x1 * x1_ch_att * x1_sp_att
+        
+        x2_ch_max = torch.amax(x2, dim = (2,3))
+        x2_ch_avg = torch.mean(x2, dim = (2,3))
+        x2_ch_att = self.activation(self.ch_att2_max(x2_ch_max) + self.ch_att2_avg(x2_ch_avg))
+        x2_ch_att = x2_ch_att[:, None, None].expand([ch,row,col])
+        x2_sp_max = torch.reshape(torch.amax(x2, dim = 1), (-1, 1, row, col))
+        x2_sp_avg = torch.reshape(torch.mean(x2, dim = 1), (-1, 1, row, col))
+        x2_sp_att = self.activation(self.sp_att2(torch.cat([x2_sp_max, x2_sp_avg], dim=1)))
+        
+        x2_att = x2 * x2_ch_att * x2_sp_att
+        
+        x1 = x1 + x1_att + x2_att
+        x2 = x2 + x1_att + x2_att      
+        
+        return x1, x2
+
 # Attention blocks
 class AttBlock(nn.Module):
     def __init__(self, ch, row, col, k=1, w=0.5):
@@ -811,10 +876,11 @@ class AttBlock(nn.Module):
         self.conv0 = nn.Conv2d(ch, ch, kernel_size=1, padding="same")
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
-        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        # self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        # self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
 
     def forward(self, x1, x2):
+        
         x1_h = self.activation(self.conv0(x1))
         x2_h = self.activation(self.conv0(x2))
         x1_h = self.activation(self.conv1(x1_h))
@@ -1479,12 +1545,12 @@ class HIS_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k=3, w=0.1)        
-        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k=3, w=0.1)
-        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k=3, w=0.1)
-        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k=3, w=0.1)
-        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k=3, w=0.1)
-        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k=3, w=0.1)
+        self.wb1 = AttModule(64, int(extent/2), int(extent/2), k=3, w=0.1)        
+        self.wb2 = AttModule(128, int(extent/4), int(extent/4), k=3, w=0.1)
+        self.wb3 = AttModule(256, int(extent/8), int(extent/8), k=3, w=0.1)
+        self.wb4 = AttModule(512, int(extent/8), int(extent/8), k=3, w=0.1)
+        self.wb5 = AttModule(256, int(extent/4), int(extent/4), k=3, w=0.1)
+        self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.1)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
