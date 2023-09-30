@@ -69,7 +69,7 @@ class custom_loss(nn.Module):
         err_theta = torch.abs(theta)
         
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err1)*500
+        err_sum = torch.mean(err1)*1000
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
@@ -806,9 +806,9 @@ class AttBlock(nn.Module):
     def __init__(self, ch, row, col, k=1, w=0.5):
         super(AttBlock,self).__init__()
         self.activation = nn.Tanh()
-        self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.conv0 = nn.Conv2d(ch, ch, kernel_size=1, padding="same")
+        self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.conv0 = nn.Conv2d(ch, ch, kernel_size=k, padding="same")
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
 
@@ -846,7 +846,7 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.3)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -862,7 +862,7 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.3)
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
@@ -1475,12 +1475,12 @@ class HIS_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k=3, w=0.0)        
-        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k=3, w=0.0)
-        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k=3, w=0.0)
-        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k=3, w=0.0)
-        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k=3, w=0.0)
-        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k=3, w=0.0)
+        self.wb1 = AttBlock(64, int(extent/2), int(extent/2), k=3, w=0.5)        
+        self.wb2 = AttBlock(128, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.wb3 = AttBlock(256, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.wb4 = AttBlock(512, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.wb5 = AttBlock(256, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.wb6 = AttBlock(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
