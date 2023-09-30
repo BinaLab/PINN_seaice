@@ -806,17 +806,21 @@ class AttBlock(nn.Module):
     def __init__(self, ch, row, col, k=1, w=0.5):
         super(AttBlock,self).__init__()
         self.activation = nn.Tanh()
-        self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.conv0 = nn.Conv2d(ch, ch, kernel_size=k, padding="same")
+        # self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
+        # self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.conv0 = nn.Conv2d(ch, ch, kernel_size=1, padding="same")
         self.conv1 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
         self.conv2 = nn.Conv2d(ch, ch, kernel_size=k, padding="same") # output: 160x160x64
+        self.a21 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a22 = torch.nn.Parameter(torch.ones(row, col)*w)
 
     def forward(self, x1, x2):
-        x = x1*self.a11 + x2*self.a12
-        x = self.activation(self.conv0(x))
-        x1 = x1 + self.conv1(x)
-        x2 = x2 + self.conv2(x)
+        x1_h = self.activation(self.conv0(x1))
+        x2_h = self.activation(self.conv0(x2))
+        x1_h = self.activation(self.conv1(x1_h))
+        x2_h = self.activation(self.conv2(x2_h))
+        x1 = x1 + x2_h*self.a21
+        x2 = x2 + x1_h*self.a22
         return x1, x2
     
 # Weighting blocks
@@ -1545,7 +1549,7 @@ class HIS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        sic = self.sic_conv(xd3_sic)
+        sic = self.activation2(self.sic_conv(xd3_sic))
                 
         out = torch.cat([siu, sic], dim=1)
         out = out * (self.landmask == 0)
