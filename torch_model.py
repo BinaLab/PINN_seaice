@@ -939,7 +939,10 @@ class decoder(nn.Module):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
         self.dropout = nn.Dropout(0.2)
-        self.upconv1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.upconv1 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
+        )
         # self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
