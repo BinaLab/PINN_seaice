@@ -862,7 +862,7 @@ class AttModule(nn.Module):
         xs = 0.5*(x1+x2) # shared information
         xs_att = self.att_share(xs)
         x1_att = self.att1(x1)
-        x2_att = self.att1(x2)
+        x2_att = self.att2(x2)
         
         x1 = x1 + x1_att + xs_att
         x2 = x2 + x2_att + xs_att      
