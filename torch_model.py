@@ -945,7 +945,8 @@ class decoder(nn.Module):
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
 
     def forward(self, x, x0):        
-        x = self.upconv1(x)        
+        x = self.upconv1(x)
+        print(x.shape, x0.shape)
         x = torch.cat([x, x0], dim=1) 
         x = self.dropout(x)
         x = self.activation(self.d11(x))
