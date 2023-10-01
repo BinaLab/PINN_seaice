@@ -831,11 +831,17 @@ class AttModule(nn.Module):
         self.activation = nn.Tanh()
         self.ch_att1_max = nn.Linear(ch, ch)
         self.ch_att1_avg = nn.Linear(ch, ch)
-        self.sp_att1 = nn.Conv2d(2, 1, kernel_size=k, padding="same")
+        self.sp_att1 = nn.Sequential(
+            nn.Conv2d(2, 16, kernel_size=k, padding="same"),
+            nn.Conv2d(16, 1, kernel_size=k, padding="same")
+        )
         
         self.ch_att2_max = nn.Linear(ch, ch)
         self.ch_att2_avg = nn.Linear(ch, ch)
-        self.sp_att2 = nn.Conv2d(2, 1, kernel_size=k, padding="same")
+        self.sp_att2 = nn.Sequential(
+            nn.Conv2d(2, 16, kernel_size=k, padding="same"),
+            nn.Conv2d(16, 1, kernel_size=k, padding="same")
+        )
 
     def forward(self, x1, x2):
         
