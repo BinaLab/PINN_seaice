@@ -855,13 +855,13 @@ class AttModule(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
         super(AttModule,self).__init__()
         self.activation = nn.Tanh()
-        self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
-        self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
         self.att_share = Cal_Att(ch, row, col, k)
-        self.a21 = torch.nn.Parameter(torch.ones(row, col)*0.0)
-        self.a22 = torch.nn.Parameter(torch.ones(row, col)*0.0)
+        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
+        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
 
     def forward(self, x1, x2):
         
