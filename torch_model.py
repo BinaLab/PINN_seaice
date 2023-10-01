@@ -60,6 +60,8 @@ class custom_loss(nn.Module):
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
+        sic_max = torch.amax(obs[:, 2, :, :], dim=0)
+        
         theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
         theta = torch.where(torch.isnan(theta), 0, theta)
 
@@ -68,13 +70,13 @@ class custom_loss(nn.Module):
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0) & (sic_max <= 0))]
         err_sum = torch.mean(err1)*1000
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
-        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
+        err2 = torch.mean(err_sic, dim=0)[torch.where((self.landmask == 0) & (sic_max <= 0))]
         err_sum += torch.mean(err2)*1000
         
         if obs.size()[1] > 3:
@@ -853,19 +855,23 @@ class AttModule(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
         super(AttModule,self).__init__()
         self.activation = nn.Tanh()
+        self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
         self.att_share = Cal_Att(ch, row, col, k)
+        self.a21 = torch.nn.Parameter(torch.ones(row, col)*0.0)
+        self.a22 = torch.nn.Parameter(torch.ones(row, col)*0.0)
 
     def forward(self, x1, x2):
         
-        xs = 0.5*(x1+x2) # shared information
+        xs = x1*self.a11 + x2*self.a12 # shared information
         xs_att = self.att_share(xs)
         x1_att = self.att1(x1)
         x2_att = self.att2(x2)
         
-        x1 = x1 + x1_att + xs_att
-        x2 = x2 + x2_att + xs_att      
+        x1 = x1 + (x1_att + xs_att)*self.a21
+        x2 = x2 + (x2_att + xs_att)*self.a22      
         
         return x1, x2
 
@@ -1622,9 +1628,9 @@ class HIS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        sic = self.activation2(self.sic_conv(xd3_sic))
+        sic = self.sic_conv(xd3_sic)
         
-        siu = siu * (sic > 0)
+        # siu = siu * (sic > 0)
                 
         out = torch.cat([siu, sic], dim=1)
         out = out * (self.landmask == 0)

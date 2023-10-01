@@ -358,6 +358,7 @@ def validate(
     """Test the model."""
     model.eval()
     rmse = 0
+    mini_step = 0
     val_loss = Metric('val_loss')
 
     with tqdm(
@@ -376,13 +377,14 @@ def validate(
                     val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
                 else:
                     val_loss.update(loss_func(output, target))
-                    
+                
+                mini_step += 1
                 rmse += RMSE(target, output)*100
 
                 t.update(1)
                 if i + 1 == len(val_loader):
                     t.set_postfix_str(
-                        'val_loss: {:.4f}'.format(rmse), #val_loss.avg
+                        'val_loss: {:.4f}'.format(rmse/mini_step), #val_loss.avg
                         refresh=False,
                     )
 
@@ -586,7 +588,7 @@ def main() -> None:
     elif args.model_type == "isunet":
         net = IS_UNet(in_channels, out_channels, landmask, row, k = 5) # information sharing
     elif args.model_type == "hisunet":
-        net = HIS_UNet(in_channels, out_channels, landmask, row, k = 5) # hierarchical information sharing (attention blocks)
+        net = HIS_UNet(in_channels, out_channels, landmask, row, k = 3) # hierarchical information sharing (attention blocks)
     elif args.model_type == "lbunet":
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":
