@@ -824,51 +824,48 @@ class TCL_block(nn.Module):
 #         x2 = x2 + x1_h*self.a22
 #         return x1, x2
 
-# Attention blocks
-class AttModule(nn.Module):
-    def __init__(self, ch, row, col, k=1, w=0.5):
-        super(AttModule,self).__init__()
+class Cal_Att(nn.Module):
+    def __init__(self, ch, row, col, k=3, w=0.5):
+        super(Cal_Att,self).__init__()
         self.activation = nn.Tanh()
-        self.ch_att1_max = nn.Linear(ch, ch)
-        self.ch_att1_avg = nn.Linear(ch, ch)
-        self.sp_att1 = nn.Sequential(
-            nn.Conv2d(2, 16, kernel_size=k, padding="same"),
-            nn.Conv2d(16, 1, kernel_size=k, padding="same")
-        )
-        
-        self.ch_att2_max = nn.Linear(ch, ch)
-        self.ch_att2_avg = nn.Linear(ch, ch)
-        self.sp_att2 = nn.Sequential(
-            nn.Conv2d(2, 16, kernel_size=k, padding="same"),
-            nn.Conv2d(16, 1, kernel_size=k, padding="same")
-        )
+        self.ch_att_max = nn.Linear(ch, ch)
+        self.ch_att_avg = nn.Linear(ch, ch)
+        self.sp_att = nn.Conv2d(2, 1, kernel_size=k, padding="same")
 
-    def forward(self, x1, x2):
+    def forward(self, x1):
         
         n_samples, ch, row, col = x1.shape
         
         x1_ch_max = torch.amax(x1, dim = (2,3))
         x1_ch_avg = torch.mean(x1, dim = (2,3))
-        x1_ch_att = self.activation(self.ch_att1_max(x1_ch_max) + self.ch_att1_avg(x1_ch_avg))
+        x1_ch_att = self.activation(self.ch_att_max(x1_ch_max) + self.ch_att_avg(x1_ch_avg))
         x1_ch_att = x1_ch_att[:, :, None, None].expand([n_samples,ch,row,col])
         x1_sp_max = torch.reshape(torch.amax(x1, dim = 1), (-1, 1, row, col))
         x1_sp_avg = torch.reshape(torch.mean(x1, dim = 1), (-1, 1, row, col))
-        x1_sp_att = self.activation(self.sp_att1(torch.cat([x1_sp_max, x1_sp_avg], dim=1)))
+        x1_sp_att = self.activation(self.sp_att(torch.cat([x1_sp_max, x1_sp_avg], dim=1)))
         
-        x1_att = x1 * x1_ch_att * x1_sp_att
+        x1_att = x1 * x1_ch_att * x1_sp_att    
         
-        x2_ch_max = torch.amax(x2, dim = (2,3))
-        x2_ch_avg = torch.mean(x2, dim = (2,3))
-        x2_ch_att = self.activation(self.ch_att2_max(x2_ch_max) + self.ch_att2_avg(x2_ch_avg))
-        x2_ch_att = x2_ch_att[:, :, None, None].expand([n_samples,ch,row,col])
-        x2_sp_max = torch.reshape(torch.amax(x2, dim = 1), (-1, 1, row, col))
-        x2_sp_avg = torch.reshape(torch.mean(x2, dim = 1), (-1, 1, row, col))
-        x2_sp_att = self.activation(self.sp_att2(torch.cat([x2_sp_max, x2_sp_avg], dim=1)))
+        return x1_att
+
+# Attention blocks
+class AttModule(nn.Module):
+    def __init__(self, ch, row, col, k=3, w=0.5):
+        super(AttModule,self).__init__()
+        self.activation = nn.Tanh()
+        self.att1 = Cal_Att(ch, row, col, k)        
+        self.att2 = Cal_Att(ch, row, col, k)
+        self.att_share = Cal_Att(ch, row, col, k)
+
+    def forward(self, x1, x2):
         
-        x2_att = x2 * x2_ch_att * x2_sp_att
+        xs = 0.5*(x1+x2) # shared information
+        xs_att = self.att_share(xs)
+        x1_att = self.att1(x1)
+        x2_att = self.att1(x2)
         
-        x1 = x1 + x1_att + x2_att
-        x2 = x2 + x1_att + x2_att      
+        x1 = x1 + x1_att + xs_att
+        x2 = x2 + x2_att + xs_att      
         
         return x1, x2
 
@@ -939,11 +936,11 @@ class decoder(nn.Module):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
         self.dropout = nn.Dropout(0.2)
-        self.upconv1 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
-        )
-        # self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
+        # self.upconv1 = nn.Sequential(
+        #     nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+        #     nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
+        # )
+        self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
         self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
 
@@ -1626,6 +1623,8 @@ class HIS_UNet(nn.Module):
         
         siu = self.siu_conv(xd3_siu)
         sic = self.activation2(self.sic_conv(xd3_sic))
+        
+        siu = siu * (sic > 0)
                 
         out = torch.cat([siu, sic], dim=1)
         out = out * (self.landmask == 0)
