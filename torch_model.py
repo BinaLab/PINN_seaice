@@ -801,7 +801,7 @@ class TCL_block(nn.Module):
         x = self.activation(self.conv2(self.conv1(x)))
         x1 = self.a21.repeat(x1.size()[0], 1, 1, 1)*x
         x2 = self.a22.repeat(x2.size()[0], 1, 1, 1)*x
-        return x1, x2    
+        return x1, x2
 
 # # Attention blocks
 # class AttBlock(nn.Module):
@@ -832,7 +832,10 @@ class Cal_Att(nn.Module):
         self.activation = nn.Tanh()
         self.ch_att_max = nn.Linear(ch, ch)
         self.ch_att_avg = nn.Linear(ch, ch)
-        self.sp_att = nn.Conv2d(2, 1, kernel_size=k, padding="same")
+        self.sp_att = nn.Sequential(
+            nn.Conv2d(2, ch, kernel_size=k, padding="same"),
+            nn.Conv2d(ch, 1, kernel_size=k, padding="same")
+        )        
 
     def forward(self, x1):
         
@@ -860,8 +863,8 @@ class AttModule(nn.Module):
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
         self.att_share = Cal_Att(ch, row, col, k)
-        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
-        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
+        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
 
     def forward(self, x1, x2):
         
@@ -925,7 +928,7 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.0)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -941,7 +944,7 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.0)
         # self.upconv1 = nn.Sequential(
         #     nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
         #     nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
@@ -1558,12 +1561,12 @@ class HIS_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttModule(64, int(extent/2), int(extent/2), k=3, w=0.1)        
-        self.wb2 = AttModule(128, int(extent/4), int(extent/4), k=3, w=0.1)
-        self.wb3 = AttModule(256, int(extent/8), int(extent/8), k=3, w=0.1)
-        self.wb4 = AttModule(512, int(extent/8), int(extent/8), k=3, w=0.1)
-        self.wb5 = AttModule(256, int(extent/4), int(extent/4), k=3, w=0.1)
-        self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.1)
+        self.wb1 = AttModule(64, int(extent/2), int(extent/2), k=3, w=0.5)        
+        self.wb2 = AttModule(128, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.wb3 = AttModule(256, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.wb4 = AttModule(512, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.wb5 = AttModule(256, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
