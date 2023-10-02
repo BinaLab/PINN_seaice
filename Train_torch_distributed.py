@@ -492,7 +492,7 @@ def main() -> None:
     if data_ver == 'v5':
         cnn_input = cnn_input[:,:,:, [0,1,2,4,5]]
         cnn_output = cnn_output[:,:,:, :-1]
-    if data_ver == 'v6':
+    if data_ver == 'v6' or data_ver == 'v7':
         cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
         if xx.shape[0] == 320:
