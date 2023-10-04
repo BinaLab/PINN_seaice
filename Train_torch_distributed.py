@@ -244,7 +244,7 @@ def make_sampler_and_loader(args, train_dataset):
 
     return train_sampler, train_loader
 
-def RMSE(prd, obs, landmask):
+def RMSE(prd, obs):
     err = torch.square(obs-prd)
     return torch.mean(err[err > 0])**0.5
 
