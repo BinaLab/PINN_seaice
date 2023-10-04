@@ -129,8 +129,8 @@ def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
             with netCDF4.Dataset(ncfile, 'r') as nc:
                 xx0 = np.array(nc.variables['xgrid'])
                 yy0 = np.array(nc.variables['ygrid'])
-                # sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
-                sic = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
+                sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
+                # sic = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
                 # sic = np.array(nc.variables['nsidc_nt_seaice_conc'])[0] # NT SIC
 
                 sic[sic <= 0] = 0
