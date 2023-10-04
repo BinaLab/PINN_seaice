@@ -863,8 +863,8 @@ class AttModule(nn.Module):
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
         self.att_share = Cal_Att(ch, row, col, k)
-        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
+        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
 
     def forward(self, x1, x2):
         
@@ -917,8 +917,8 @@ class WB(nn.Module):
         x = x1*self.a11 + x2*self.a12
         x = self.activation(self.conv1(x))
         x = self.activation(self.conv2(x))
-        x1 = x + x*self.a21
-        x2 = x + x*self.a22
+        x1 = x1 + x*self.a21
+        x2 = x2 + x*self.a22
         return x1, x2 
     
 class encoder(nn.Module):
