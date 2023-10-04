@@ -244,9 +244,9 @@ def make_sampler_and_loader(args, train_dataset):
 
     return train_sampler, train_loader
 
-def RMSE(prd, obs):
+def RMSE(prd, obs, landmask):
     err = torch.square(obs-prd)
-    return torch.mean(err)**0.5
+    return torch.mean(err[err > 0])**0.5
 
 # def init_processes(backend):
 #     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
