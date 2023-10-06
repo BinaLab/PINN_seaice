@@ -862,7 +862,10 @@ class AttModule(nn.Module):
         self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
-        self.att_share = Cal_Att(ch, row, col, k)
+        self.att_share = nn.Sequential(
+            nn.Conv2d(ch, ch, kernel_size=k, padding="same"),
+            nn.Conv2d(ch, ch, kernel_size=k, padding="same")
+        )
         self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
         self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
 
@@ -873,8 +876,8 @@ class AttModule(nn.Module):
         x1_att = self.att1(x1)
         x2_att = self.att2(x2)
         
-        x1 = x1 + x1_att + xs_att*self.a21
-        x2 = x2 + x2_att + xs_att*self.a22      
+        x1 = x1 + (x1_att + xs_att)*self.a21
+        x2 = x2 + (x2_att + xs_att)*self.a22      
         
         return x1, x2
 

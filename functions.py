@@ -748,6 +748,10 @@ def make_cnn_input2D(data_input, data_output, days = 3):
 def MAE(prd, obs):
     return np.nanmean(abs(obs-prd))
 
+def MAE_grid(prd, obs):
+    err = abs(obs-prd)
+    return np.nanmean(err, axis=0)
+
 def RMSE(prd, obs):
     err = np.square(obs-prd)
     return np.nanmean(err)**0.5
