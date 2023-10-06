@@ -70,13 +70,13 @@ class custom_loss(nn.Module):
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0) & (sic_max > 0))]
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum = torch.mean(err1)*10
 
         err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
         
         neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
-        err2 = torch.mean(err_sic, dim=0)[torch.where((self.landmask == 0) & (sic_max > 0))]
+        err2 = torch.mean(err_sic, dim=0)[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum += torch.mean(err2)*1000
         
         if obs.size()[1] > 3:
@@ -862,10 +862,11 @@ class AttModule(nn.Module):
         self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
-        self.att_share = nn.Sequential(
-            nn.Conv2d(ch, ch, kernel_size=k, padding="same"),
-            nn.Conv2d(ch, ch, kernel_size=k, padding="same")
-        )
+        self.att_share = Cal_Att(ch, row, col, k)
+        # nn.Sequential(
+        #     nn.Conv2d(ch, ch, kernel_size=k, padding="same"),
+        #     nn.Conv2d(ch, ch, kernel_size=k, padding="same")
+        # )
         self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
         self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
 
@@ -876,8 +877,8 @@ class AttModule(nn.Module):
         x1_att = self.att1(x1)
         x2_att = self.att2(x2)
         
-        x1 = x1 + x1_att + xs_att*self.a21
-        x2 = x2 + x2_att + xs_att*self.a22      
+        x1 = x1 + (x1_att + xs_att)*self.a21
+        x2 = x2 + (x2_att + xs_att)*self.a22      
         
         return x1, x2
 
