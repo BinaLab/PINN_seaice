@@ -876,8 +876,8 @@ class AttModule(nn.Module):
         x1_att = self.att1(x1)
         x2_att = self.att2(x2)
         
-        x1 = x1 + (x1_att + xs_att)*self.a21
-        x2 = x2 + (x2_att + xs_att)*self.a22      
+        x1 = x1 + x1_att + xs_att*self.a21
+        x2 = x2 + x2_att + xs_att*self.a22      
         
         return x1, x2
 
