@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.nn import Parameter
-from torch_geometric.nn import ChebConv
 from torch_geometric.nn import GCNConv
 from torch_geometric.nn.inits import glorot, zeros
 
@@ -108,7 +107,7 @@ class physics_loss(nn.Module):
 
     def forward(self, obs, prd, sic0):
         
-        sic_th = 0.001
+        sic_th = 0.0
         
         sic_p = prd[:, 2, :, :]
         # sic_p[sic_p > 1] = 1
@@ -182,7 +181,76 @@ class physics_loss(nn.Module):
         w = torch.tensor(10.0)
         err_sum += w*err_phy
         
-        return err_sum    
+        return err_sum  
+    
+class physics_loss_cice(nn.Module):
+    def __init__(self, landmask):
+        super(physics_loss_cice, self).__init__();
+        self.landmask = landmask
+
+    def forward(self, obs, prd, sit0):
+        
+        sit_th = 0.0
+        
+        sit_p = prd[:, 2, :, :]*8
+        sit_o = obs[:, 2, :, :]*8
+        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
+        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
+        
+        vel_o = (u_o**2 + v_o**2)**0.5
+        vel_p = (u_p**2 + v_p**2)**0.5
+        
+        err_u = torch.square(u_o - u_p) #[sic > 0]
+        err_v = torch.square(v_o - v_p) #[sic > 0]
+        
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err_sum = torch.mean(err1)
+
+        err_sit = torch.square(sit_o - sit_p)
+        
+        err2 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 0)]
+        err_sum += torch.mean(err2)*10
+        
+        # physics loss ===============================================
+        ## Where SIC < 0 ==> sea ice drift = 0!
+        err_phy = 0
+        
+        ## Negative or positive SIC
+        neg_sit = torch.where(sit_p < 0, err_sit, 0)
+        # pos_sic = torch.where(sic_p > 1, err_sic, 0)     
+        err5 = torch.mean(neg_sit, dim=0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err5)
+        
+        # advection
+        advt = sit_p*0
+        dx = (sit_p[:, 1:-1, 2:]-sit_p[:, 1:-1, :-2]) + (sit_p[:, 2:, 2:]-sit_p[:, 2:, :-2]) + (sit_p[:, :-2, 2:]-sit_p[:, :-2, :-2])
+        dy = (sit_p[:, 2:, 1:-1]-sit_p[:, :-2, 1:-1]) + (sit_p[:, 2:, 2:]-sit_p[:, :-2, 2:]) + (sit_p[:, 2:, :-2]-sit_p[:, :-2, :-2])    
+        advt[:, 1:-1, 1:-1] = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
+        
+        # divergence
+        divt = sit_p*0
+        dx = (u_p[:, 1:-1, 2:]-u_p[:, 1:-1, :-2]) + (u_p[:, 2:, 2:]-u_p[:, 2:, :-2]) + (u_p[:, :-2, 2:]-u_p[:, :-2, :-2])
+        dy = (v_p[:, 1:-1, 2:]-v_p[:, 1:-1, :-2]) + (v_p[:, 2:, 2:]-v_p[:, 2:, :-2]) + (v_p[:, :-2, 2:]-v_p[:, :-2, :-2])
+        divt[:, 1:-1, 1:-1] = dx/3 + dy/3
+        divt = divt*sit_p/25
+        
+        dsit = sit_p - sit0
+        
+        residual = dsit + advt
+        
+        # SIC change
+        err_res = torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_phy += torch.mean(err_res)
+        
+        # r = corrcoef(dsic, advc)
+        # if r > 0:
+        #     err_phy += r
+        # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
+        
+        w = torch.tensor(1.0)
+        err_sum += w*err_phy
+        
+        return err_sum
     
     
 class MultiTaskLossWrapper(nn.Module):

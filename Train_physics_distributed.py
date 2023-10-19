@@ -488,7 +488,7 @@ def main() -> None:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
     cnn_input = cnn_input[:,:,:, [0,1,2,3,4,5,6]]
-    cnn_output = cnn_output[:,:,:, [0,1,2]]
+    cnn_output = cnn_output[:,:,:, [0,1,3]]
         
     if args.model_type == "mtunet":
         args.predict = "all"
@@ -568,9 +568,9 @@ def main() -> None:
     elif args.model_type == "mtunet":
         net = HF_UNet(in_channels, out_channels)
     elif args.model_type == "tsunet":
-        net = TS_UNet(in_channels, out_channels, landmask) # Triple sharing
+        net = TS_UNet(in_channels, out_channels, landmask, row) # Triple sharing
     elif args.model_type == "isunet":
-        net = IS_UNet(in_channels, out_channels, landmask) # information sharing
+        net = IS_UNet(in_channels, out_channels, landmask, row) # information sharing
     elif args.model_type == "lbunet":
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":
@@ -582,7 +582,7 @@ def main() -> None:
     elif args.model_type == "lg": # linear regression
         net = linear_regression(in_channels, out_channels, row, col)
 
-    model_name = f"torch_{args.model_type}_p{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_cice{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
@@ -594,7 +594,7 @@ def main() -> None:
         )
 
     if phy == "phy":
-        loss_fn = physics_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
+        loss_fn = physics_loss_cice(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
         if args.model_type == "fc":
             loss_fn = nn.L1Loss()
