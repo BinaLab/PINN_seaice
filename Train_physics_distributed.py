@@ -661,7 +661,7 @@ def main() -> None:
     net.eval()
     
     for m in np.unique(val_months):
-        if m % 3 == dist.get_rank():
+        if m % world_size == dist.get_rank():
             
             data = val_input[val_months==m, :, :, :]
             target = val_output[val_months==m, :, :, :]
