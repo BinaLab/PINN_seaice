@@ -571,6 +571,8 @@ def main() -> None:
         net = TS_UNet(in_channels, out_channels, landmask, row) # Triple sharing
     elif args.model_type == "isunet":
         net = IS_UNet(in_channels, out_channels, landmask, row) # information sharing
+    elif args.model_type == "hisunet":
+        net = HIS_UNet(in_channels, out_channels, landmask, row, k = 3) # hierarchical information sharing (attention blocks)
     elif args.model_type == "lbunet":
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":
@@ -581,6 +583,8 @@ def main() -> None:
         net = FC(in_channels, out_channels)
     elif args.model_type == "lg": # linear regression
         net = linear_regression(in_channels, out_channels, row, col)
+    else:
+        net = UNet(in_channels, out_channels)
 
     model_name = f"torch_{args.model_type}_cice{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
