@@ -664,7 +664,7 @@ def main() -> None:
     
     net.eval()
     
-    if dist.get_rank() = 0:
+    if dist.get_rank() == 0:
         for m in np.unique(val_months):
             # if m % world_size == dist.get_rank():
             
