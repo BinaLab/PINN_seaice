@@ -53,6 +53,7 @@ class custom_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd):
+        
         sic = prd[:, 2, :, :]*100
         u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
         u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
@@ -99,28 +100,24 @@ def corrcoef(x, y):
     r2 = torch.sum(torch.square(x-xm))*torch.sum(torch.square(y-ym))
     r = r1/(r2**0.5)
     return r
-    
-class physics_loss(nn.Module):
+
+# Reference loss for physical loss function
+class ref_loss(nn.Module):
     def __init__(self, landmask):
-        super(physics_loss, self).__init__();
+        super(ref_loss, self).__init__();
         self.landmask = landmask
 
-    def forward(self, obs, prd, sic0):
+    def forward(self, obs, prd):
         
         sic_th = 0.0
         
-        sic_p = prd[:, 2, :, :]
-        # sic_p[sic_p > 1] = 1
-        # sic_p[sic_p < 0] = 0
-        sic_o = obs[:, 2, :, :]
+        sic_p = prd[:, 2, :, :]*8
+        sic_o = obs[:, 2, :, :]*8
         u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
         u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
         
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
-        
-        # u_p[sic_p <= sic_th] = 0
-        # v_p[sic_p <= sic_th] = 0
         
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
@@ -132,7 +129,37 @@ class physics_loss(nn.Module):
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2)*2500
+        err_sum += torch.mean(err2)*40
+        return err_sum   
+    
+class physics_loss(nn.Module):
+    def __init__(self, landmask):
+        super(physics_loss, self).__init__();
+        self.landmask = landmask
+
+    def forward(self, obs, prd, sic0):
+        
+        sic_th = 0.0
+        
+        sic_p = prd[:, 2, :, :]*8
+        sic_o = obs[:, 2, :, :]*8
+        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
+        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
+        
+        vel_o = (u_o**2 + v_o**2)**0.5
+        vel_p = (u_p**2 + v_p**2)**0.5
+        
+        err_u = torch.square(u_o - u_p) #[sic > 0]
+        err_v = torch.square(v_o - v_p) #[sic > 0]
+        
+        sicmask = torch.max(sic_o, dim=0)[0]
+        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err_sum = torch.mean(err1)
+
+        err_sic = torch.square(sic_o - sic_p)
+        
+        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_sum += torch.mean(err2)*40
         
         # if obs.size()[1] > 3:
         #     sit_p = prd[:, 3, :, :]
