@@ -376,7 +376,7 @@ def validate(
                     val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
                 else:
                     val_loss.update(loss_func(output, target))
-                    
+                print(target.shape, output.shape)
                 rmse += RMSE(target, output)*100
 
                 t.update(1)
