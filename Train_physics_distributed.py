@@ -564,8 +564,8 @@ def main() -> None:
     
     n_samples = train_dataset.length
     val_samples = val_dataset.length
-    in_channels, row, col = train_dataset[0][0].size
-    out_channels, _, _ = train_dataset[0][1].size
+    in_channels, row, col = train_dataset[0][0].shape
+    out_channels, _, _ = train_dataset[0][1].shape
     
     # n_samples, in_channels, row, col = train_input.size()
     # _, out_channels, _, _ = train_output.size()
