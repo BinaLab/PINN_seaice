@@ -380,7 +380,7 @@ class SeaiceDataset(Dataset):
         
         _, var_ip, row, col = self.input.shape
         _, var_op, _, _ = self.output.shape
-        cnn_input = torch.zeros([var_ip * self.int, row, col]) * np.nan
+        cnn_input = torch.zeros([var_ip * self.int, row, col])*np.nan
         
         if self.exact:
             cnn_output = torch.zeros([var_op, row, col])*np.nan
@@ -390,13 +390,13 @@ class SeaiceDataset(Dataset):
         if n in self.valid:
             for i in range(0, self.int):
                 for v in range(0, var_ip):            
-                    cnn_input[v+i*var_ip, :, :] = (self.input[n-i, :, :, v])
+                    cnn_input[v+i*var_ip, :, :] = (self.input[n-i, v, :, :])
             if self.exact:
                 cnn_output[:, :, :] = (self.output[n+self.fore-1, :, :, :])
             else:
                 for j in range(0, self.fore):
                     for v in range(0, var_op):            
-                        cnn_output[v+j*var_op, :, :] = (self.output[n+j, :, :, v])
+                        cnn_output[v+j*var_op, :, :] = (self.output[n+j, v, :, :])
                         
         return (cnn_input, cnn_output)
 
