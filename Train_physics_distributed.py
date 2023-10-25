@@ -200,7 +200,7 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
-def make_sampler_and_loader(args, train_dataset):
+def make_sampler_and_loader(args, train_dataset, shuffle = True):
     """Create sampler and dataloader for train and val datasets."""
     torch.set_num_threads(4)
     kwargs: dict[str, Any] = (
@@ -214,7 +214,7 @@ def make_sampler_and_loader(args, train_dataset):
             train_dataset,
             num_replicas=dist.get_world_size(),
             rank=dist.get_rank(),
-            shuffle=True
+            shuffle=shuffle
         )
         train_loader = DataLoader(
             train_dataset,
@@ -511,7 +511,8 @@ def main() -> None:
         landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
-    cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
+    # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
+    
     
     ## Add x y coordinates as inputs
     if args.model_type != "lg":
@@ -529,38 +530,52 @@ def main() -> None:
 
     val_input = cnn_input[mask1] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[mask1] #cnn_output[(~mask1)&(mask2), :, :, :]
-    train_input = cnn_input[(~mask1)&(~mask2)] #cnn_input[(~mask1)&(~mask2), :, :, :]
-    train_output = cnn_output[(~mask1)&(~mask2)] #cnn_output[(~mask1)&(~mask2), :, :, :]
+    train_input = cnn_input[(~mask1)] #cnn_input[(~mask1)&(~mask2), :, :, :]
+    train_output = cnn_output[(~mask1)] #cnn_output[(~mask1)&(~mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
     # test_output = cnn_output[mask1, :, :, :]    
-        
-    if args.model_type == "fc": # in case of fully-connected layer: flatten layers
-        train_input = torch.flatten(train_input[:, landmask==0, :], start_dim=0, end_dim= -2)
-        train_output = torch.flatten(train_output[:, landmask==0, :], start_dim=0, end_dim= -2)
-        val_input = torch.flatten(val_input, start_dim=0, end_dim= -2)
-        val_output = torch.flatten(val_output, start_dim=0, end_dim= -2)
-        n_samples, in_channels = train_input.size()
-        _, out_channels = train_output.size()
-        
-    else:
-        train_input = torch.permute(train_input, (0, 3, 1, 2))
-        train_output = torch.permute(train_output, (0, 3, 1, 2))
-        val_input = torch.permute(val_input, (0, 3, 1, 2))
-        val_output = torch.permute(val_output, (0, 3, 1, 2))
-        
-        n_samples, in_channels, row, col = train_input.size()
-        _, out_channels, _, _ = train_output.size()
+
+    train_input = torch.permute(train_input, (0, 3, 1, 2))
+    train_output = torch.permute(train_output, (0, 3, 1, 2))
+    val_input = torch.permute(val_input, (0, 3, 1, 2))
+    val_output = torch.permute(val_output, (0, 3, 1, 2))
     
-    print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
+    # print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     
-    train_dataset = TensorDataset(train_input, train_output)
-    val_dataset = TensorDataset(val_input, val_output)
+    # train_dataset = TensorDataset(train_input, train_output)
+    # val_dataset = TensorDataset(val_input, val_output)
     # test_dataset = TensorDataset(test_input, test_output)
     
-    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset) 
-    val_sampler, val_loader = make_sampler_and_loader(args, val_dataset)
+    # Cehck sequential days ---------------------------------------
+    seq_days = []
+    step = 0
+    for i in range(0, len(days)):
+        if (days[i] ==1) & (years[i] != years[0]):
+            step += days[i-1]
+        seq_days.append(days[i] + step)
+
+    seq_days = np.array(seq_days)
+    train_days = seq_days[~mask1]
+    val_days = seq_days[mask1]
+    # -------------------------------------------------------------
     
-    del cnn_input, cnn_output, train_input, train_output
+    train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = False)
+    val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = False)
+    
+    n_samples = train_dataset.length
+    val_samples = val_dataset.length
+    in_channels, row, col = train_dataset[0][0].size()
+    out_channels, _, _ = train_dataset[0][1].size()
+    
+    # n_samples, in_channels, row, col = train_input.size()
+    # _, out_channels, _, _ = train_output.size()
+    
+    print("Train sample: {0}, Val sample: {1}; IN: {2} OUT: {3} ({4} x {5})".format(n_samples, val_samples, in_channels, out_channels, row, col)) 
+
+    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = True) 
+    val_sampler, val_loader = make_sampler_and_loader(args, val_dataset, shuffle = False)
+    
+    # del cnn_input, cnn_output, train_input, train_output
     
     #############################################################################   
     if args.model_type == "unet":
@@ -656,37 +671,40 @@ def main() -> None:
     
     torch.cuda.empty_cache()
     
-    del train_dataset, train_loader, train_sampler, val_dataset, val_loader, val_sampler
+    del train_dataset, train_loader, train_sampler
     
     # Test the model with the trained model ========================================
-    val_months = months[mask1]
-    val_days = days[mask1]
+    val_months = months[mask1][val_dataset.valid]
+    val_days = days[mask1][val_dataset.valid]
     
     net.eval()
     
-    if dist.get_rank() == 0:
+    if dist.get_rank() == 0:        
         for m in np.unique(val_months):
             # if m % world_size == dist.get_rank():
             
-            data = val_input[val_months==m, :, :, :]
-            target = val_output[val_months==m, :, :, :]
-            output = torch.zeros(target.size())
+            idx = np.where(val_months == m)[0]
+            
+            # data = val_input[val_months==m, :, :, :]
+            target = torch.zeros([len(idx), out_channels, row, col]) #val_output[val_months==m, :, :, :]
+            output = torch.zeros([len(idx), out_channels, row, col])
             
             with tqdm(total=target.size()[0],
                       bar_format='{l_bar}{bar:10}|{postfix}',
                       desc=f'Validation {date}-{str(int(m)).zfill(2)}'
                      ) as t:
                 with torch.no_grad():
-                    for j in range(0, target.size()[0]):
-                        output[j, :, :, :] = net(data[j:j+1, :, :, :])
+                    for j in range(0, len(idx)): #range(0, target.size()[0]):
+                        output[j, :, :, :] = net(val_dataset[idx[j]][0])
+                        target[j, :, :, :] = val_dataset[idx[j]][1]
                         t.update(1)                  
                     
-                    test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
-                                 val_months[val_months==m], val_days[val_months==m]]
+            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
+                         val_months[val_months==m], val_days[val_months==m]]
 
-                    # Open a file and use dump()
-                    with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
-                        pickle.dump(test_save, file)
+            # Open a file and use dump()
+            with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
+                pickle.dump(test_save, file)
                         
     if dist.get_rank() == 0:
         print("#### Validation done!! ####")     

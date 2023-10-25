@@ -5,8 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.nn import Parameter
-from torch_geometric.nn import GCNConv
-from torch_geometric.nn.inits import glorot, zeros
+from torch.utils.data import TensorDataset, DataLoader, Dataset
 
 ### LOSS FUNCTIONS #####################################################################
 class vel_loss(nn.Module):
@@ -356,6 +355,50 @@ def convert_cnn_input2D(data_input, data_output, days, months, years, dayint = 3
                 
                 
     return cnn_input[valid, :, :, :], cnn_output[valid, :, :, :], days[valid], months[valid], years[valid]
+
+### MAKE INPUT DATASETS #########################################################
+class SeaiceDataset(Dataset):
+    def __init__(self, data_input, data_output, seq, dayint = 3, forecast = 3, exact = False):
+        # store the image and mask filepaths, and augmentation
+        # transforms
+        self.input = data_input
+        self.output = data_output
+        self.seq = seq
+        self.int = dayint
+        self.fore = forecast
+        self.exact = exact
+        self.valid = []
+        for n in range(dayint-1, data_input.shape[0]-forecast):
+            if seq[n+forecast] - seq[n-dayint+1] == dayint + forecast-1:
+                self.valid.append(n)
+        self.length = len(self.valid)
+        
+    def __len__(self):
+        # return the number of total samples contained in the dataset
+        return len(self.valid)
+    def __getitem__(self, n):
+        
+        _, var_ip, row, col = self.input.shape
+        _, var_op, _, _ = self.output.shape
+        cnn_input = np.zeros([var_ip * self.int, row, col], dtype = np.float16) * np.nan
+        
+        if self.exact:
+            cnn_output = np.zeros([var_op, row, col], dtype = np.float16)*np.nan
+        else:
+            cnn_output = np.zeros([var_op * self.fore, row, col], dtype = np.float16)*np.nan
+        
+        if n in self.valid:
+            for i in range(0, self.int):
+                for v in range(0, var_ip):            
+                    cnn_input[v+i*var_ip, :, :] = (self.input[n-i, :, :, v]).astype(np.float16)
+            if self.exact:
+                cnn_output[:, :, :] = (self.output[n+self.fore-1, :, :, :]).astype(np.float16)
+            else:
+                for j in range(0, self.fore):
+                    for v in range(0, var_op):            
+                        cnn_output[v+j*var_op, :, :] = (self.output[n+j, :, :, v]).astype(np.float16)
+                        
+        return (cnn_input, cnn_output)
 
 ### ML MODELS #####################################################################
 class FC(nn.Module):
