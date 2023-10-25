@@ -701,8 +701,8 @@ def main() -> None:
                      ) as t:
                 with torch.no_grad():
                     for j in range(0, len(idx)): #range(0, target.size()[0]):
-                        output[j, :, :, :] = net(val_dataset[idx[j]][0])
-                        target[j, :, :, :] = val_dataset[idx[j]][1]
+                        output[j, :, :, :] = net(val_dataset[idx[j]:idx[j]+1][0])
+                        target[j, :, :, :] = val_dataset[idx[j]:idx[j]+1][1]
                         t.update(1)                  
                     
             test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
