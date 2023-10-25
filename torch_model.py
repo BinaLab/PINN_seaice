@@ -1322,9 +1322,9 @@ class EB_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64 
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1420,9 +1420,9 @@ class LB_UNet(nn.Module):
         self.siu_dc3 = decoder(128, 64) # output: 320x320x64     
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, int(n_outputs/3*1), kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1521,8 +1521,8 @@ class IS_UNet(nn.Module):
         self.wb6 = WB(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1647,8 +1647,8 @@ class HIS_UNet(nn.Module):
         self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, int(n_outputs/3*1), kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
