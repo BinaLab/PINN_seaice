@@ -390,13 +390,13 @@ class SeaiceDataset(Dataset):
         if n in self.valid:
             for i in range(0, self.int):
                 for v in range(0, var_ip):            
-                    cnn_input[v+i*var_ip, :, :] = (self.input[n-i, v, :, :])
+                    cnn_input[v*self.fore+i, :, :] = (self.input[n-i, v, :, :])
             if self.exact:
                 cnn_output[:, :, :] = (self.output[n+self.fore-1, :, :, :])
             else:
                 for j in range(0, self.fore):
                     for v in range(0, var_op):            
-                        cnn_output[v+j*var_op, :, :] = (self.output[n+j, v, :, :])
+                        cnn_output[v*self.fore+j, :, :] = (self.output[n+j, v, :, :])
                         
         return (cnn_input, cnn_output)
 
@@ -1322,9 +1322,9 @@ class EB_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64 
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1420,9 +1420,9 @@ class LB_UNet(nn.Module):
         self.siu_dc3 = decoder(128, 64) # output: 320x320x64     
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, int(n_outputs/3*1), kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1647,8 +1647,8 @@ class HIS_UNet(nn.Module):
         self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, int(n_outputs/3*2), kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, int(n_outputs/3*1), kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
