@@ -692,6 +692,7 @@ def main() -> None:
             idx = np.where(val_months == m)[0]
             
             # data = val_input[val_months==m, :, :, :]
+            data = torch.zeros([len(idx), in_channels, row, col])
             target = torch.zeros([len(idx), out_channels, row, col]) #val_output[val_months==m, :, :, :]
             output = torch.zeros([len(idx), out_channels, row, col])
             
@@ -701,6 +702,7 @@ def main() -> None:
                      ) as t:
                 with torch.no_grad():
                     for j in range(0, len(idx)): #range(0, target.size()[0]):
+                        data[j, :, :, :] = val_dataset[idx[j]][0]
                         output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])
                         target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
                         t.update(1)                  
