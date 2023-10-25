@@ -304,6 +304,9 @@ def train(
     ) as t:
         for batch_idx, (data, target) in enumerate(train_loader):
             mini_step += 1
+            ind = torch.sum(data.isnan(), dim=(1,2,3))
+            data = data[ind==0, :, :, :]
+            target = target[ind==0, :, :, :]
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
                 
@@ -368,6 +371,9 @@ def validate(
     ) as t:
         with torch.no_grad():
             for i, (data, target) in enumerate(val_loader):
+                ind = torch.sum(data.isnan(), dim=(1,2,3))
+                data = data[ind==0, :, :, :]
+                target = target[ind==0, :, :, :]
                 if args.cuda:
                     data, target = data.cuda(), target.cuda()
                 output = model(data)
