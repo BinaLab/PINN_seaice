@@ -187,7 +187,7 @@ def parse_args() -> argparse.Namespace:
 
     # Set automatically by torch distributed launch
     parser.add_argument(
-        '--local_rank',
+        '--local-rank',
         type=int,
         default=0,
         help='local rank for distributed training',
