@@ -314,7 +314,7 @@ def train(
             if args.phy == "phy":
                 loss = loss_func(output, target, data[:, 2, :, :].cuda())
             else:
-                loss = loss_func(output, target)
+                loss = loss_func(output*100, target*100)
 
             with torch.no_grad():
                 step_loss += loss
@@ -685,7 +685,7 @@ def main() -> None:
     
     net.eval()
     
-    if dist.get_rank() == 0:        
+    if dist.get_rank() == 0:    
         for m in np.unique(val_months):
             # if m % world_size == dist.get_rank():
             
