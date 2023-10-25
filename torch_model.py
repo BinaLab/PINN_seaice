@@ -380,23 +380,23 @@ class SeaiceDataset(Dataset):
         
         _, var_ip, row, col = self.input.shape
         _, var_op, _, _ = self.output.shape
-        cnn_input = np.zeros([var_ip * self.int, row, col], dtype = np.float16) * np.nan
+        cnn_input = torch.zeros([var_ip * self.int, row, col]) * np.nan
         
         if self.exact:
-            cnn_output = np.zeros([var_op, row, col], dtype = np.float16)*np.nan
+            cnn_output = torch.zeros([var_op, row, col])*np.nan
         else:
-            cnn_output = np.zeros([var_op * self.fore, row, col], dtype = np.float16)*np.nan
+            cnn_output = torch.zeros([var_op * self.fore, row, col])*np.nan
         
         if n in self.valid:
             for i in range(0, self.int):
                 for v in range(0, var_ip):            
-                    cnn_input[v+i*var_ip, :, :] = (self.input[n-i, :, :, v]).astype(np.float16)
+                    cnn_input[v+i*var_ip, :, :] = (self.input[n-i, :, :, v])
             if self.exact:
-                cnn_output[:, :, :] = (self.output[n+self.fore-1, :, :, :]).astype(np.float16)
+                cnn_output[:, :, :] = (self.output[n+self.fore-1, :, :, :])
             else:
                 for j in range(0, self.fore):
                     for v in range(0, var_op):            
-                        cnn_output[v+j*var_op, :, :] = (self.output[n+j, :, :, v]).astype(np.float16)
+                        cnn_output[v+j*var_op, :, :] = (self.output[n+j, :, :, v])
                         
         return (cnn_input, cnn_output)
 
