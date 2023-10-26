@@ -593,6 +593,8 @@ def main() -> None:
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":
         net = EB_UNet(in_channels, out_channels, landmask)
+    elif args.model_type == "casunet":
+        net = Cascade_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "cnn":
         net = Net(in_channels, out_channels)
     elif args.model_type == "flatten":
