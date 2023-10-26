@@ -1774,10 +1774,10 @@ class Cascade_UNet(nn.Module):
             w_dx[i, i] = torch.tensor([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])/3
             w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
             
-        self.dx=nn.Conv2d(1, 1, kernel_size=3, stride=1, padding="same", bias=False)
+        self.dx=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
         self.dx.weight=nn.Parameter(w_dx)
 
-        self.dy=nn.Conv2d(1, 1, kernel_size=3, stride=1, padding="same", bias=False)
+        self.dy=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
         self.dy.weight=nn.Parameter(w_dy)
         
     def forward(self, x, sic0):
@@ -1816,8 +1816,8 @@ class Cascade_UNet(nn.Module):
         
         for i in range(1, siu.shape[1]):
             # print(sic[:, i-1:i].shape, sic0.shape)
-            dx = self.dx(sic[:, i-1:i])
-            dy = self.dx(sic[:, i-1:i])
+            # dx = self.dx(sic[:, i-1:i])
+            # dy = self.dx(sic[:, i-1:i])
             # print(dx.shape, dy.shape, r[:, 0:1].shape)
             sic[:, i:i+1] = -(siu[:, i:i+1]*dx + siv[:, i:i+1]*dy)/25*50 + r[:, i:i+1]
         
