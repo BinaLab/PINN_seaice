@@ -1809,16 +1809,12 @@ class Cascade_UNet(nn.Module):
         
         sic = torch.zeros(siu.shape).cuda()
         
-        dx = self.dx(sic0)
-        dy = self.dx(sic0)
+        # dx = self.dx(sic0)
+        # dy = self.dx(sic0)
         # print(dx.shape, dy.shape, sic[:, 0:1].shape, siu[:, 0:1].shape, siv[:, 0:1].shape, r[:, 0:1].shape)
-        sic[:, 0:1] = -(siu[:, 0:1]*dx + siv[:, 0:1]*dy)/25*50 + r[:, 0:1]
+        sic[:, 0:1] = -(siu[:, 0:1]*self.dx(sic0) + siv[:, 0:1]*self.dx(sic0))/25*50 + r[:, 0:1]
         
         for i in range(1, siu.shape[1]):
-            # print(sic[:, i-1:i].shape, sic0.shape)
-            # dx = self.dx(sic[:, i-1:i])
-            # dy = self.dx(sic[:, i-1:i])
-            # print(dx.shape, dy.shape, r[:, 0:1].shape)
             sic0 = sic[:, i-1:i].clone()
             sic[:, i:i+1] = -(siu[:, i:i+1]*self.dx(sic0) + siv[:, i:i+1]*self.dx(sic0))/25*50 + r[:, i:i+1]
         
