@@ -309,8 +309,12 @@ def train(
             target = target[ind==0, :, :, :]
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
+            
+            if args.model_type == "casunet":
+                output = model(data, data[:, 2:3])
+            else:
+                output = model(data)
                 
-            output = model(data)
             if args.phy == "phy":
                 loss = loss_func(output, target, data[:, 2, :, :].cuda())
             else:
@@ -376,7 +380,11 @@ def validate(
                 target = target[ind==0, :, :, :]
                 if args.cuda:
                     data, target = data.cuda(), target.cuda()
-                output = model(data)
+                    
+                if args.model_type == "casunet":
+                    output = model(data, data[:, 2:3])
+                else:
+                    output = model(data)
                 
                 if args.phy == "phy":
                     val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
@@ -705,7 +713,10 @@ def main() -> None:
                 with torch.no_grad():
                     for j in range(0, len(idx)): #range(0, target.size()[0]):
                         data[j, :, :, :] = val_dataset[idx[j]][0]
-                        output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])
+                        if args.model_type == "casunet":
+                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
+                        else:
+                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
                         target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
                         t.update(1)                  
                     

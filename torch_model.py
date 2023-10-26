@@ -1720,7 +1720,7 @@ class HIS_UNet(nn.Module):
     
 # Hierarchical information sharing UNET model
 class Cascade_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, landmask, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, sic0, k=3):
         super().__init__()
         
         self.activation = nn.Tanh()
@@ -1767,9 +1767,10 @@ class Cascade_UNet(nn.Module):
         self.siv_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
-        w_dx = torch.zeros([n_outputs//3, n_outputs//3, 3, 3])
-        w_dy = torch.zeros([n_outputs//3, n_outputs//3, 3, 3])
-        for i in range(0, in_channels):
+        c = 1
+        w_dx = torch.zeros([c, c, 3, 3])
+        w_dy = torch.zeros([c, c, 3, 3])
+        for i in range(0, c):
             w_dx[i, i] = torch.tensor([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])/3
             w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
             
