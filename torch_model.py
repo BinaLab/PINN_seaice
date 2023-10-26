@@ -1720,7 +1720,7 @@ class HIS_UNet(nn.Module):
     
 # Hierarchical information sharing UNET model
 class Cascade_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, landmask, sic0, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
         super().__init__()
         
         self.activation = nn.Tanh()
