@@ -1775,10 +1775,10 @@ class Cascade_UNet(nn.Module):
             w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
             
         self.dx=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
-        self.dx.weight=nn.Parameter(w_dx)
+        self.dx.weight=nn.Parameter(w_dx, requires_grad = False)
 
         self.dy=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
-        self.dy.weight=nn.Parameter(w_dy)
+        self.dy.weight=nn.Parameter(w_dy, requires_grad = False)
         
     def forward(self, x, sic0):
         # First convolution
