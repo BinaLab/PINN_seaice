@@ -1718,3 +1718,107 @@ class HIS_UNet(nn.Module):
 
         return out
     
+# Hierarchical information sharing UNET model
+class Cascade_UNet(nn.Module):
+    def __init__(self, n_inputs, n_outputs, landmask, k=3):
+        super().__init__()
+        
+        self.activation = nn.Tanh()
+        self.landmask = landmask
+        
+        self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
+        
+        ##### SIU BRANCH #####
+        # input: 320x320x64
+        self.siu_ec1 = encoder(32, 64) # output: 160x160x64
+        # input: 160x160x64
+        self.siu_ec2 = encoder(64, 128) # output: 80x80x128
+        # input: 80x80x128
+        self.siu_ec3 = encoder(128, 256) # output: 40x40x256
+
+        # input: 40x40x256
+        self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+
+        # Decoder
+        self.siu_dc1 = decoder(512, 256) # output: 80x80x256
+        self.siu_dc2 = decoder(256, 128) # output: 160x160x128
+        self.siu_dc3 = decoder(128, 64) # output: 320x320x64     
+        
+        ##### SIC BRANCH #####
+        # input: 320x320x64
+        self.sic_ec1 = encoder(32, 64) # output: 160x160x64
+        # input: 160x160x64
+        self.sic_ec2 = encoder(64, 128) # output: 80x80x128
+        # input: 80x80x128
+        self.sic_ec3 = encoder(128, 256) # output: 40x40x256
+
+        # input: 40x40x256
+        self.sic_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+
+        # Decoder
+        self.sic_dc1 = decoder(512, 256) # output: 80x80x256
+        self.sic_dc2 = decoder(256, 128) # output: 160x160x128
+        self.sic_dc3 = decoder(128, 64) # output: 320x320x64 
+
+        # Output layer
+        self.siu_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
+        self.siv_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
+        
+        w_dx = torch.zeros([n_outputs//3, n_outputs//3, 3, 3])
+        w_dy = torch.zeros([n_outputs//3, n_outputs//3, 3, 3])
+        for i in range(0, in_channels):
+            w_dx[i, i] = torch.tensor([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])/3
+            w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
+            
+        self.dx=nn.Conv2d(1, 1, kernel_size=3, stride=1, padding="same", bias=False)
+        self.dx.weight=nn.Parameter(w_dx)
+
+        self.dy=nn.Conv2d(1, 1, kernel_size=3, stride=1, padding="same", bias=False)
+        self.dy.weight=nn.Parameter(w_dy)
+        
+    def forward(self, x, sic0):
+        # First convolution
+        x = self.first_conv(x)
+        
+        ##### SID branch #####
+        xe1_siu, xe1b_siu = self.siu_ec1(x) # SIU
+        xe2_siu, xe2b_siu = self.siu_ec2(xe1_siu) # SIU
+        xe3_siu, xe3b_siu = self.siu_ec3(xe2_siu) # SIU
+        xe41_siu = self.activation(self.siu_ec41(xe3_siu))
+        xe42_siu = self.activation(self.siu_ec42(xe41_siu))
+        xd1_siu = self.siu_dc1(xe42_siu, xe3b_siu)
+        xd2_siu = self.siu_dc2(xd1_siu, xe2b_siu)
+        xd3_siu = self.siu_dc3(xd2_siu, xe1b_siu)
+        siu = self.siu_conv(xd3_siu)
+        siv = self.siv_conv(xd3_siu)        
+        
+        ##### SIC branch #####
+        xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
+        xe2_sic, xe2b_sic = self.sic_ec2(xe1_sic) # SIC
+        xe3_sic, xe3b_sic = self.sic_ec3(xe2_sic) # SIC
+        xe41_sic = self.activation(self.sic_ec41(xe3_sic))
+        xe42_sic = self.activation(self.sic_ec42(xe41_sic))
+        xd1_sic = self.sic_dc1(xe42_sic, xe3b_sic)
+        xd2_sic = self.sic_dc2(xd1_sic, xe2b_sic)
+        xd3_sic = self.sic_dc3(xd2_sic, xe1b_sic)
+        r = self.sic_conv(xd3_sic)
+        
+        sic = torch.zeros(siu.shape)
+        
+        dx = self.dx(sic0)
+        dy = self.dx(sic0)
+        sic[:, 0] = (siu[:, 0]*dx + siv[:, 0]*dy)/25*50 + r[:, 0]
+        
+        for i in range(1, siu.shape[1]):
+            dx = self.dx(sic[:, i-1])
+            dy = self.dx(sic[:, i-1])
+            sic[:, i] = (siu[:, i]*dx + siv[:, i]*dy)/25*50 + r[:, i]
+        
+        out = torch.cat([siu, siv, sic], dim=1)
+        out = out * (self.landmask == 0)
+
+        return out
+    
