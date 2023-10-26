@@ -1817,6 +1817,7 @@ class Cascade_UNet(nn.Module):
         for i in range(1, siu.shape[1]):
             dx = self.dx(sic[:, i-1:i])
             dy = self.dx(sic[:, i-1:i])
+            print(dx.shape, dy.shape, r[:, 0:1].shape)
             sic[:, i:i+1] = -(siu[:, i:i+1]*dx + siv[:, i:i+1]*dy)/25*50 + r[:, i:i+1]
         
         out = torch.cat([siu, siv, sic], dim=1)
