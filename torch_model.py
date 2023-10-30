@@ -75,11 +75,11 @@ class custom_loss(nn.Module):
         err2 = torch.mean(err_sic, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum += torch.mean(err2)*10
         
-        if obs.size()[1] > 3:
-            err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
-            neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
-            err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 0)]   
-            err_sum += torch.mean(err3)*5000
+        # if obs.size()[1] > 3:
+        #     err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
+        #     neg_sit = torch.where(prd[:, 3, :, :] < 0, abs(prd[:, 3, :, :]), 0)
+        #     err3 = torch.mean(err_sit, dim=0)[torch.where(self.landmask == 0)]   
+        #     err_sum += torch.mean(err3)*5000
         
         # err_sum += torch.mean(err_sic + err_sit)*100
         # err_sum += torch.nanmean(err_theta)*0.5/3.141592
