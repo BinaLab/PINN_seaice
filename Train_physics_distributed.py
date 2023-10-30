@@ -318,7 +318,7 @@ def train(
             if args.phy == "phy":
                 loss = loss_func(output, target, data[:, 2, :, :].cuda())
             else:
-                loss = loss_func(output*100, target*100)
+                loss = loss_func(output, target)
 
             with torch.no_grad():
                 step_loss += loss
