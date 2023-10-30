@@ -582,8 +582,8 @@ def main() -> None:
     val_days = seq_days[mask1]
     # -------------------------------------------------------------
     
-    train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = False)
-    val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = False)
+    train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
+    val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
     
     n_samples = train_dataset.length
     val_samples = val_dataset.length
