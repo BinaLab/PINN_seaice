@@ -506,10 +506,19 @@ def main() -> None:
         # CICE data
         cnn_input = cnn_input[:,:,:, [0,1,2,3,4,5,6]]
         cnn_output = cnn_output[:,:,:, [0,1,3]]
+        # Land mask data
+        with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
+            landmask = pickle.load(file) 
     elif data_type == "cnn":
         # Satellite observation data
         cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
+        # Land mask data
+        with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
+            landmask = pickle.load(file)
+            landmask = torch.tensor(landmask)[30:286, 10:266]
+            
+        print(cnn_input.shape, landmask_shape)
         
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
@@ -519,11 +528,8 @@ def main() -> None:
         else:
             print(f"SIT prediction is not available with {data_ver} data >>> Proceed with all prediction")
     elif args.predict == "uv":
-        cnn_output = cnn_output[:,:,:,0:2]   
-        
-    # Read landmask data
-    with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
-        landmask = pickle.load(file) 
+        cnn_output = cnn_output[:,:,:,0:2]        
+
     landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
     if args.cuda:
         landmask = landmask.cuda() # Land = 1; Ocean = 0;
