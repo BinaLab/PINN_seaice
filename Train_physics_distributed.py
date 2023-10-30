@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-file',
         type=str,
-        default='train_cice_2019_2022_v1.pkl',
+        default='train_cnn_2016_2022_v7.pkl',
         help='filename of dataset',
     )    
     parser.add_argument(
@@ -497,15 +497,19 @@ def main() -> None:
     
     #### READ DATA ##################################################################    
     data_ver = data_file[-6:-4]
+    data_type = data_file[6:9]
     
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    cnn_input = cnn_input[:,:,:, [0,1,2,3,4,5,6]]
-    cnn_output = cnn_output[:,:,:, [0,1,3]]
-        
-    if args.model_type == "mtunet":
-        args.predict = "all"
+    if data_type == "cic":
+        # CICE data
+        cnn_input = cnn_input[:,:,:, [0,1,2,3,4,5,6]]
+        cnn_output = cnn_output[:,:,:, [0,1,3]]
+    elif data_type == "cnn":
+        # Satellite observation data
+        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:,:,:,:-1]
         
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
@@ -526,7 +530,6 @@ def main() -> None:
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
-    
     
     ## Add x y coordinates as inputs
     if args.model_type != "lg":
