@@ -514,8 +514,9 @@ def main() -> None:
         cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
         # Land mask data
-        with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
+        with open(data_path + f"landmask_320.pkl", 'rb') as file:
             landmask = pickle.load(file)
+            landmask = torch.tensor(landmask)[30:286, 10:266]
             
         print(cnn_input.shape, landmask.shape)
         
