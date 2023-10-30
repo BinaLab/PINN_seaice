@@ -1724,6 +1724,7 @@ class Cascade_UNet(nn.Module):
         super().__init__()
         
         self.activation = nn.Tanh()
+        self.relu = nn.ReLU()
         self.landmask = landmask
         
         self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
@@ -1818,6 +1819,7 @@ class Cascade_UNet(nn.Module):
             sic0 = sic[:, i-1:i].clone()
             sic[:, i:i+1] = -(siu[:, i:i+1]*self.dx(sic0) + siv[:, i:i+1]*self.dy(sic0))/25*scaling + r[:, i:i+1] + sic0
         
+        sic = self.relu(sic)
         out = torch.cat([siu, siv, sic], dim=1)
         out = out * (self.landmask == 0)
 
