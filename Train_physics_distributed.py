@@ -504,12 +504,14 @@ def main() -> None:
     
     if data_type == "cic":
         # CICE data
+        data_type = "cice"
         cnn_input = cnn_input[:,:,:, [0,1,2,3,4,5,6]]
         cnn_output = cnn_output[:,:,:, [0,1,3]]
         # Land mask data
         with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
             landmask = pickle.load(file) 
     elif data_type == "cnn":
+        data_type = "sat"
         # Satellite observation data
         cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
@@ -517,8 +519,6 @@ def main() -> None:
         with open(data_path + f"landmask_320.pkl", 'rb') as file:
             landmask = pickle.load(file)
             landmask = torch.tensor(landmask)[30:286, 10:266]
-            
-        print(cnn_input.shape, landmask.shape)
         
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
@@ -626,7 +626,7 @@ def main() -> None:
     else:
         net = UNet(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_cice{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
