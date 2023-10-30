@@ -163,7 +163,7 @@ class physics_loss(nn.Module):
         
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
-        pos_sic = torch.where(sic_p > 1, err_sic, 0)     
+        pos_sic = torch.where(sic_p > 100, err_sic, 0)     
         err5 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
         err_phy += torch.mean(err5)
         
