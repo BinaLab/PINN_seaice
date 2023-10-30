@@ -54,7 +54,7 @@ class custom_loss(nn.Module):
 
     def forward(self, obs, prd):
         f = self.forecast
-        # sic = prd[:, 2*f:3*f, :, :]*100
+        sic = prd[:, 2*f:3*f, :, :]*100
         u_o = obs[:, 0*f:1*f, :, :]*30; v_o = obs[:, 1*f:2*f, :, :]*30
         u_p = prd[:, 0*f:1*f, :, :]*30; v_p = prd[:, 1*f:2*f, :, :]*30
         vel_o = (u_o**2 + v_o**2)**0.5
@@ -137,10 +137,10 @@ class physics_loss(nn.Module):
         
         sic_th = 0.0
         
-        sic_p = prd[:, 2, :, :]*8
-        sic_o = obs[:, 2, :, :]*8
-        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
-        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
+        sic_p = prd[:, 2, :, :]*100
+        sic_o = obs[:, 2, :, :]*100
+        u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
+        u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
@@ -155,15 +155,7 @@ class physics_loss(nn.Module):
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2)*40
-        
-        # if obs.size()[1] > 3:
-        #     sit_p = prd[:, 3, :, :]
-        #     sit_o = obs[:, 3, :, :]
-        #     err_sit = torch.square(sit_o - sit_p)
-        #     neg_sit = torch.where(sit_p < 0, abs(sit_p), 0)
-        #     err3 = torch.mean(err_sit + neg_sit, dim=0)[torch.where(self.landmask == 0)]   
-        #     err_sum += torch.mean(err3)*50
+        err_sum += torch.mean(err2)
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
@@ -193,12 +185,14 @@ class physics_loss(nn.Module):
         residual = dsic + advc
         
         # SIC change
-        err_res = torch.mean(torch.where(abs(residual) > 1, abs(residual)-1, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_res = torch.mean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
         err_phy += torch.mean(err_res)
         
-        r = corrcoef(dsic, advc)
-        if r > 0:
-            err_phy += r
+        N = dsic.shape[0]
+        for n in range(0, N):
+            r = corrcoef(dsic[n], advc[n])
+            if r > 0:
+                err_phy += r*10
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
         w = torch.tensor(10.0)
@@ -1706,7 +1700,7 @@ class HIS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        sic = self.sic_conv(xd3_sic)
+        sic = self.activation2(self.sic_conv(xd3_sic))
         
         # siu = siu * (sic > 0)
                 

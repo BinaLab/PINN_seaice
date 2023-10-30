@@ -636,7 +636,7 @@ def main() -> None:
         )
 
     if phy == "phy":
-        loss_fn = physics_loss_cice(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
+        loss_fn = physics_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
         if args.model_type == "fc":
             loss_fn = nn.L1Loss()
