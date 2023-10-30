@@ -66,13 +66,13 @@ class custom_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         
-        err1 = torch.mean(err_u + err_v, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err1 = torch.mean(err_u + err_v, dim=0) #* (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum = torch.mean(err1)*10
 
         err_sic = torch.square(obs[:, 2*f:3*f, :, :]-prd[:, 2*f:3*f, :, :])
         
         neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
-        err2 = torch.mean(err_sic, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err2 = torch.mean(err_sic, dim=0) #* (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum += torch.mean(err2)*10
         
         # if obs.size()[1] > 3:
