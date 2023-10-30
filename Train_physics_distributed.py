@@ -518,7 +518,7 @@ def main() -> None:
             landmask = pickle.load(file)
             landmask = torch.tensor(landmask)[30:286, 10:266]
             
-        print(cnn_input.shape, landmask_shape)
+        print(cnn_input.shape, landmask.shape)
         
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
