@@ -592,8 +592,6 @@ def main() -> None:
     
     # n_samples, in_channels, row, col = train_input.size()
     # _, out_channels, _, _ = train_output.size()
-    
-    print("Train sample: {0}, Val sample: {1}; IN: {2} OUT: {3} ({4} x {5})".format(n_samples, val_samples, in_channels, out_channels, row, col)) 
 
     train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = True) 
     val_sampler, val_loader = make_sampler_and_loader(args, val_dataset, shuffle = False)
@@ -654,7 +652,9 @@ def main() -> None:
     history = {'loss': [], 'val_loss': [], 'time': []}
 
     total_params = sum(p.numel() for p in net.parameters())
-    print(f"Number of parameters: {total_params}")
+    if dist.get_rank() == 0:
+        print(f"Number of parameters: {total_params}")
+        print("Train sample: {0}, Val sample: {1}; IN: {2} OUT: {3} ({4} x {5})".format(n_samples, val_samples, in_channels, out_channels, row, col)) 
     
     t0 = time.time()
     for epoch in range(n_epochs):

@@ -1791,8 +1791,8 @@ class Cascade_UNet(nn.Module):
         xd1_siu = self.siu_dc1(xe42_siu, xe3b_siu)
         xd2_siu = self.siu_dc2(xd1_siu, xe2b_siu)
         xd3_siu = self.siu_dc3(xd2_siu, xe1b_siu)
-        siu = self.siu_conv(xd3_siu)
-        siv = self.siv_conv(xd3_siu)       
+        siu = self.siu_conv(xd3_siu) * (self.landmask == 0)
+        siv = self.siv_conv(xd3_siu) * (self.landmask == 0)     
         
         ##### SIC branch #####
         xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
@@ -1816,9 +1816,8 @@ class Cascade_UNet(nn.Module):
         #     sic0 = sic[:, i-1:i].clone()
         #     sic[:, i:i+1] = -(siu[:, i:i+1]*self.dx(sic0) + siv[:, i:i+1]*self.dy(sic0))/25*scaling + r[:, i:i+1] + sic0
         
-        sic = self.relu(sic)
+        sic = self.relu(sic) * (self.landmask == 0)
         out = torch.cat([siu, siv, sic], dim=1)
-        out = out * (self.landmask == 0)
+        # out = out * (self.landmask == 0)
 
         return out
-    
