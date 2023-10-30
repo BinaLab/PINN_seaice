@@ -1319,9 +1319,9 @@ class EB_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64 
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same") #nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same") #nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
