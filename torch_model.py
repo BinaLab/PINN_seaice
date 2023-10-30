@@ -47,35 +47,32 @@ class single_loss(nn.Module):
         return err_sum
 
 class custom_loss(nn.Module):
-    def __init__(self, landmask):
+    def __init__(self, landmask, forecast):
         super(custom_loss, self).__init__();
         self.landmask = landmask
+        self.forecast = forecast
 
     def forward(self, obs, prd):
-        
-        sic = prd[:, 2, :, :]*100
-        u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
-        u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
+        f = self.forecast
+        # sic = prd[:, 2*f:3*f, :, :]*100
+        u_o = obs[:, 0*f:1*f, :, :]*30; v_o = obs[:, 1*f:2*f, :, :]*30
+        u_p = prd[:, 0*f:1*f, :, :]*30; v_p = prd[:, 1*f:2*f, :, :]*30
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
-        sic_max = torch.amax(obs[:, 2, :, :], dim=0)
-        
-        theta = torch.acos((u_o*u_p+v_o*v_p)/(vel_o*vel_p))
-        theta = torch.where(torch.isnan(theta), 0, theta)
+        sic_max = torch.amax(obs[:, 2*f:3*f, :, :], dim=0)
 
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
-        err_theta = torch.abs(theta)
         
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err1 = torch.mean(err_u + err_v, dim=0) #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum = torch.mean(err1)*10
 
-        err_sic = torch.square(obs[:, 2, :, :]-prd[:, 2, :, :])
+        err_sic = torch.square(obs[:, 2*f:3*f, :, :]-prd[:, 2*f:3*f, :, :])
         
-        neg_sic = torch.where(prd[:, 2, :, :] < 0, abs(prd[:, 2, :, :]), 0)
-        err2 = torch.mean(err_sic, dim=0)[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
+        err2 = torch.mean(err_sic, dim=0) #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum += torch.mean(err2)*1000
         
         if obs.size()[1] > 3:
@@ -1806,7 +1803,7 @@ class Cascade_UNet(nn.Module):
         xd1_sic = self.sic_dc1(xe42_sic, xe3b_sic)
         xd2_sic = self.sic_dc2(xd1_sic, xe2b_sic)
         xd3_sic = self.sic_dc3(xd2_sic, xe1b_sic)
-        r = self.sic_conv(xd3_sic)
+        r = self.activation(self.sic_conv(xd3_sic))
         
         sic = torch.zeros(siu.shape).cuda()
         scaling = 30
