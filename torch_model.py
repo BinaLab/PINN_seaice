@@ -60,7 +60,7 @@ class custom_loss(nn.Module):
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
-        sic_max = torch.amax(obs[:, 2*f:3*f, :, :], dim=0)
+        # sic_max = torch.amax(obs[:, 2*f:3*f, :, :], dim=0)
 
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
