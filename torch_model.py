@@ -1760,7 +1760,7 @@ class Cascade_UNet(nn.Module):
         # Decoder
         self.sic_dc1 = decoder(512, 256) # output: 80x80x256
         self.sic_dc2 = decoder(256, 128) # output: 160x160x128
-        self.sic_dc3 = decoder(128, 64) # output: 320x320x64 
+        self.sic_dc3 = decoder(128, 64) # output: 320x320x64
 
         # Output layer
         self.siu_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
@@ -1812,11 +1812,11 @@ class Cascade_UNet(nn.Module):
         # dx = self.dx(sic0)
         # dy = self.dx(sic0)
         # print(dx.shape, dy.shape, sic[:, 0:1].shape, siu[:, 0:1].shape, siv[:, 0:1].shape, r[:, 0:1].shape)
-        sic[:, 0:1] = -(siu[:, 0:1]*self.dx(sic0) + siv[:, 0:1]*self.dx(sic0))/25*50 + r[:, 0:1] + sic0
+        sic[:, 0:1] = -(siu[:, 0:1]*self.dx(sic0) + siv[:, 0:1]*self.dy(sic0))/25*50 + r[:, 0:1] + sic0
         
         for i in range(1, siu.shape[1]):
             sic0 = sic[:, i-1:i].clone()
-            sic[:, i:i+1] = -(siu[:, i:i+1]*self.dx(sic0) + siv[:, i:i+1]*self.dx(sic0))/25*50 + r[:, i:i+1] + sic0
+            sic[:, i:i+1] = -(siu[:, i:i+1]*self.dx(sic0) + siv[:, i:i+1]*self.dy(sic0))/25*50 + r[:, i:i+1] + sic0
         
         out = torch.cat([siu, siv, sic], dim=1)
         out = out * (self.landmask == 0)
