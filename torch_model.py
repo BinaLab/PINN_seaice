@@ -387,7 +387,7 @@ class SeaiceDataset(Dataset):
         if n in self.valid:
             for i in range(0, self.int):
                 for v in range(0, var_ip):            
-                    cnn_input[v*self.fore+i, :, :] = (self.input[n-i, v, :, :])
+                    cnn_input[v*self.int+i, :, :] = (self.input[n-i, v, :, :])
             if self.exact:
                 cnn_output[:, :, :] = (self.output[n+self.fore-1, :, :, :])
             else:
