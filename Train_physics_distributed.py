@@ -649,7 +649,7 @@ def main() -> None:
                 loss_fn = single_loss(landmask)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    scheduler = ExponentialLR(optimizer, gamma=0.99)
+    scheduler = ExponentialLR(optimizer, gamma=0.97)
 
     history = {'loss': [], 'val_loss': [], 'time': []}
 
