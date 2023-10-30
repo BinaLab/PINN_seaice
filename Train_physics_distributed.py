@@ -509,7 +509,7 @@ def main() -> None:
         cnn_output = cnn_output[:,:,:, [0,1,3]]
         # Land mask data
         with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
-            landmask = pickle.load(file) 
+            landmask = pickle.load(file)
     elif data_type == "cnn":
         data_type = "sat"
         # Satellite observation data
@@ -538,11 +538,11 @@ def main() -> None:
     # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
     ## Add x y coordinates as inputs
-    if args.model_type != "lg":
-        xx_n = (xx - xx.min())/(xx.max() - xx.min()).astype(np.float16)
-        yy_n = (yy - yy.min())/(yy.max() - yy.min()).astype(np.float16)
-        cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
-        cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
+    # if args.model_type != "lg":
+    #     xx_n = (xx - xx.min())/(xx.max() - xx.min()).astype(np.float16)
+    #     yy_n = (yy - yy.min())/(yy.max() - yy.min()).astype(np.float16)
+    #     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
+    #     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
     
     ## Convert numpy array into torch tensor
     cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
