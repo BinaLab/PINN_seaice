@@ -1795,7 +1795,7 @@ class Cascade_UNet(nn.Module):
         xd2_siu = self.siu_dc2(xd1_siu, xe2b_siu)
         xd3_siu = self.siu_dc3(xd2_siu, xe1b_siu)
         siu = self.siu_conv(xd3_siu)
-        siv = self.siv_conv(xd3_siu)        
+        siv = self.siv_conv(xd3_siu)       
         
         ##### SIC branch #####
         xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
