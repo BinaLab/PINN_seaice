@@ -67,13 +67,13 @@ class custom_loss(nn.Module):
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         
         err1 = torch.mean(err_u + err_v, dim=0) #* (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
-        err_sum = torch.mean(err1)
+        err_sum = torch.mean(err1)*10
 
         err_sic = torch.square(obs[:, 2*f:3*f, :, :]-prd[:, 2*f:3*f, :, :])
         
         neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
         err2 = torch.mean(err_sic, dim=0) #* (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
-        err_sum += torch.mean(err2)
+        err_sum += torch.mean(err2)*10
         
         # if obs.size()[1] > 3:
         #     err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
@@ -150,12 +150,12 @@ class physics_loss(nn.Module):
         
         sicmask = torch.max(sic_o, dim=0)[0]
         err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err1)
+        err_sum = torch.mean(err1) * 10
 
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2)
+        err_sum += torch.mean(err2) * 10
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
