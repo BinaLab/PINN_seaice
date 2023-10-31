@@ -1512,8 +1512,9 @@ class IS_UNet(nn.Module):
         self.wb6 = WB(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1574,11 +1575,12 @@ class IS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
+        siu = self.siv_conv(xd3_siu)
         sic = self.sic_conv(xd3_sic)
         
         # siu = siu * (sic > 0)
                 
-        out = torch.cat([siu, sic], dim=1)
+        out = torch.cat([siu, siv, sic], dim=1)
         out = out * (self.landmask == 0)
 
         return out
@@ -1638,8 +1640,9 @@ class HIS_UNet(nn.Module):
         self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
@@ -1700,11 +1703,12 @@ class HIS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        sic = self.activation2(self.sic_conv(xd3_sic))
+        siu = self.siv_conv(xd3_siv)
+        sic = self.sic_conv(xd3_sic)
         
         # siu = siu * (sic > 0)
                 
-        out = torch.cat([siu, sic], dim=1)
+        out = torch.cat([siu, siv, sic], dim=1)
         out = out * (self.landmask == 0)
 
         return out
