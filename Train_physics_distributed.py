@@ -735,7 +735,7 @@ def main() -> None:
             
             test_save = [data[valid].to('cpu').detach().numpy(), target[valid].to('cpu').detach().numpy(), output[valid].to('cpu').detach().numpy(),
                          val_months[idx[valid]], val_days[idx[valid]]]
-            print(len(valid), data[valid].shape, target[valid].shape, output[valid].shape)
+            # print(len(valid), data[valid].shape, target[valid].shape, output[valid].shape)
 
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
