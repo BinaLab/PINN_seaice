@@ -54,7 +54,7 @@ class custom_loss(nn.Module):
 
     def forward(self, obs, prd):
         f = self.forecast
-        sic_o = prd[:, 2, :, :]*100
+        sic_o = obs[:, 2, :, :]*100
         sic_p = prd[:, 2, :, :]*100
         u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
         u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
