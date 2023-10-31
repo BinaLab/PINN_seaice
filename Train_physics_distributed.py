@@ -709,6 +709,7 @@ def main() -> None:
             # if m % world_size == dist.get_rank():
             
             idx = np.where(val_months == m)[0]
+            valid = []
             
             # data = val_input[val_months==m, :, :, :]
             data = torch.zeros([len(idx), in_channels, row, col])
@@ -722,15 +723,19 @@ def main() -> None:
                 with torch.no_grad():
                     for j in range(0, len(idx)): #range(0, target.size()[0]):
                         data[j, :, :, :] = val_dataset[idx[j]][0]
-                        if args.model_type == "casunet":
-                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
-                        else:
-                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
-                        target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
+                        check = torch.sum(torch.tensor(data).isnan())
+                        if check == 0:
+                            if args.model_type == "casunet":
+                                output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
+                            else:
+                                output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
+                            target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
+                            valid.append(j)
                         t.update(1)                  
-                    
-            test_save = [data.to('cpu').detach().numpy(), target.to('cpu').detach().numpy(), output.to('cpu').detach().numpy(),
-                         val_months[val_months==m], val_days[val_months==m]]
+            
+            test_save = [data[valid].to('cpu').detach().numpy(), target[valid].to('cpu').detach().numpy(), output[valid].to('cpu').detach().numpy(),
+                         val_months[idx[valid]], val_days[idx[valid]]]
+            print(len(valid), data[valid].shape(), target[valid].shape(), output[valid].shape())
 
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
