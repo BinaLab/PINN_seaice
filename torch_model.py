@@ -1575,7 +1575,7 @@ class IS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        siu = self.siv_conv(xd3_siu)
+        siv = self.siv_conv(xd3_siu)
         sic = self.sic_conv(xd3_sic)
         
         # siu = siu * (sic > 0)
@@ -1703,7 +1703,7 @@ class HIS_UNet(nn.Module):
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        siu = self.siv_conv(xd3_siv)
+        siv = self.siv_conv(xd3_siu)
         sic = self.sic_conv(xd3_sic)
         
         # siu = siu * (sic > 0)
