@@ -54,10 +54,10 @@ class custom_loss(nn.Module):
 
     def forward(self, obs, prd):
         f = self.forecast
-        sic_o = prd[:, 2*f:3*f, :, :]*100
-        sic_p = prd[:, 2*f:3*f, :, :]*100
-        u_o = obs[:, 0*f:1*f, :, :]*30; v_o = obs[:, 1*f:2*f, :, :]*30
-        u_p = prd[:, 0*f:1*f, :, :]*30; v_p = prd[:, 1*f:2*f, :, :]*30
+        sic_o = prd[:, 2, :, :]*100
+        sic_p = prd[:, 2, :, :]*100
+        u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
+        u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         vel_o = (u_o**2 + v_o**2)**0.5
         vel_p = (u_p**2 + v_p**2)**0.5
         
@@ -72,7 +72,7 @@ class custom_loss(nn.Module):
 
         err_sic = torch.square(sic_o - sic_p)
         
-        neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
+        # neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
         err2 = torch.mean(err_sic, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum += torch.mean(err2[err2 > 0])*10
         
