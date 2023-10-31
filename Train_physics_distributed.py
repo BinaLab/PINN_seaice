@@ -723,7 +723,7 @@ def main() -> None:
                 with torch.no_grad():
                     for j in range(0, len(idx)): #range(0, target.size()[0]):
                         data[j, :, :, :] = val_dataset[idx[j]][0]
-                        check = torch.sum(torch.tensor(data).isnan())
+                        check = torch.sum(torch.tensor(val_dataset[idx[j]][0]).isnan())
                         if check == 0:
                             if args.model_type == "casunet":
                                 output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
