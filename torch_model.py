@@ -195,10 +195,10 @@ class physics_loss(nn.Module):
         err_phy += torch.mean(err_res)
         
         N = dsic.shape[0]
-        for n in range(0, N):
-            r = corrcoef(dsic[n], advc[n])
-            if r > 0:
-                err_phy += r * 1.0
+        # for n in range(0, N):
+        #     r = corrcoef(dsic[n], advc[n])
+        #     if r > 0:
+        #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
         w = torch.tensor(10.0)
