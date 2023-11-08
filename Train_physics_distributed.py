@@ -516,9 +516,11 @@ def main() -> None:
         cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
         # Land mask data
-        with open(data_path + f"landmask_320.pkl", 'rb') as file:
+        # with open(data_path + f"landmask_320.pkl", 'rb') as file:
+        #     landmask = pickle.load(file)
+        #     landmask = torch.tensor(landmask)[30:286, 10:266]
+        with open(data_path + f"CAAmask_256.pkl", 'rb') as file:
             landmask = pickle.load(file)
-            landmask = torch.tensor(landmask)[30:286, 10:266]
         
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
@@ -558,10 +560,10 @@ def main() -> None:
     # test_input = cnn_input[mask1, :, :, :]
     # test_output = cnn_output[mask1, :, :, :]    
 
-    train_input = torch.permute(train_input, (0, 3, 1, 2))
-    train_output = torch.permute(train_output, (0, 3, 1, 2))
-    val_input = torch.permute(val_input, (0, 3, 1, 2))
-    val_output = torch.permute(val_output, (0, 3, 1, 2))
+    train_input = torch.permute(train_input, (0, 3, 1, 2)) * (landmask == 0)
+    train_output = torch.permute(train_output, (0, 3, 1, 2)) * (landmask == 0)
+    val_input = torch.permute(val_input, (0, 3, 1, 2)) * (landmask == 0)
+    val_output = torch.permute(val_output, (0, 3, 1, 2)) * (landmask == 0)
     
     # print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     

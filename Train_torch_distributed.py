@@ -499,8 +499,7 @@ def main() -> None:
             cnn_input = cnn_input[:, 30:286, 10:266,:]
             cnn_output = cnn_output[:, 30:286, 10:266,:]        
             xx = xx[30:286, 10:266]
-            yy = yy[30:286, 10:266]
-        
+            yy = yy[30:286, 10:266]        
         
     if args.model_type == "mtunet":
         args.predict = "all"
@@ -516,7 +515,7 @@ def main() -> None:
         cnn_output = cnn_output[:,:,:,0:2]     
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
-    cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
+    # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
     ## Add x y coordinates as inputs
     if args.model_type != "lg":
