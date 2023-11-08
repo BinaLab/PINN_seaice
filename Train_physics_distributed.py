@@ -87,6 +87,12 @@ def parse_args() -> argparse.Namespace:
         help='year to exclude during the training process',
     )
     parser.add_argument(
+        '--sdate',
+        type=int,
+        default=2013,
+        help='year to start training',
+    )
+    parser.add_argument(
         '--checkpoint-format',
         default='checkpoint_unet_{epoch}.pth.tar',
         help='checkpoint file format',
@@ -484,7 +490,8 @@ def main() -> None:
     data_path = args.data_dir
     data_file = args.data_file
     model_dir = args.model_dir
-    date = args.date   
+    date = args.date
+    sdate = args.sdate
 
     n_epochs = args.epochs
     batch_size = args.batch_size  # size of each batch
@@ -549,7 +556,7 @@ def main() -> None:
     cnn_output = torch.tensor(cnn_output, dtype=torch.float32)
     
     mask1 = (years == date) # Test samples
-    mask2 = (days % 7 == 2) # Validation samples
+    mask2 = (years >= sdate) # (days % 7 == 2) # Validation samples
 
     val_input = cnn_input[mask1] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[mask1] #cnn_output[(~mask1)&(mask2), :, :, :]
@@ -626,7 +633,7 @@ def main() -> None:
     else:
         net = UNet(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_CA_{args.model_type}_{data_type}{data_ver}_{args.predict}_wo{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
