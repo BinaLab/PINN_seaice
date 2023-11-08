@@ -595,6 +595,8 @@ def main() -> None:
 
     train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = True) 
     val_sampler, val_loader = make_sampler_and_loader(args, val_dataset, shuffle = False)
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     # del cnn_input, cnn_output, train_input, train_output
     
@@ -628,8 +630,6 @@ def main() -> None:
 
     # print(device)
     net.to(device)
-    if args.cuda:
-        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     if args.no_cuda == False:
         net = torch.nn.parallel.DistributedDataParallel(
