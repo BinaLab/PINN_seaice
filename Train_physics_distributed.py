@@ -520,14 +520,15 @@ def main() -> None:
     elif data_type == "cnn":
         data_type = "sat"
         # Satellite observation data
-        cnn_input = cnn_input[:,:,:,[0,1,2,3,4,5]]
-        cnn_output = cnn_output[:,:,:,:-1]
+        cnn_input = cnn_input[:,60:220, 90:250,[0,1,2,3,4,5]]
+        cnn_output = cnn_output[:,60:220, 90:250,:-1]
         # Land mask data
         # with open(data_path + f"landmask_320.pkl", 'rb') as file:
         #     landmask = pickle.load(file)
         #     landmask = torch.tensor(landmask)[30:286, 10:266]
         with open(data_path + f"CAAmask_256.pkl", 'rb') as file:
             landmask = pickle.load(file)
+            landmask = torch.tensor(landmask)[60:220, 90:250]
         
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
