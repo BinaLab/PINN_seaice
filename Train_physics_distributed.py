@@ -533,8 +533,6 @@ def main() -> None:
         cnn_output = cnn_output[:,:,:,0:2]        
 
     landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
-    if args.cuda:
-        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
@@ -630,6 +628,8 @@ def main() -> None:
 
     # print(device)
     net.to(device)
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     
     if args.no_cuda == False:
         net = torch.nn.parallel.DistributedDataParallel(
