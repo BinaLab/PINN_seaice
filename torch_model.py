@@ -217,10 +217,10 @@ def dynamics(u, v, h):
         w_dx[i, i] = torch.tensor([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])/3
         w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
 
-    dx=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
+    dx=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False).cuda()
     dx.weight=nn.Parameter(w_dx, requires_grad = False)
 
-    dy=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
+    dy=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False).cuda()
     dy.weight=nn.Parameter(w_dy, requires_grad = False)
 
     adv = (u*dx(h) + v*dy(h))/25
