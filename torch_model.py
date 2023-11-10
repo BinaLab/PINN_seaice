@@ -67,14 +67,14 @@ class custom_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         
-        err1 = torch.mean(err_u + err_v, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
-        err_sum = torch.mean(err1[err1 > 0])*10
+        err1 = torch.nanmean(err_u + err_v, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err_sum = torch.nanmean(err1[err1 > 0])*10
 
         err_sic = torch.square(sic_o - sic_p)
         
         # neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
-        err2 = torch.mean(err_sic, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
-        err_sum += torch.mean(err2[err2 > 0])*10
+        err2 = torch.nanmean(err_sic, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err_sum += torch.nanmean(err2[err2 > 0])*10
         
         # if obs.size()[1] > 3:
         #     err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
@@ -150,13 +150,13 @@ class physics_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         
         sicmask = torch.max(sic_o, dim=0)[0]
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err1[err1 > 0]) * 10
+        err1 = torch.nanmean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err_sum = torch.nanmean(err1[err1 > 0]) * 10
 
         err_sic = torch.square(sic_o - sic_p)
         
-        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2[err2 > 0]) * 10
+        err2 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_sum += torch.nanmean(err2[err2 > 0]) * 10
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
@@ -165,34 +165,37 @@ class physics_loss(nn.Module):
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
         pos_sic = torch.where(sic_p > 100, err_sic, 0)     
-        err3 = torch.mean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_phy += torch.mean(err3)
+        err3 = torch.nanmean(neg_sic + pos_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_phy += torch.nanmean(err3)
         
         ## Valid SID
         valid_sic = torch.where(sic_o <= 0, 0, 1)
-        err4 = torch.mean(torch.where(valid_sic==0, err_u + err_v, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.mean(err4)
+        err4 = torch.nanmean(torch.where(valid_sic==0, err_u + err_v, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_phy += torch.nanmean(err4)
         
         # advection
-        advc = sic_p*0
-        dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
-        dy = (sic_p[:, 2:, 1:-1]-sic_p[:, :-2, 1:-1]) + (sic_p[:, 2:, 2:]-sic_p[:, :-2, 2:]) + (sic_p[:, 2:, :-2]-sic_p[:, :-2, :-2])    
-        advc[:, 1:-1, 1:-1] = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
+        advc, divc = dynamics(u_p, v_p, sic_p)
         
-        # divergence
-        divc = sic_p*0
-        dx = (u_p[:, 1:-1, 2:]-u_p[:, 1:-1, :-2]) + (u_p[:, 2:, 2:]-u_p[:, 2:, :-2]) + (u_p[:, :-2, 2:]-u_p[:, :-2, :-2])
-        dy = (v_p[:, 1:-1, 2:]-v_p[:, 1:-1, :-2]) + (v_p[:, 2:, 2:]-v_p[:, 2:, :-2]) + (v_p[:, :-2, 2:]-v_p[:, :-2, :-2])
-        divc[:, 1:-1, 1:-1] = dx/3 + dy/3
-        divc = divc*sic_p/25
+#         # advection
+#         advc = sic_p*0
+#         dx = (sic_p[:, 1:-1, 2:]-sic_p[:, 1:-1, :-2]) + (sic_p[:, 2:, 2:]-sic_p[:, 2:, :-2]) + (sic_p[:, :-2, 2:]-sic_p[:, :-2, :-2])
+#         dy = (sic_p[:, 2:, 1:-1]-sic_p[:, :-2, 1:-1]) + (sic_p[:, 2:, 2:]-sic_p[:, :-2, 2:]) + (sic_p[:, 2:, :-2]-sic_p[:, :-2, :-2])    
+#         advc[:, 1:-1, 1:-1] = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
+        
+#         # divergence
+#         divc = sic_p*0
+#         dx = (u_p[:, 1:-1, 2:]-u_p[:, 1:-1, :-2]) + (u_p[:, 2:, 2:]-u_p[:, 2:, :-2]) + (u_p[:, :-2, 2:]-u_p[:, :-2, :-2])
+#         dy = (v_p[:, 1:-1, 2:]-v_p[:, 1:-1, :-2]) + (v_p[:, 2:, 2:]-v_p[:, 2:, :-2]) + (v_p[:, :-2, 2:]-v_p[:, :-2, :-2])
+#         divc[:, 1:-1, 1:-1] = dx/3 + dy/3
+#         divc = divc*sic_p/25
         
         dsic = sic_p - sic0
         
         residual = dsic + advc
         
         # SIC change
-        err_res = torch.mean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.mean(err_res)
+        err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_phy += torch.nanmean(err_res)
         
         N = dsic.shape[0]
         # for n in range(0, N):
@@ -204,7 +207,26 @@ class physics_loss(nn.Module):
         w = torch.tensor(10.0)
         err_sum += w*err_phy
         
-        return err_sum  
+        return err_sum
+    
+    def dynamics(u, v, h):
+        c = 1
+        w_dx = torch.zeros([c, c, 3, 3])
+        w_dy = torch.zeros([c, c, 3, 3])
+        for i in range(0, c):
+            w_dx[i, i] = torch.tensor([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])/3
+            w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
+
+        dx=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
+        dx.weight=nn.Parameter(w_dx, requires_grad = False)
+
+        dy=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
+        dy.weight=nn.Parameter(w_dy, requires_grad = False)
+
+        adv = (u*dx(h) + v*dy(h))/25
+        div = (h*dx(u) + h*dy(v))/25
+        
+        return adv, div
     
 class physics_loss_cice(nn.Module):
     def __init__(self, landmask):
@@ -1592,7 +1614,8 @@ class IS_UNet(nn.Module):
         # siu = siu * (sic > 0)
                 
         out = torch.cat([siu, siv, sic], dim=1)
-        out = out * (self.landmask == 0)
+        out[:, :, self.landmask == 0] = torch.nan
+        # out = out * (self.landmask == 0)
 
         return out
     
@@ -1750,7 +1773,8 @@ class HIS_UNet(nn.Module):
         # siu = siu * (sic > 0)
                 
         out = torch.cat([siu, siv, sic], dim=1)
-        out = out * (self.landmask == 0)
+        out[:, :, self.landmask == 0] = torch.nan
+        # out = out * (self.landmask == 0)
 
         return out
     
