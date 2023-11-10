@@ -67,13 +67,13 @@ class custom_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         
-        err1 = torch.nanmean(err_u + err_v, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err1 = torch.nanmean(err_u + err_v, dim=0) # * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum = torch.nanmean(err1[err1 > 0])*10
 
         err_sic = torch.square(sic_o - sic_p)
         
         # neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
-        err2 = torch.nanmean(err_sic, dim=0) * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
+        err2 = torch.nanmean(err_sic, dim=0) # * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
         err_sum += torch.nanmean(err2[err2 > 0])*10
         
         # if obs.size()[1] > 3:
@@ -1614,7 +1614,7 @@ class IS_UNet(nn.Module):
         # siu = siu * (sic > 0)
                 
         out = torch.cat([siu, siv, sic], dim=1)
-        out[:, :, self.landmask == 0] = torch.nan
+        out[:, :, self.landmask != 0] = torch.nan
         # out = out * (self.landmask == 0)
 
         return out
@@ -1773,7 +1773,7 @@ class HIS_UNet(nn.Module):
         # siu = siu * (sic > 0)
                 
         out = torch.cat([siu, siv, sic], dim=1)
-        out[:, :, self.landmask == 0] = torch.nan
+        out[:, :, self.landmask != 0] = torch.nan
         # out = out * (self.landmask == 0)
 
         return out
