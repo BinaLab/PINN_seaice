@@ -252,7 +252,7 @@ def make_sampler_and_loader(args, train_dataset, shuffle = True):
 
 def RMSE(prd, obs):
     err = torch.square(obs-prd)
-    return torch.mean(err)**0.5
+    return torch.nanmean(err)**0.5
 
 # def init_processes(backend):
 #     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
