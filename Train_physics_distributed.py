@@ -571,7 +571,7 @@ def main() -> None:
     mask1 = (years == date) # Test samples
     mask2 = (years >= sdate) # (days % 7 != 2) # Validation samples
     
-    train_mask = ~mask1
+    train_mask = (~mask1)&(mask2)
     val_mask = mask1
     
     train_input = cnn_input[train_mask] #cnn_input[(~mask1)&(~mask2), :, :, :]
@@ -609,7 +609,7 @@ def main() -> None:
     # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
     val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
     
-    train_dataset, _ = random_split(train_dataset, [args.ratio, 1.-args.ratio])
+    train_dataset, _ = random_split(train_dataset, [args.ratio, 1-args.ratio])
     
     n_samples = len(train_dataset) #.length
     val_samples = len(val_dataset) #.length
@@ -652,7 +652,7 @@ def main() -> None:
     else:
         net = UNet(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{args.ratio}_{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_{args.ratio}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
