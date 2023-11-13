@@ -570,11 +570,14 @@ def main() -> None:
     
     mask1 = (years == date) # Test samples
     mask2 = (years >= sdate) # (days % 7 != 2) # Validation samples
-
-    val_input = cnn_input[mask1] #cnn_input[(~mask1)&(mask2), :, :, :]
-    val_output = cnn_output[mask1] #cnn_output[(~mask1)&(mask2), :, :, :]
-    train_input = cnn_input[(~mask1)&(mask2)] #cnn_input[(~mask1)&(~mask2), :, :, :]
-    train_output = cnn_output[(~mask1)&(mask2)] #cnn_output[(~mask1)&(~mask2), :, :, :]
+    
+    train_mask = ~mask1
+    val_mask = mask1
+    
+    train_input = cnn_input[train_mask] #cnn_input[(~mask1)&(~mask2), :, :, :]
+    train_output = cnn_output[train_mask] #cnn_output[(~mask1)&(~mask2), :, :, :]
+    val_input = cnn_input[val_mask] #cnn_input[(~mask1)&(mask2), :, :, :]
+    val_output = cnn_output[val_mask] #cnn_output[(~mask1)&(mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
     # test_output = cnn_output[mask1, :, :, :]    
 
@@ -598,8 +601,8 @@ def main() -> None:
         seq_days.append(days[i] + step)
 
     seq_days = np.array(seq_days)
-    train_days = seq_days[~mask1]
-    val_days = seq_days[mask1]
+    train_days = seq_days[train_mask]
+    val_days = seq_days[val_mask]
     # -------------------------------------------------------------
     
     train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
