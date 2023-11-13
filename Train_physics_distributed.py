@@ -609,7 +609,8 @@ def main() -> None:
     # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
     val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
     
-    train_dataset, _ = random_split(train_dataset, [args.ratio, 1-args.ratio])
+    if args.ratio < 1:
+        train_dataset, _ = random_split(train_dataset, [args.ratio, 1-args.ratio])
     
     n_samples = len(train_dataset) #.length
     val_samples = len(val_dataset) #.length
