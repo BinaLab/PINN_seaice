@@ -20,7 +20,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 import torch.distributed as dist
 from torch.utils import collect_env
 from torch.utils.data import TensorDataset
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torch.utils.data.distributed import DistributedSampler
  
 # from torch.utils.tensorboard import SummaryWriter
@@ -591,6 +591,7 @@ def main() -> None:
     # -------------------------------------------------------------
     
     train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
+    # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
     val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
     
     n_samples = train_dataset.length

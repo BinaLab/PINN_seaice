@@ -15,6 +15,8 @@ import cartopy.crs as ccrs
 
 from scipy.interpolate import griddata
 
+import torch
+import torch.nn as nn
 import cdsapi
 import xarray as xr
 from urllib.request import urlopen
@@ -813,3 +815,20 @@ def float_to_int(input0, output0):
 def nanmask(array, mask):
     array[mask] = np.nan
     return array
+
+def advection(u, v, h):
+    c = 1
+    w_dx = torch.zeros([c, c, 3, 3])
+    w_dy = torch.zeros([c, c, 3, 3])
+    for i in range(0, c):
+        w_dx[i, i] = torch.tensor([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])/3
+        w_dy[i, i] = torch.tensor([[-1, -1, -1], [0, 0, 0], [1,1,1]])/3
+
+    dx=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
+    dx.weight=nn.Parameter(w_dx, requires_grad = False)
+
+    dy=nn.Conv2d(c, c, kernel_size=3, stride=1, padding="same", bias=False)
+    dy.weight=nn.Parameter(w_dy, requires_grad = False)
+    
+    adv = u*dx(h) + v*dy(h)
+    return adv
