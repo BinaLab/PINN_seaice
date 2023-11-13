@@ -611,8 +611,8 @@ def main() -> None:
     
     train_dataset, _ = random_split(train_dataset, [args.ratio, 1.-args.ratio])
     
-    n_samples = train_dataset.length
-    val_samples = val_dataset.length
+    n_samples = len(train_dataset) #.length
+    val_samples = len(val_dataset) #.length
     in_channels, row, col = train_dataset[0][0].shape
     out_channels, _, _ = train_dataset[0][1].shape
     
