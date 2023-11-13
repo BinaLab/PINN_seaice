@@ -89,7 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--sdate',
         type=int,
-        default=2013,
+        default=2016,
         help='year to start training',
     )
     parser.add_argument(
@@ -652,7 +652,7 @@ def main() -> None:
     else:
         net = UNet(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}-{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{args.ratio}_{date}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
 
     # print(device)
     net.to(device)
