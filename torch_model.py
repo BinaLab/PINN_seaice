@@ -157,22 +157,22 @@ class physics_loss(nn.Module):
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.nanmean(err_sic, dim=0) #[torch.where(self.landmask == 0)]
-        err_sum += torch.nanmean(err2[err2 > 0]) * 100
+        err_sum += torch.nanmean(err2[err2 > 0]) * 10
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
         err_phy = 0
         
         ## Negative or positive SIC
-        neg_sic = torch.where(sic_p < 0, err_sic, 0)
-        pos_sic = torch.where(sic_p > 100, err_sic, 0)     
+        neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
+        pos_sic = torch.where(sic_p > 100, sic_p-100, 0)
         err3 = torch.nanmean(neg_sic + pos_sic, dim=0) #[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err3) * 10
+        err_phy += torch.nanmean(err3)
         
         ## Valid SID
         valid_sic = torch.where(sic_p <= 0, 0, 1)
-        err4 = torch.nanmean(torch.where(valid_sic==0, err_u + err_v, 0), dim = 0) #[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err4) * 10
+        err4 = torch.nanmean(torch.where(sic_p <= 0, torch.square(u_p)+torch.square(v_p), 0), dim = 0) #[torch.where(self.landmask == 0)]
+        err_phy += torch.nanmean(err4)
         
         # advection
         
@@ -195,7 +195,7 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err_res) * 10
+        err_phy += torch.nanmean(err_res)
         
         N = dsic.shape[0]
         # for n in range(0, N):
@@ -204,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(1.0)
+        w = torch.tensor(10.0)
         err_sum += w*err_phy
         
         return err_sum
