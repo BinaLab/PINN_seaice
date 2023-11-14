@@ -177,7 +177,7 @@ class physics_loss(nn.Module):
         # advection
         
         # advection
-        advc = torch.zeros(sic_p.shape)
+        advc = sic_p.clone() * 0
         dx = (sic0[:, 1:-1, 2:]-sic0[:, 1:-1, :-2]) + (sic0[:, 2:, 2:]-sic0[:, 2:, :-2]) + (sic0[:, :-2, 2:]-sic0[:, :-2, :-2])
         dy = (sic0[:, 2:, 1:-1]-sic0[:, :-2, 1:-1]) + (sic0[:, 2:, 2:]-sic0[:, :-2, 2:]) + (sic0[:, 2:, :-2]-sic0[:, :-2, :-2])    
         advc[:, 1:-1, 1:-1] = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
