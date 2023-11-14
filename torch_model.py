@@ -157,7 +157,7 @@ class physics_loss(nn.Module):
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.nanmean(err_sic, dim=0) #[torch.where(self.landmask == 0)]
-        err_sum += torch.nanmean(err2[err2 > 0]) * 10
+        err_sum += torch.nanmean(err2[err2 > 0]) * 100
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
@@ -204,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(5.0)
+        w = torch.tensor(2.0)
         err_sum += w*err_phy
         
         return err_sum
