@@ -194,7 +194,7 @@ class physics_loss(nn.Module):
         residual = dsic + advc
         
         # SIC change
-        err_res = torch.nanmean(torch.where(abs(residual) > 100, err_u + err_v + err_sic, 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
         err_phy += torch.nanmean(err_res)
         
         N = dsic.shape[0]

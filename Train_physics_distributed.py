@@ -328,7 +328,7 @@ def train(
                 output = model(data)
                 
             if args.phy == "phy":
-                loss = loss_func(output, target, data[:, 2, :, :].cuda())
+                loss = loss_func(output, target, data[:, 2*args.day_int, :, :].cuda())
             else:
                 loss = loss_func(output, target)
 
@@ -399,7 +399,7 @@ def validate(
                     output = model(data)
                 
                 if args.phy == "phy":
-                    val_loss.update(loss_func(output, target, data[:, 2, :, :].cuda()))
+                    val_loss.update(loss_func(output, target, data[:, 2*args.day_int, :, :].cuda()))
                 else:
                     val_loss.update(loss_func(output, target))
 
