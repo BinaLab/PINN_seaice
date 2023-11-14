@@ -610,7 +610,8 @@ def main() -> None:
     val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
     
     if args.ratio < 1:
-        train_dataset, _ = random_split(train_dataset, [args.ratio, 1-args.ratio])
+        generator = torch.Generator().manual_seed(0)
+        train_dataset, _ = random_split(train_dataset, [args.ratio, 1-args.ratio], generator)
     
     n_samples = len(train_dataset) #.length
     val_samples = len(val_dataset) #.length
