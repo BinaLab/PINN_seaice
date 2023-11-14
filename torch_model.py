@@ -167,17 +167,17 @@ class physics_loss(nn.Module):
         neg_sic = torch.where(sic_p < 0, err_sic, 0)
         pos_sic = torch.where(sic_p > 100, err_sic, 0)     
         err3 = torch.nanmean(neg_sic + pos_sic, dim=0) #[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err3)
+        err_phy += torch.nanmean(err3) * 10
         
         ## Valid SID
-        valid_sic = torch.where(sic_o <= 0, 0, 1)
+        valid_sic = torch.where(sic_p <= 0, 0, 1)
         err4 = torch.nanmean(torch.where(valid_sic==0, err_u + err_v, 0), dim = 0) #[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err4)
+        err_phy += torch.nanmean(err4) * 10
         
         # advection
         
         # advection
-        advc = sic_p*0
+        advc = torch.zeros(sic_p.shape)
         dx = (sic0[:, 1:-1, 2:]-sic0[:, 1:-1, :-2]) + (sic0[:, 2:, 2:]-sic0[:, 2:, :-2]) + (sic0[:, :-2, 2:]-sic0[:, :-2, :-2])
         dy = (sic0[:, 2:, 1:-1]-sic0[:, :-2, 1:-1]) + (sic0[:, 2:, 2:]-sic0[:, :-2, 2:]) + (sic0[:, 2:, :-2]-sic0[:, :-2, :-2])    
         advc[:, 1:-1, 1:-1] = (u_p[:, 1:-1, 1:-1]*dx/3 + v_p[:, 1:-1, 1:-1]*dy/3)/25
@@ -204,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(100.0)
+        w = torch.tensor(10.0)
         err_sum += w*err_phy
         
         return err_sum
