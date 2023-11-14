@@ -195,7 +195,7 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err_res)
+        err_phy += torch.nanmean(err_res) * 10
         
         N = dsic.shape[0]
         # for n in range(0, N):
