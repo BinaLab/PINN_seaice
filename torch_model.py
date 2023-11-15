@@ -68,13 +68,13 @@ class custom_loss(nn.Module):
         err_vel = torch.square(vel_o - vel_p) #[sic > 0]
         
         err1 = torch.nanmean(err_u + err_v, dim=0) # * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
-        err_sum = torch.nanmean(err1[err1 > 0])*10
+        err_sum = torch.nanmean(err1)*10
 
         err_sic = torch.square(sic_o - sic_p)
         
         # neg_sic = torch.where(prd[:, 2*f:3*f, :, :] < 0, abs(prd[:, 2*f:3*f, :, :]), 0)
         err2 = torch.nanmean(err_sic, dim=0) # * (self.landmask == 0)  #[torch.where((self.landmask == 0))] # & (sic_max > 0))]
-        err_sum += torch.nanmean(err2[err2 > 0])*10
+        err_sum += torch.nanmean(err2)*10
         
         # if obs.size()[1] > 3:
         #     err_sit = torch.abs(obs[:, 3, :, :]-prd[:, 3, :, :])  
@@ -151,12 +151,12 @@ class physics_loss(nn.Module):
         
         sicmask = torch.max(sic_o, dim=0)[0]
         err1 = torch.nanmean(err_u + err_v, dim=0) #[torch.where(self.landmask == 0)]
-        err_sum = torch.nanmean(err1[err1 > 0]) * 10
+        err_sum = torch.nanmean(err1) * 10
 
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.nanmean(err_sic, dim=0) #[torch.where(self.landmask == 0)]
-        err_sum += torch.nanmean(err2[err2 > 0]) * 10
+        err_sum += torch.nanmean(err2) * 10
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
@@ -165,7 +165,7 @@ class physics_loss(nn.Module):
         ## Negative or positive SIC
         neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
         pos_sic = torch.where(sic_p > 100, sic_p-100, 0)
-        err3 = torch.nanmean(neg_sic + pos_sic, dim=0) #[torch.where(self.landmask == 0)]
+        err3 = torch.nanmean(torch.square(neg_sic) + torch.square(pos_sic), dim=0) #[torch.where(self.landmask == 0)]
         err_phy += torch.nanmean(err3)
         
         ## Valid SID
@@ -1801,7 +1801,7 @@ class Cascade_UNet(nn.Module):
 
         # input: 40x40x256
         self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.siu_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1818,7 +1818,7 @@ class Cascade_UNet(nn.Module):
 
         # input: 40x40x256
         self.sic_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.sic_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1852,8 +1852,8 @@ class Cascade_UNet(nn.Module):
         xe2_siu, xe2b_siu = self.siu_ec2(xe1_siu) # SIU
         xe3_siu, xe3b_siu = self.siu_ec3(xe2_siu) # SIU
         xe41_siu = self.activation(self.siu_ec41(xe3_siu))
-        xe42_siu = self.activation(self.siu_ec42(xe41_siu))
-        xd1_siu = self.siu_dc1(xe42_siu, xe3b_siu)
+        # xe41_siu = self.activation(self.siu_ec42(xe41_siu))
+        xd1_siu = self.siu_dc1(xe41_siu, xe3b_siu)
         xd2_siu = self.siu_dc2(xd1_siu, xe2b_siu)
         xd3_siu = self.siu_dc3(xd2_siu, xe1b_siu)
         siu = self.siu_conv(xd3_siu) * (self.landmask == 0)
@@ -1864,8 +1864,8 @@ class Cascade_UNet(nn.Module):
         xe2_sic, xe2b_sic = self.sic_ec2(xe1_sic) # SIC
         xe3_sic, xe3b_sic = self.sic_ec3(xe2_sic) # SIC
         xe41_sic = self.activation(self.sic_ec41(xe3_sic))
-        xe42_sic = self.activation(self.sic_ec42(xe41_sic))
-        xd1_sic = self.sic_dc1(xe42_sic, xe3b_sic)
+        # xe41_sic = self.activation(self.sic_ec42(xe41_sic))
+        xd1_sic = self.sic_dc1(xe41_sic, xe3b_sic)
         xd2_sic = self.sic_dc2(xd1_sic, xe2b_sic)
         xd3_sic = self.sic_dc3(xd2_sic, xe1b_sic)
         r = self.activation(self.sic_conv(xd3_sic))
@@ -1875,7 +1875,7 @@ class Cascade_UNet(nn.Module):
         # dx = self.dx(sic0)
         # dy = self.dx(sic0)
         # print(dx.shape, dy.shape, sic[:, 0:1].shape, siu[:, 0:1].shape, siv[:, 0:1].shape, r[:, 0:1].shape)
-        sic[:, 0:1] = -(siu[:, 0:1]*self.dx(sic0) + siv[:, 0:1]*self.dy(sic0))/25*scaling + r[:, 0:1] + sic0
+        sic[:, 0:1] = -(siu[:, 0:1]*self.dx(sic0) + siv[:, 0:1]*self.dy(sic0))/50*scaling + r[:, 0:1] + sic0
         
         # for i in range(1, siu.shape[1]):
         #     sic0 = sic[:, i-1:i].clone()
