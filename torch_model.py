@@ -1018,10 +1018,10 @@ class AttModule(nn.Module):
         self.activation = nn.Tanh()
         self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a13 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        # self.a13 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
-        self.att3 = Cal_Att(ch, row, col, k)
+        # self.att3 = Cal_Att(ch, row, col, k)
         self.att_share = Cal_Att(ch, row, col, k)
         # nn.Sequential(
         #     nn.Conv2d(ch, ch, kernel_size=k, padding="same"),
@@ -1029,21 +1029,21 @@ class AttModule(nn.Module):
         # )
         self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
         self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
-        self.a23 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
+        # self.a23 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
 
-    def forward(self, x1, x2, x3):
+    def forward(self, x1, x2):
         
-        xs = x1*self.a11 + x2*self.a12 + x3*self.a13 # shared information
+        xs = x1*self.a11 + x2*self.a12 # + x3*self.a13 # shared information
         xs_att = self.att_share(xs)
         x1_att = self.att1(x1)
         x2_att = self.att2(x2)
-        x3_att = self.att3(x3)
+        # x3_att = self.att3(x3)
         
         x1 = x1 + (x1_att + xs_att)*self.a21
         x2 = x2 + (x2_att + xs_att)*self.a22      
-        x3 = x3 + (x3_att + xs_att)*self.a23      
+        # x3 = x3 + (x3_att + xs_att)*self.a23      
         
-        return x1, x2, x3
+        return x1, x2
 
 # Attention blocks
 class AttBlock(nn.Module):
@@ -1649,22 +1649,22 @@ class HIS_UNet(nn.Module):
         self.siu_dc2 = decoder(256, 128) # output: 160x160x128
         self.siu_dc3 = decoder(128, 64) # output: 320x320x64
         
-        ##### SIV BRANCH #####
-        # input: 320x320x64
-        self.siv_ec1 = encoder(32, 64) # output: 160x160x64
-        # input: 160x160x64
-        self.siv_ec2 = encoder(64, 128) # output: 80x80x128
-        # input: 80x80x128
-        self.siv_ec3 = encoder(128, 256) # output: 40x40x256
+#         ##### SIV BRANCH #####
+#         # input: 320x320x64
+#         self.siv_ec1 = encoder(32, 64) # output: 160x160x64
+#         # input: 160x160x64
+#         self.siv_ec2 = encoder(64, 128) # output: 80x80x128
+#         # input: 80x80x128
+#         self.siv_ec3 = encoder(128, 256) # output: 40x40x256
 
-        # input: 40x40x256
-        self.siv_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        # self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+#         # input: 40x40x256
+#         self.siv_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+#         # self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
-        # Decoder
-        self.siv_dc1 = decoder(512, 256) # output: 80x80x256
-        self.siv_dc2 = decoder(256, 128) # output: 160x160x128
-        self.siv_dc3 = decoder(128, 64) # output: 320x320x64
+#         # Decoder
+#         self.siv_dc1 = decoder(512, 256) # output: 80x80x256
+#         self.siv_dc2 = decoder(256, 128) # output: 160x160x128
+#         self.siv_dc3 = decoder(128, 64) # output: 320x320x64
         
         ##### SIC BRANCH #####
         # input: 320x320x64
@@ -1692,8 +1692,8 @@ class HIS_UNet(nn.Module):
         self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
@@ -1702,24 +1702,24 @@ class HIS_UNet(nn.Module):
         
         ##### Encoder 1 #####
         xe1_siu, xe1b_siu = self.siu_ec1(x) # SIU
-        xe1_siv, xe1b_siv = self.siv_ec1(x) # SIV
+        # xe1_siv, xe1b_siv = self.siv_ec1(x) # SIV
         xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
         # Weighting block 1
-        wb1_siu, wb1_siv, wb1_sic = self.wb1(xe1_siu, xe1_siv, xe1_sic)
+        wb1_siu, wb1_sic = self.wb1(xe1_siu, xe1_sic)
         
         ##### Encoder 2 #####
         xe2_siu, xe2b_siu = self.siu_ec2(wb1_siu) # SIU
-        xe2_siv, xe2b_siv = self.siv_ec2(wb1_siv) # SIV
+        # xe2_siv, xe2b_siv = self.siv_ec2(wb1_siv) # SIV
         xe2_sic, xe2b_sic = self.sic_ec2(wb1_sic) # SIC
         # Weighting block 2
-        wb2_siu, wb2_siv, wb2_sic = self.wb2(xe2_siu, xe2_siv, xe2_sic)
+        wb2_siu, wb2_sic = self.wb2(xe2_siu, xe2_sic)
         
         ##### Encoder 3 #####
         xe3_siu, xe3b_siu = self.siu_ec3(wb2_siu) # SIU
-        xe3_siv, xe3b_siv = self.siv_ec3(wb2_siv) # SIV
+        # xe3_siv, xe3b_siv = self.siv_ec3(wb2_siv) # SIV
         xe3_sic, xe3b_sic = self.sic_ec3(wb2_sic) # SIC
         # Weighting block 3
-        wb3_siu, wb3_siv, wb3_sic = self.wb3(xe3_siu, xe3_siv, xe3_sic)
+        wb3_siu, wb3_sic = self.wb3(xe3_siu, xe3_sic)
         
         ##### Bottom bridge #####
         # SIU
@@ -1727,8 +1727,8 @@ class HIS_UNet(nn.Module):
         xe41_siu = self.activation1(self.siu_ec41(wb3_siu))
         # xe41_siu = self.activation1(self.siu_ec42(xe41_siu))
         # SIV
-        xe3_siv = self.dropout(xe3_siv)
-        xe41_siv = self.activation1(self.siv_ec41(wb3_siv))
+        # xe3_siv = self.dropout(xe3_siv)
+        # xe41_siv = self.activation1(self.siv_ec41(wb3_siv))
         # xe41_siv = self.activation1(self.siv_ec42(xe41_siv))
         # SIC
         xe3_sic = self.dropout(xe3_sic)
@@ -1736,44 +1736,44 @@ class HIS_UNet(nn.Module):
         # xe41_sic = self.activation1(self.sic_ec42(xe41_sic))
         # output: 40x40x512
         # Weighting block 4
-        wb4_siu, wb4_siv, wb4_sic = self.wb4(xe41_siu, xe41_siv, xe41_sic) 
+        wb4_siu, wb4_sic = self.wb4(xe41_siu, xe41_sic) 
         
         ##### Decoder 1 #####
         # SIU
         xd1_siu = self.siu_dc1(wb4_siu, xe3b_siu)
         # SIV
-        xd1_siv = self.siv_dc1(wb4_siv, xe3b_siv)
+        # xd1_siv = self.siv_dc1(wb4_siv, xe3b_siv)
         # SIC
         xd1_sic = self.sic_dc1(wb4_sic, xe3b_sic)
         # Weighting block 5
-        wb5_siu, wb5_siv, wb5_sic = self.wb5(xd1_siu, xd1_siv, xd1_sic) 
+        wb5_siu, wb5_sic = self.wb5(xd1_siu, xd1_sic) 
         
         ##### Decoder 2 #####
         # SIU
         xd2_siu = self.siu_dc2(wb5_siu, xe2b_siu)
         # SIV
-        xd2_siv = self.siv_dc2(wb5_siv, xe2b_siv)
+        # xd2_siv = self.siv_dc2(wb5_siv, xe2b_siv)
         # SIC
         xd2_sic = self.sic_dc2(wb5_sic, xe2b_sic)
         # Weighting block 6
-        wb6_siu, wb6_siv, wb6_sic = self.wb6(xd2_siu, xd2_siv, xd2_sic) 
+        wb6_siu, wb6_sic = self.wb6(xd2_siu, xd2_sic) 
         
         
         ##### Decoder 3 #####
         # SIU
         xd3_siu = self.siu_dc3(wb6_siu, xe1b_siu)
         # SIV
-        xd3_siv = self.siv_dc3(wb6_siv, xe1b_siv)
+        # xd3_siv = self.siv_dc3(wb6_siv, xe1b_siv)
         # SIC
         xd3_sic = self.sic_dc3(wb6_sic, xe1b_sic)
         
         siu = self.siu_conv(xd3_siu)
-        siv = self.siv_conv(xd3_siv)
+        # siv = self.siv_conv(xd3_siv)
         sic = self.sic_conv(xd3_sic)
         
         # siu = siu * (sic > 0)
                 
-        out = torch.cat([siu, siv, sic], dim=1)
+        out = torch.cat([siu, sic], dim=1)
         out[:, :, self.landmask != 0] = torch.nan
         # out = out * (self.landmask == 0)
 
