@@ -135,7 +135,7 @@ class physics_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd, sic0):
-        
+        d
         sic_th = 0.0
         
         sic_p = prd[:, 2, :, :]*100
@@ -204,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(10.0)
+        w = torch.tensor(20.0)
         err_sum += w*err_phy
         
         return err_sum
@@ -1094,13 +1094,13 @@ class encoder(nn.Module):
         self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
         self.dropout = nn.Dropout(0.0)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
-        self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
+        # self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
 
     def forward(self, x):
-        x = self.dropout(x)
-        x = self.activation(self.e11(x))
-        xb = self.activation(self.e12(x))
+        # x = self.dropout(x)
+        xb = self.activation(self.e11(x))
+        # xb = self.activation(self.e12(xb))
         x = self.pool1(xb)
         return x, xb
     
@@ -1115,14 +1115,14 @@ class decoder(nn.Module):
         # )
         self.upconv1 = nn.ConvTranspose2d(ch1, ch2, kernel_size=2, stride=2) # output: 80x80x256
         self.d11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
-        self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
+        # self.d12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 80x80x256
 
     def forward(self, x, x0):        
         x = self.upconv1(x)
         x = torch.cat([x, x0], dim=1) 
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.activation(self.d11(x))
-        x = self.activation(self.d12(x))
+        # x = self.activation(self.d12(x))
         return x
     
 # Triple-sharing UNET model
@@ -1305,7 +1305,7 @@ class EB_UNet(nn.Module):
 
         # input: 40x40x256
         self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.siu_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1322,7 +1322,7 @@ class EB_UNet(nn.Module):
 
         # input: 40x40x256
         self.siv_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.siv_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1339,7 +1339,7 @@ class EB_UNet(nn.Module):
 
         # input: 40x40x256
         self.sic_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.sic_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1373,22 +1373,22 @@ class EB_UNet(nn.Module):
         ##### Bottom bridge #####
         # SID
         xe41_siu = self.activation(self.siu_ec41(xe3_siu))
-        xe42_siu = self.activation(self.siu_ec42(xe41_siu))
+        # xe41_siu = self.activation(self.siu_ec42(xe41_siu))
         # SIV
         xe41_siv = self.activation(self.siv_ec41(xe3_siv))
-        xe42_siv = self.activation(self.siv_ec42(xe41_siv))
+        # xe41_siv = self.activation(self.siv_ec42(xe41_siv))
         # SIC
         xe41_sic = self.activation(self.sic_ec41(xe3_sic))
-        xe42_sic = self.activation(self.sic_ec42(xe41_sic))
+        # xe41_sic = self.activation(self.sic_ec42(xe41_sic))
         # output: 40x40x512
         
         ##### Decoder 1 #####
         # SIU
-        xd1_siu = self.siu_dc1(xe42_siu, xe3b_siu)
+        xd1_siu = self.siu_dc1(xe41_siu, xe3b_siu)
         # SIV
-        xd1_siv = self.siv_dc1(xe42_siv, xe3b_siv)
+        xd1_siv = self.siv_dc1(xe41_siv, xe3b_siv)
         # SIC
-        xd1_sic = self.sic_dc1(xe42_sic, xe3b_sic)
+        xd1_sic = self.sic_dc1(xe41_sic, xe3b_sic)
         # Weighting block 5
         
         ##### Decoder 2 #####
@@ -1642,7 +1642,7 @@ class HIS_UNet(nn.Module):
 
         # input: 40x40x256
         self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.siu_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1659,7 +1659,7 @@ class HIS_UNet(nn.Module):
 
         # input: 40x40x256
         self.siv_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.siv_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1676,7 +1676,7 @@ class HIS_UNet(nn.Module):
 
         # input: 40x40x256
         self.sic_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+        # self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
         self.sic_dc1 = decoder(512, 256) # output: 80x80x256
@@ -1725,18 +1725,18 @@ class HIS_UNet(nn.Module):
         # SIU
         xe3_siu = self.dropout(xe3_siu)
         xe41_siu = self.activation1(self.siu_ec41(wb3_siu))
-        xe42_siu = self.activation1(self.siu_ec42(xe41_siu))
+        # xe41_siu = self.activation1(self.siu_ec42(xe41_siu))
         # SIV
         xe3_siv = self.dropout(xe3_siv)
         xe41_siv = self.activation1(self.siv_ec41(wb3_siv))
-        xe42_siv = self.activation1(self.siv_ec42(xe41_siv))
+        # xe41_siv = self.activation1(self.siv_ec42(xe41_siv))
         # SIC
         xe3_sic = self.dropout(xe3_sic)
         xe41_sic = self.activation1(self.sic_ec41(wb3_sic))
-        xe42_sic = self.activation1(self.sic_ec42(xe41_sic))
+        # xe41_sic = self.activation1(self.sic_ec42(xe41_sic))
         # output: 40x40x512
         # Weighting block 4
-        wb4_siu, wb4_siv, wb4_sic = self.wb4(xe42_siu, xe42_siv, xe42_sic) 
+        wb4_siu, wb4_siv, wb4_sic = self.wb4(xe41_siu, xe41_siv, xe41_sic) 
         
         ##### Decoder 1 #####
         # SIU
