@@ -135,7 +135,6 @@ class physics_loss(nn.Module):
         self.landmask = landmask
 
     def forward(self, obs, prd, sic0):
-        d
         sic_th = 0.0
         
         sic_p = prd[:, 2, :, :]*100
