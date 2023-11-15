@@ -1630,24 +1630,26 @@ class HIS_UNet(nn.Module):
         self.dropout = nn.Dropout(0.2)
         self.landmask = landmask
         
-        self.first_conv = nn.Conv2d(n_inputs, 32, kernel_size=k, padding="same")
+        n1, n2, n3, n4, n5 = 16, 32, 64, 128, 256
+        
+        self.first_conv = nn.Conv2d(n_inputs, n1, kernel_size=k, padding="same")       
         
         ##### SIU BRANCH #####
         # input: 320x320x64
-        self.siu_ec1 = encoder(32, 64) # output: 160x160x64
+        self.siu_ec1 = encoder(n1, n2) # output: 160x160x64
         # input: 160x160x64
-        self.siu_ec2 = encoder(64, 128) # output: 80x80x128
+        self.siu_ec2 = encoder(n2, n3) # output: 80x80x128
         # input: 80x80x128
-        self.siu_ec3 = encoder(128, 256) # output: 40x40x256
+        self.siu_ec3 = encoder(n3, n4) # output: 40x40x256
 
         # input: 40x40x256
-        self.siu_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.siu_ec41 = nn.Conv2d(n4, n5, kernel_size=k, padding="same") # output: 40x40x512
         # self.siu_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
-        self.siu_dc1 = decoder(512, 256) # output: 80x80x256
-        self.siu_dc2 = decoder(256, 128) # output: 160x160x128
-        self.siu_dc3 = decoder(128, 64) # output: 320x320x64
+        self.siu_dc1 = decoder(n5, n4) # output: 80x80x256
+        self.siu_dc2 = decoder(n4, n3) # output: 160x160x128
+        self.siu_dc3 = decoder(n3, n2) # output: 320x320x64
         
 #         ##### SIV BRANCH #####
 #         # input: 320x320x64
@@ -1668,33 +1670,33 @@ class HIS_UNet(nn.Module):
         
         ##### SIC BRANCH #####
         # input: 320x320x64
-        self.sic_ec1 = encoder(32, 64) # output: 160x160x64
+        self.sic_ec1 = encoder(n1, n2) # output: 160x160x64
         # input: 160x160x64
-        self.sic_ec2 = encoder(64, 128) # output: 80x80x128
+        self.sic_ec2 = encoder(n2, n3) # output: 80x80x128
         # input: 80x80x128
-        self.sic_ec3 = encoder(128, 256) # output: 40x40x256
+        self.sic_ec3 = encoder(n3, n4) # output: 40x40x256
 
         # input: 40x40x256
-        self.sic_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+        self.sic_ec41 = nn.Conv2d(n4, n5, kernel_size=k, padding="same") # output: 40x40x512
         # self.sic_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
         # Decoder
-        self.sic_dc1 = decoder(512, 256) # output: 80x80x256
-        self.sic_dc2 = decoder(256, 128) # output: 160x160x128
-        self.sic_dc3 = decoder(128, 64) # output: 320x320x64         
+        self.sic_dc1 = decoder(n5, n4) # output: 80x80x256
+        self.sic_dc2 = decoder(n4, n3) # output: 160x160x128
+        self.sic_dc3 = decoder(n3, n2) # output: 320x320x64         
         
         ##### Weighting Blocks #####
-        self.wb1 = AttModule(64, int(extent/2), int(extent/2), k=3, w=0.5)        
-        self.wb2 = AttModule(128, int(extent/4), int(extent/4), k=3, w=0.5)
-        self.wb3 = AttModule(256, int(extent/8), int(extent/8), k=3, w=0.5)
-        self.wb4 = AttModule(512, int(extent/8), int(extent/8), k=3, w=0.5)
-        self.wb5 = AttModule(256, int(extent/4), int(extent/4), k=3, w=0.5)
-        self.wb6 = AttModule(128, int(extent/2), int(extent/2), k=3, w=0.5)
+        self.wb1 = AttModule(n2, int(extent/2), int(extent/2), k=3, w=0.5)        
+        self.wb2 = AttModule(n3, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.wb3 = AttModule(n4, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.wb4 = AttModule(n5, int(extent/8), int(extent/8), k=3, w=0.5)
+        self.wb5 = AttModule(n4, int(extent/4), int(extent/4), k=3, w=0.5)
+        self.wb6 = AttModule(n3, int(extent/2), int(extent/2), k=3, w=0.5)
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(n2, 2, kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.sic_conv = nn.Conv2d(n2, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
