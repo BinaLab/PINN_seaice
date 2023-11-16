@@ -1311,22 +1311,22 @@ class EB_UNet(nn.Module):
         self.siu_dc2 = decoder(256, 128) # output: 160x160x128
         self.siu_dc3 = decoder(128, 64) # output: 320x320x64     
         
-        ##### SIV BRANCH #####
-        # input: 320x320x64
-        self.siv_ec1 = encoder(32, 64) # output: 160x160x64
-        # input: 160x160x64
-        self.siv_ec2 = encoder(64, 128) # output: 80x80x128
-        # input: 80x80x128
-        self.siv_ec3 = encoder(128, 256) # output: 40x40x256
+#         ##### SIV BRANCH #####
+#         # input: 320x320x64
+#         self.siv_ec1 = encoder(32, 64) # output: 160x160x64
+#         # input: 160x160x64
+#         self.siv_ec2 = encoder(64, 128) # output: 80x80x128
+#         # input: 80x80x128
+#         self.siv_ec3 = encoder(128, 256) # output: 40x40x256
 
-        # input: 40x40x256
-        self.siv_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
-        # self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
+#         # input: 40x40x256
+#         self.siv_ec41 = nn.Conv2d(256, 512, kernel_size=k, padding="same") # output: 40x40x512
+#         # self.siv_ec42 = nn.Conv2d(512, 512, kernel_size=k, padding="same") # output: 40x40x512
 
-        # Decoder
-        self.siv_dc1 = decoder(512, 256) # output: 80x80x256
-        self.siv_dc2 = decoder(256, 128) # output: 160x160x128
-        self.siv_dc3 = decoder(128, 64) # output: 320x320x64 
+#         # Decoder
+#         self.siv_dc1 = decoder(512, 256) # output: 80x80x256
+#         self.siv_dc2 = decoder(256, 128) # output: 160x160x128
+#         self.siv_dc3 = decoder(128, 64) # output: 320x320x64 
         
         ##### SIC BRANCH #####
         # input: 320x320x64
@@ -1346,8 +1346,8 @@ class EB_UNet(nn.Module):
         self.sic_dc3 = decoder(128, 64) # output: 320x320x64 
 
         # Output layer
-        self.siu_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same") #nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
-        self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
+        self.siu_conv = nn.Conv2d(64, 2, kernel_size=k, padding="same") #nn.Conv2d(64, 2*n_outputs//3, kernel_size=k, padding="same")
+        # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
         self.sic_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same") #nn.Conv2d(64, 1*n_outputs//3, kernel_size=k, padding="same")
         
     def forward(self, x):
@@ -1356,17 +1356,17 @@ class EB_UNet(nn.Module):
         
         ##### Encoder 1 #####
         xe1_siu, xe1b_siu = self.siu_ec1(x) # SIU
-        xe1_siv, xe1b_siv = self.siv_ec1(x) # SIV
+        # xe1_siv, xe1b_siv = self.siv_ec1(x) # SIV
         xe1_sic, xe1b_sic = self.sic_ec1(x) # SIC
         
         ##### Encoder 2 #####
         xe2_siu, xe2b_siu = self.siu_ec2(xe1_siu) # SIU
-        xe2_siv, xe2b_siv = self.siv_ec2(xe1_siv) # SIV
+        # xe2_siv, xe2b_siv = self.siv_ec2(xe1_siv) # SIV
         xe2_sic, xe2b_sic = self.sic_ec2(xe1_sic) # SIC
 
         ##### Encoder 3 #####
         xe3_siu, xe3b_siu = self.siu_ec3(xe2_siu) # SIU
-        xe3_siv, xe3b_siv = self.siv_ec3(xe2_siv) # SIV
+        # xe3_siv, xe3b_siv = self.siv_ec3(xe2_siv) # SIV
         xe3_sic, xe3b_sic = self.sic_ec3(xe2_sic) # SIC
         
         ##### Bottom bridge #####
@@ -1374,7 +1374,7 @@ class EB_UNet(nn.Module):
         xe41_siu = self.activation(self.siu_ec41(xe3_siu))
         # xe41_siu = self.activation(self.siu_ec42(xe41_siu))
         # SIV
-        xe41_siv = self.activation(self.siv_ec41(xe3_siv))
+        # xe41_siv = self.activation(self.siv_ec41(xe3_siv))
         # xe41_siv = self.activation(self.siv_ec42(xe41_siv))
         # SIC
         xe41_sic = self.activation(self.sic_ec41(xe3_sic))
@@ -1385,7 +1385,7 @@ class EB_UNet(nn.Module):
         # SIU
         xd1_siu = self.siu_dc1(xe41_siu, xe3b_siu)
         # SIV
-        xd1_siv = self.siv_dc1(xe41_siv, xe3b_siv)
+        # xd1_siv = self.siv_dc1(xe41_siv, xe3b_siv)
         # SIC
         xd1_sic = self.sic_dc1(xe41_sic, xe3b_sic)
         # Weighting block 5
@@ -1394,7 +1394,7 @@ class EB_UNet(nn.Module):
         # SIU
         xd2_siu = self.siu_dc2(xd1_siu, xe2b_siu)
         # SIV
-        xd2_siv = self.siv_dc2(xd1_siv, xe2b_siv)
+        # xd2_siv = self.siv_dc2(xd1_siv, xe2b_siv)
         # SIC
         xd2_sic = self.sic_dc2(xd1_sic, xe2b_sic)
         # Weighting block 6        
@@ -1403,15 +1403,15 @@ class EB_UNet(nn.Module):
         # SIU
         xd3_siu = self.siu_dc3(xd2_siu, xe1b_siu)
         # SIV
-        xd3_siv = self.siv_dc3(xd2_siv, xe1b_siv)
+        # xd3_siv = self.siv_dc3(xd2_siv, xe1b_siv)
         # SIC
         xd3_sic = self.sic_dc3(xd2_sic, xe1b_sic)
 
         siu = self.siu_conv(xd3_siu)
-        siv = self.siv_conv(xd3_siv)
+        # siv = self.siv_conv(xd3_siv)
         sic = self.sic_conv(xd3_sic)
         
-        out = torch.cat([siu, siv, sic], dim=1)
+        out = torch.cat([siu, sic], dim=1)
         out = out * (self.landmask == 0)
 
         return out
