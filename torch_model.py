@@ -1412,7 +1412,8 @@ class EB_UNet(nn.Module):
         sic = self.sic_conv(xd3_sic)
         
         out = torch.cat([siu, sic], dim=1)
-        out = out * (self.landmask == 0)
+        # out = out * (self.landmask == 0)
+        out[:, :, self.landmask != 0] = torch.nan
 
         return out
     
