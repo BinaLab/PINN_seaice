@@ -242,17 +242,6 @@ def make_sampler_and_loader(args, train_dataset, shuffle = True):
             sampler=train_sampler,
             **kwargs,
         )
-    # val_sampler = DistributedSampler(
-    #     val_dataset,
-    #     num_replicas=dist.get_world_size(),
-    #     rank=dist.get_rank(),
-    # )
-    # val_loader = DataLoader(
-    #     val_dataset,
-    #     batch_size=args.val_batch_size,
-    #     sampler=val_sampler,
-    #     **kwargs,
-    # )
 
     return train_sampler, train_loader
 
