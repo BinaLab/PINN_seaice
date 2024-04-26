@@ -204,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(self.w)
+        w = torch.tensor(se)
         err_sum += w*err_phy
         
         return err_sum
@@ -1623,7 +1623,7 @@ class IS_UNet(nn.Module):
     
 # Hierarchical information sharing UNET model
 class HIS_UNet(nn.Module):
-    def __init__(self, n_inputs, n_outputs, landmask, extent, k=3):
+    def __init__(self, n_inputs, n_outputs, landmask, extent, k=3, phy = "nophy"):
         super().__init__()
         
         self.activation1 = nn.Tanh()
@@ -1697,7 +1697,11 @@ class HIS_UNet(nn.Module):
         # Output layer
         self.siu_conv = nn.Conv2d(n2, 2, kernel_size=k, padding="same")
         # self.siv_conv = nn.Conv2d(64, 1, kernel_size=k, padding="same")
-        self.sic_conv = nn.Conv2d(n2, 1, kernel_size=k, padding="same")
+        
+        if phy == "phy":
+            self.sic_conv = nn.Sequential(nn.Conv2d(n2, 1, kernel_size=k, padding="same"), nn.Sigmoid())
+        else:
+            self.sic_conv = nn.Conv2d(n2, 1, kernel_size=k, padding="same")
         
     def forward(self, x):
         # First convolution
