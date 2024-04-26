@@ -130,9 +130,10 @@ class ref_loss(nn.Module):
         return err_sum   
     
 class physics_loss(nn.Module):
-    def __init__(self, landmask):
+    def __init__(self, landmask, w):
         super(physics_loss, self).__init__();
         self.landmask = landmask
+        self.w = w
 
     def forward(self, obs, prd, sic0):
         sic_th = 0.0
@@ -203,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(10.0)
+        w = torch.tensor(self.w)
         err_sum += w*err_phy
         
         return err_sum
