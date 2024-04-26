@@ -651,7 +651,8 @@ def main() -> None:
         net = UNet(in_channels, out_channels)
 
     model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_{args.ratio}_{phy}_d{dayint}f{forecast}_{device_name}{world_size}"  
-
+    print(model_name)
+    
     # print(device)
     net.to(device)
     
