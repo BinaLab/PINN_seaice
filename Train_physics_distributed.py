@@ -634,7 +634,7 @@ def main() -> None:
     elif args.model_type == "isunet":
         net = IS_UNet(in_channels, out_channels, landmask, row) # information sharing
     elif args.model_type == "hisunet":
-        net = HIS_UNet(in_channels, out_channels, landmask, row, k = 3, phy) # hierarchical information sharing (attention blocks)
+        net = HIS_UNet(in_channels, out_channels, landmask, row, 3, phy) # hierarchical information sharing (attention blocks)
     elif args.model_type == "lbunet":
         net = LB_UNet(in_channels, out_channels, landmask)
     elif args.model_type == "ebunet":
