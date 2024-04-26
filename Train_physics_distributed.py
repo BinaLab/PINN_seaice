@@ -152,6 +152,12 @@ def parse_args() -> argparse.Namespace:
         help='filename of dataset',
     )
     parser.add_argument(
+        '--phy-weight',
+        type=float,
+        default=1.0,
+        help='relative weight for physics informed loss function',
+    )
+    parser.add_argument(
         '--epochs',
         type=int,
         default=100,
@@ -494,6 +500,7 @@ def main() -> None:
     lr = args.base_lr
 
     phy = args.phy ## PHYSICS OR NOT
+    phy_w = args.phy_weight
     dayint = args.day_int
     forecast = args.forecast    
     
@@ -655,7 +662,7 @@ def main() -> None:
         )
 
     if phy == "phy":
-        loss_fn = physics_loss(landmask, 1.0) # nn.L1Loss() #nn.CrossEntropyLoss()
+        loss_fn = physics_loss(landmask, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
         if args.model_type == "fc":
             loss_fn = nn.L1Loss()
