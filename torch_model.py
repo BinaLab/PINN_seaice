@@ -204,7 +204,7 @@ class physics_loss(nn.Module):
         #         err_phy += r * 1.0
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
-        w = torch.tensor(se)
+        w = torch.tensor(self.w)
         err_sum += w*err_phy
         
         return err_sum
