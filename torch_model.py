@@ -1616,7 +1616,7 @@ class HIS_UNet(nn.Module):
         self.dropout = nn.Dropout(0.2)
         self.landmask = landmask
         
-        n1, n2, n3, n4, n5 = 16, 32, 64, 128, 256
+        n1, n2, n3, n4, n5 = 8, 16, 32, 64, 128 #, 256
         
         self.first_conv = nn.Conv2d(n_inputs, n1, kernel_size=k, padding="same")       
         
