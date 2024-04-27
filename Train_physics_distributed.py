@@ -477,7 +477,7 @@ def train(
 
     if args.log_writer is not None:
         args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
-        
+
     return train_loss.avg.item(), model
 
 
@@ -820,7 +820,7 @@ def main() -> None:
             train_loader,
             train_sampler,
             args
-        ).item()
+        )
         
         scheduler.step()
         # val_loss, _ = validate(epoch, net, loss_fn, val_loader, args).item()
