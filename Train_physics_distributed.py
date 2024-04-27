@@ -744,6 +744,8 @@ def main() -> None:
             val_loss += RMSE(target, output)*100
             val_cnt += 1
 
+        torch.cuda.empty_cache()
+
         t1 = time.time() - t0
         if dist.get_rank() == 0:
             print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(
