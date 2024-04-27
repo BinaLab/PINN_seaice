@@ -157,7 +157,7 @@ class physics_loss(nn.Module):
         ## Valid SID
         valid_sic = torch.where(sic_p <= 0.05, 0, 1)
         err4 = torch.nanmean(torch.where(sic_p <= 0.05, torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err4 / torch.max(err4))
+        err_phy += torch.nanmean(err4 / torch.max(err4[~err4.isnan()]))
         
         # advection
         
@@ -1616,7 +1616,7 @@ class HIS_UNet(nn.Module):
         self.dropout = nn.Dropout(0.2)
         self.landmask = landmask
         
-        n1, n2, n3, n4, n5 = 8, 16, 32, 64, 128 #, 256
+        n1, n2, n3, n4, n5 = 16, 32, 64, 128, 256
         
         self.first_conv = nn.Conv2d(n_inputs, n1, kernel_size=k, padding="same")       
         
