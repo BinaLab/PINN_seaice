@@ -684,26 +684,68 @@ def main() -> None:
         print(f"Number of parameters: {total_params}")
         print("Train sample: {0}, Val sample: {1}; IN: {2} OUT: {3} ({4} x {5})".format(n_samples, val_samples, in_channels, out_channels, row, col)) 
     
-    t0 = time.time()
+    
     for epoch in range(n_epochs):
+
+        t0 = time.time()
         
         train_loss = 0.0
         train_cnt = 0
         
         net.train()
         
-        train_loss = train(
-            epoch,
-            net,
-            optimizer,
-            loss_fn,
-            train_loader,
-            train_sampler,
-            args
-        )
+        # train_loss = train(
+        #     epoch,
+        #     net,
+        #     optimizer,
+        #     loss_fn,
+        #     train_loader,
+        #     train_sampler,
+        #     args
+        # )
         
-        scheduler.step()
-        val_loss = validate(epoch, net, loss_fn, val_loader, args)
+        # scheduler.step()
+        # val_loss = validate(epoch, net, loss_fn, val_loader, args)
+        
+        ##### TRAIN ###########################
+        for batch_idx, (data, target) in enumerate(train_loader):
+
+            ind = torch.sum(data.isnan(), dim=(1,2,3))
+            data = data[ind==0, :, :, :]
+            target = target[ind==0, :, :, :]
+            if args.cuda:
+                data, target = data.cuda(), target.cuda()
+
+            output = net(data)
+                
+            if args.phy == "phy":
+                loss = loss_func(output, target, data[:, 2*args.day_int, :, :].cuda())
+            else:
+                loss = loss_func(output, target)
+
+            train_loss += loss.cpu().item()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            train_cnt += 1
+
+        ##### Validation ###########################
+        val_loss = 0
+        val_cnt = 0
+        for i, (data, target) in enumerate(val_loader):
+            ind = torch.sum(data.isnan(), dim=(1,2,3))
+            data = data[ind==0, :, :, :]
+            target = target[ind==0, :, :, :]
+            if args.cuda:
+                data, target = data.cuda(), target.cuda()
+                
+            output = model(data)
+
+            rmse += RMSE(target, output)*100
+            val_cnt += 1
+
+        t1 = time.time() - t0
+        print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(str(epoch).zfill(3), train_loss/train_cnt, rmse/val_cnt, t1))
         
         if dist.get_rank() == 0:
             if epoch % args.checkpoint_freq == 0:
