@@ -719,9 +719,9 @@ def main() -> None:
             output = net(data)
                 
             if args.phy == "phy":
-                loss = loss_func(output, target, data[:, 2*args.day_int, :, :].cuda())
+                loss = loss_fn(output, target, data[:, 2*args.day_int, :, :].cuda())
             else:
-                loss = loss_func(output, target)
+                loss = loss_fn(output, target)
 
             train_loss += loss.cpu().item()
             optimizer.zero_grad()
