@@ -669,7 +669,7 @@ def main() -> None:
             loss_fn = nn.L1Loss()
         else:
             if args.predict== "all":
-                loss_fn = custom_loss(landmask, args.forecast) #nn.MSELoss() #ref_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
+                loss_fn = ref_loss(landmask) #custom_loss(landmask, args.forecast) #nn.MSELoss() #ref_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
             else:
                 loss_fn = single_loss(landmask)
 

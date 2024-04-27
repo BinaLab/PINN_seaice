@@ -117,12 +117,12 @@ class ref_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         
         err1 = torch.nanmean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.nanmean(err1) / torch.nanmax(err1)
+        err_sum = torch.nanmean(err1) / torch.max(err1[~err1.isnan()])
 
         err_sic = torch.square(sic_o - sic_p)
         
         err2 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.nanmean(err2) / torch.nanmax(err2)
+        err_sum += torch.nanmean(err2) / torch.max(err2[~err2.isnan()])
         
         return err_sum   
     
@@ -150,12 +150,12 @@ class physics_loss(nn.Module):
         neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
         pos_sic = torch.where(sic_p > 100, sic_p-100, 0)
         err3 = torch.nanmean(torch.square(neg_sic) + torch.square(pos_sic), dim=0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err3) / torch.nanmax(err3)
+        err_phy += torch.nanmean(err3) / torch.max(err3[~err3.isnan()])
         
         ## Valid SID
         valid_sic = torch.where(sic_p <= 0.05, 0, 1)
         err4 = torch.nanmean(torch.where(sic_p <= 0.05, torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err4) / torch.nanmax(err4)
+        err_phy += torch.nanmean(err4) / torch.max(err4[~err4.isnan()])
         
         # advection
         
@@ -178,7 +178,7 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err_res) / torch.nanmax(err_res)
+        err_phy += torch.nanmean(err_res) / torch.max(err_res[~err_res.isnan()])
         
         N = dsic.shape[0]
         # for n in range(0, N):
