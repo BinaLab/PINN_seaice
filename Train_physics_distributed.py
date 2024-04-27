@@ -533,7 +533,7 @@ def validate(
                 t.update(1)
                 if i + 1 == len(val_loader):
                     t.set_postfix_str(
-                        'val_loss: {:.4f}'.format(rmse/(i+1)), #val_loss.avg
+                        'val_loss: {:.4f}'.format(rmse), #val_loss.avg
                         refresh=False,
                     )
 
