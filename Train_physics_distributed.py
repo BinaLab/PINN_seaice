@@ -835,7 +835,7 @@ def main() -> None:
         )
         
         scheduler.step()
-        # val_loss = validate(epoch, net, loss_fn, val_loader, args)
+        val_loss = validate(epoch, net, loss_fn, val_loader, args)
         
         # ##### TRAIN ###########################
         # for batch_idx, (data, target) in enumerate(train_loader):
@@ -860,21 +860,21 @@ def main() -> None:
         #     train_cnt += 1
 
         # ##### Validation ###########################
-        val_loss = 0
-        val_cnt = 0
-        net.eval()
-        with torch.no_grad():
-            for i, (data, target) in enumerate(val_loader):
-                ind = torch.sum(data.isnan(), dim=(1,2,3))
-                data = data[ind==0, :, :, :]
-                target = target[ind==0, :, :, :]
-                if args.cuda:
-                    data, target = data.cuda(), target.cuda()
+        # val_loss = 0
+        # val_cnt = 0
+        # net.eval()
+        # with torch.no_grad():
+        #     for i, (data, target) in enumerate(val_loader):
+        #         ind = torch.sum(data.isnan(), dim=(1,2,3))
+        #         data = data[ind==0, :, :, :]
+        #         target = target[ind==0, :, :, :]
+        #         if args.cuda:
+        #             data, target = data.cuda(), target.cuda()
                     
-                output = net(data)
+        #         output = net(data)
     
-                val_loss += RMSE(target, output)*100
-                val_cnt += 1
+        #         val_loss += RMSE(target, output)*100
+        #         val_cnt += 1
 
         torch.cuda.empty_cache()
 
