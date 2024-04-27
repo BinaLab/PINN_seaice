@@ -739,7 +739,7 @@ def main() -> None:
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
                 
-            output = model(data)
+            output = net(data)
 
             rmse += RMSE(target, output)*100
             val_cnt += 1
