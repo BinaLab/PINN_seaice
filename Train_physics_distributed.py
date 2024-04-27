@@ -813,7 +813,7 @@ def main() -> None:
         
         net.train()
         
-        train_loss, model = train(
+        train_loss, net = train(
             epoch,
             net,
             optimizer,
