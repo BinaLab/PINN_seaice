@@ -824,7 +824,7 @@ def main() -> None:
         )
         
         scheduler.step()
-        val_loss = validate(epoch, net, loss_fn, val_loader, args).item()
+        val_loss = validate(epoch, net, loss_fn, val_loader, args)
         
         # ##### TRAIN ###########################
         # for batch_idx, (data, target) in enumerate(train_loader):
