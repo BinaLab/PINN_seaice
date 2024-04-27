@@ -741,11 +741,11 @@ def main() -> None:
                 
             output = net(data)
 
-            rmse += RMSE(target, output)*100
+            val_loss += RMSE(target, output)*100
             val_cnt += 1
 
         t1 = time.time() - t0
-        print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(str(epoch).zfill(3), train_loss/train_cnt, rmse/val_cnt, t1))
+        print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(str(epoch).zfill(3), train_loss/train_cnt, val_loss/val_cnt, t1))
         
         if dist.get_rank() == 0:
             if epoch % args.checkpoint_freq == 0:
