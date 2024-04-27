@@ -174,7 +174,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--day-int',
         type=int,
-        default=1,
+        default=3,
         help='date interval to create inputs',
     )
     parser.add_argument(
