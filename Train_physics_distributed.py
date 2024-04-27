@@ -478,7 +478,7 @@ def train(
     if args.log_writer is not None:
         args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
 
-    return train_loss.avg.item(), model
+    return train_loss.avg.item()
 
 
 def validate(
@@ -813,7 +813,7 @@ def main() -> None:
         
         net.train()
         
-        train_loss, net = train(
+        train_loss = train(
             epoch,
             net,
             optimizer,
