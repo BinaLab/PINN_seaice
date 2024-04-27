@@ -533,7 +533,7 @@ def validate(
                 t.update(1)
                 if i + 1 == len(val_loader):
                     t.set_postfix_str(
-                        'val_loss: {:.4f}'.format(rmse), #val_loss.avg
+                        'val_loss: {:.4f}'.format(rmse/(i+1)), #val_loss.avg
                         refresh=False,
                     )
 
@@ -862,17 +862,19 @@ def main() -> None:
         # ##### Validation ###########################
         val_loss = 0
         val_cnt = 0
-        for i, (data, target) in enumerate(val_loader):
-            ind = torch.sum(data.isnan(), dim=(1,2,3))
-            data = data[ind==0, :, :, :]
-            target = target[ind==0, :, :, :]
-            if args.cuda:
-                data, target = data.cuda(), target.cuda()
-                
-            output = net(data)
-
-            val_loss += RMSE(target, output)*100
-            val_cnt += 1
+        net.eval()
+        with torch.no_grad():
+            for i, (data, target) in enumerate(val_loader):
+                ind = torch.sum(data.isnan(), dim=(1,2,3))
+                data = data[ind==0, :, :, :]
+                target = target[ind==0, :, :, :]
+                if args.cuda:
+                    data, target = data.cuda(), target.cuda()
+                    
+                output = net(data)
+    
+                val_loss += RMSE(target, output)*100
+                val_cnt += 1
 
         torch.cuda.empty_cache()
 
