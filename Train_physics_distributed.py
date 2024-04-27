@@ -459,14 +459,25 @@ def train(
             with torch.no_grad():
                 step_loss += loss
 
+            loss = loss / args.batches_per_allreduce
+            # if (
+            #     mini_step % args.batches_per_allreduce == 0
+            #     or batch_idx + 1 == len(train_loader)
+            # ):
+            #     loss.backward()
+            # else:
+            #     with model.no_sync():  # type: ignore
+            #         loss.backward()
+            
             loss.backward()
 
             if (
                 mini_step % args.batches_per_allreduce == 0
                 or batch_idx + 1 == len(train_loader)
             ):
-                optimizer.zero_grad()
+                
                 optimizer.step()
+                optimizer.zero_grad()
                 
                 train_loss.update(step_loss / mini_step)
                 step_loss.zero_()
@@ -517,7 +528,7 @@ def validate(
                 else:
                     val_loss.update(loss_func(output, target))
 
-                rmse += RMSE(target, output)*100
+                rmse += RMSE(target, output) #*100
 
                 t.update(1)
                 if i + 1 == len(val_loader):
