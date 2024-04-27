@@ -108,56 +108,39 @@ class ref_loss(nn.Module):
         
         sic_th = 0.0
         
-        sic_p = prd[:, 2, :, :]*8
-        sic_o = obs[:, 2, :, :]*8
-        u_o = obs[:, 0, :, :]*50; v_o = obs[:, 1, :, :]*50
-        u_p = prd[:, 0, :, :]*50; v_p = prd[:, 1, :, :]*50
-        
-        vel_o = (u_o**2 + v_o**2)**0.5
-        vel_p = (u_p**2 + v_p**2)**0.5
+        sic_p = prd[:, 2, :, :]*100
+        sic_o = obs[:, 2, :, :]*100
+        u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
+        u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         
         err_u = torch.square(u_o - u_p) #[sic > 0]
         err_v = torch.square(v_o - v_p) #[sic > 0]
         
-        sicmask = torch.max(sic_o, dim=0)[0]
-        err1 = torch.mean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.mean(err1)
+        err1 = torch.nanmean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err_sum = torch.nanmean(err1) / torch.nanmax(err1)
 
         err_sic = torch.square(sic_o - sic_p)
         
-        err2 = torch.mean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.mean(err2)*40
+        err2 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
+        err_sum += torch.nanmean(err2) / torch.nanmax(err2)
+        
         return err_sum   
     
 class physics_loss(nn.Module):
     def __init__(self, landmask, w):
         super(physics_loss, self).__init__();
         self.landmask = landmask
+        self.data_loss = ref_loss(landmask)
         self.w = w
 
     def forward(self, obs, prd, sic0):
-        sic_th = 0.0
-        
+        err_sum = self.data_loss(obs, prd)
+
         sic_p = prd[:, 2, :, :]*100
         sic_o = obs[:, 2, :, :]*100
-        sic0 = sic0 * 100
+        sic0 = sic0*100
         u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
         u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
-        
-        vel_o = (u_o**2 + v_o**2)**0.5
-        vel_p = (u_p**2 + v_p**2)**0.5
-        
-        err_u = torch.square(u_o - u_p) #[sic > 0]
-        err_v = torch.square(v_o - v_p) #[sic > 0]
-        
-        sicmask = torch.max(sic_o, dim=0)[0]
-        err1 = torch.nanmean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.nanmean(err1) * 10
-
-        err_sic = torch.square(sic_o - sic_p)
-        
-        err2 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.nanmean(err2) * 10
         
         # physics loss ===============================================
         ## Where SIC < 0 ==> sea ice drift = 0!
@@ -167,12 +150,12 @@ class physics_loss(nn.Module):
         neg_sic = torch.where(sic_p < 0, abs(sic_p), 0)
         pos_sic = torch.where(sic_p > 100, sic_p-100, 0)
         err3 = torch.nanmean(torch.square(neg_sic) + torch.square(pos_sic), dim=0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err3)
+        err_phy += torch.nanmean(err3) / torch.nanmax(err3)
         
         ## Valid SID
-        valid_sic = torch.where(sic_p <= 0, 0, 1)
-        err4 = torch.nanmean(torch.where(sic_p <= 0, torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err4)
+        valid_sic = torch.where(sic_p <= 0.05, 0, 1)
+        err4 = torch.nanmean(torch.where(sic_p <= 0.05, torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
+        err_phy += torch.nanmean(err4) / torch.nanmax(err4)
         
         # advection
         
@@ -195,7 +178,7 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err_res)
+        err_phy += torch.nanmean(err_res) / torch.nanmax(err_res)
         
         N = dsic.shape[0]
         # for n in range(0, N):
@@ -1092,13 +1075,13 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
-        self.dropout = nn.Dropout(0.0)
+        self.dropout = nn.Dropout(0.2)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         # self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
 
     def forward(self, x):
-        # x = self.dropout(x)
+        x = self.dropout(x)
         xb = self.activation(self.e11(x))
         # xb = self.activation(self.e12(xb))
         x = self.pool1(xb)
@@ -1108,7 +1091,7 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
-        self.dropout = nn.Dropout(0.0)
+        self.dropout = nn.Dropout(0.2)
         # self.upconv1 = nn.Sequential(
         #     nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
         #     nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
@@ -1120,7 +1103,7 @@ class decoder(nn.Module):
     def forward(self, x, x0):        
         x = self.upconv1(x)
         x = torch.cat([x, x0], dim=1) 
-        # x = self.dropout(x)
+        x = self.dropout(x)
         x = self.activation(self.d11(x))
         # x = self.activation(self.d12(x))
         return x
