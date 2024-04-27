@@ -753,7 +753,7 @@ def main() -> None:
             #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))
         
             history['loss'].append(train_loss/train_cnt)
-            history['val_loss'].append(val_loss/val_cn)
+            history['val_loss'].append(val_loss/val_cnt)
             history['time'].append(time.time() - t0)
             
             if epoch == n_epochs-1:
