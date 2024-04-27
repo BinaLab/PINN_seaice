@@ -870,8 +870,8 @@ def main() -> None:
             print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(
                 str(epoch).zfill(3), train_loss/train_cnt, val_loss/val_cnt, t1))
             
-            # if epoch % args.checkpoint_freq == 0:
-            #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))
+            if epoch % args.checkpoint_freq == 0:
+                save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))
         
             history['loss'].append(train_loss/train_cnt)
             history['val_loss'].append(val_loss/val_cnt)
