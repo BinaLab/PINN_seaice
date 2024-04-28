@@ -1077,7 +1077,7 @@ class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.5)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         # self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # output: 160x160x64
@@ -1093,7 +1093,7 @@ class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
         self.activation = nn.Tanh() #nn.ReLU()
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.5)
         # self.upconv1 = nn.Sequential(
         #     nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
         #     nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 80x80x256
@@ -1613,7 +1613,7 @@ class HIS_UNet(nn.Module):
         
         self.activation1 = nn.Tanh()
         self.activation2 = nn.ReLU()
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.5)
         self.landmask = landmask
         
         n1, n2, n3, n4, n5 = 16, 32, 64, 128, 256
