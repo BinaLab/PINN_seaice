@@ -854,17 +854,17 @@ def main() -> None:
 
         torch.cuda.empty_cache()
 
+        history['loss'].append(train_loss/train_cnt)
+        history['val_loss'].append(val_loss/val_cnt)
+        history['time'].append(time.time() - t0)
+
         t1 = time.time() - t0
         if dist.get_rank() == 0:
             print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(
                 str(epoch).zfill(3), train_loss/train_cnt, val_loss/val_cnt, t1))
             
-            if epoch % args.checkpoint_freq == 0:
-                save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))
-        
-            history['loss'].append(train_loss/train_cnt)
-            history['val_loss'].append(val_loss/val_cnt)
-            history['time'].append(time.time() - t0)
+            # if epoch % args.checkpoint_freq == 0:
+            #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))          
             
             if epoch == n_epochs-1:
                 torch.save(net.state_dict(), f'{model_dir}/{model_name}.pth')
@@ -872,24 +872,25 @@ def main() -> None:
                 with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
                     pickle.dump(history, file)
                     
-            # if epoch >= 50 and train_loss.item()*2 < val_loss.item():
-            #     break # over-fitting
+        if epoch >= 50 and np.nanmean(history['val_loss'][-5:]) >= np.nanmean(history['val_loss'][-10:-5]):
+            break # over-fitting
     
     torch.cuda.empty_cache()
     
     del train_dataset, train_loader, train_sampler
     
     # Test the model with the trained model ========================================
+    val_years = years[mask1][val_dataset.valid]
     val_months = months[mask1][val_dataset.valid]
     val_days = days[mask1][val_dataset.valid]
     
     net.eval()
     
     if dist.get_rank() == 0:    
-        for m in np.unique(val_months):
+        for m in np.unique(val_years):
             # if m % world_size == dist.get_rank():
             
-            idx = np.where(val_months == m)[0]
+            idx = np.where(val_years == m)[0]
             valid = []
             
             # data = val_input[val_months==m, :, :, :]
@@ -897,22 +898,17 @@ def main() -> None:
             target = torch.zeros([len(idx), out_channels, row, col]) #val_output[val_months==m, :, :, :]
             output = torch.zeros([len(idx), out_channels, row, col])
             
-            with tqdm(total=target.size()[0],
-                      bar_format='{l_bar}{bar:10}|{postfix}',
-                      desc=f'Validation {date}-{str(int(m)).zfill(2)}'
-                     ) as t:
-                with torch.no_grad():
-                    for j in range(0, len(idx)): #range(0, target.size()[0]):
-                        data[j, :, :, :] = val_dataset[idx[j]][0]
-                        check = torch.sum(torch.tensor(val_dataset[idx[j]][0]).isnan())
-                        if check == 0:
-                            if args.model_type == "casunet":
-                                output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
-                            else:
-                                output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
-                            target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
-                            valid.append(j)
-                        t.update(1)                  
+            with torch.no_grad():
+                for j in range(0, len(idx)): #range(0, target.size()[0]):
+                    data[j, :, :, :] = val_dataset[idx[j]][0]
+                    check = torch.sum(torch.tensor(val_dataset[idx[j]][0]).isnan())
+                    if check == 0:
+                        if args.model_type == "casunet":
+                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
+                        else:
+                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
+                        target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
+                        valid.append(j)              
             
             test_save = [data[valid].to('cpu').detach().numpy(), target[valid].to('cpu').detach().numpy(), output[valid].to('cpu').detach().numpy(),
                          val_months[idx[valid]], val_days[idx[valid]]]
