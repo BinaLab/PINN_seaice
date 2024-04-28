@@ -910,7 +910,8 @@ def main() -> None:
                         target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
                         valid.append(j)              
             
-            test_save = [data[valid].to('cpu').detach().numpy(), target[valid].to('cpu').detach().numpy(), output[valid].to('cpu').detach().numpy(),
+            test_save = [data[valid].to('cpu').detach().numpy().astype(np.float16), target[valid].to('cpu').detach().numpy().astype(np.float16), 
+                         output[valid].to('cpu').detach().numpy().astype(np.float16),
                          val_months[idx[valid]], val_days[idx[valid]]]
             # print(len(valid), data[valid].shape, target[valid].shape, output[valid].shape)
 
