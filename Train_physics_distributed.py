@@ -516,7 +516,7 @@ def validate(
     if args.log_writer is not None:
         args.log_writer.add_scalar('val/loss', val_loss.avg, epoch)
         
-    return rmse / (i+1) #val_loss.avg.item()
+    return rmse / (i+1) * 100 #val_loss.avg.item()
 
 def test(
     model: torch.nn.Module,
