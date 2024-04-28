@@ -872,8 +872,8 @@ def main() -> None:
                 with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
                     pickle.dump(history, file)
                     
-        if epoch > 100 and torch.nanmedian(torch.tensor(history['val_loss'][-10:])) >= torch.nanmedian(torch.tensor(history['val_loss'][-20:-10])):
-            break # over-fitting
+        # if epoch > 100 and torch.nanmedian(torch.tensor(history['val_loss'][-10:])) >= torch.nanmedian(torch.tensor(history['val_loss'][-20:-10])):
+        #     break # over-fitting
     
     torch.cuda.empty_cache()
     
