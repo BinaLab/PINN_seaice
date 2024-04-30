@@ -490,7 +490,7 @@ def validate(
 ):
     """Test the model."""
     model.eval()
-    rmse = [0, 0, 0]
+    rmse = torch.tensor([0, 0, 0])
     val_loss = Metric('val_loss')
 
     with torch.no_grad():
