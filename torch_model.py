@@ -177,8 +177,8 @@ class physics_loss(nn.Module):
         # err_phy += torch.nanmean(err3) / torch.max(err3[~err3.isnan()])
         
         ## Valid SID
-        valid_sic = torch.where(sic_p <= 0.05, 0, 1)
-        err4 = torch.nanmean(torch.where(sic_p <= 0.05, torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
+        valid_sic = torch.where(sic_p <= 1., 0, 1)
+        err4 = torch.nanmean(torch.where(sic_p <= 1., torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
         err_phy += torch.nanmean(err4)
         
         # advection
