@@ -220,7 +220,7 @@ def parse_args() -> argparse.Namespace:
 
 def make_sampler_and_loader(args, train_dataset, shuffle = True):
     """Create sampler and dataloader for train and val datasets."""
-    torch.set_num_threads(4)
+    torch.set_num_threads(args.world_size)
     kwargs: dict[str, Any] = (
         {'num_workers': args.world_size, 'pin_memory': True} if args.cuda else {}
     )
