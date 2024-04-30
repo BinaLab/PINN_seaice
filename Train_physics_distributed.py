@@ -511,7 +511,7 @@ def validate(
             else:
                 val_loss.update(loss_func(output, target))
 
-            for c in range(0, data.shape[1]):
+            for c in range(0, target.shape[1]):
                 rmse[c] += RMSE(target[:, c], output[:, c]) #*100
 
             # t.update(1)
