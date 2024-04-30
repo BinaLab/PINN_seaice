@@ -131,18 +131,22 @@ class ref_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         # print(err_u_max, err_v_max)
         
-        err1 = torch.nanmean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
+        err1 = torch.nanmean(err_u, dim=0)[torch.where(self.landmask == 0)]
         err1 = torch.nanmean(err1)
+        # err_sum = torch.nanmean(err1)
+
+        err2 = torch.nanmean(err_v, dim=0)[torch.where(self.landmask == 0)]
+        err2 = torch.nanmean(err2)
         # err_sum = torch.nanmean(err1)
 
         err_sic = torch.square(sic_o - sic_p)
         # err_sic = err_sic / torch.nanmean(err_sic)
         
-        err2 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err2 = torch.nanmean(err2)
+        err3 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
+        err3 = torch.nanmean(err3)
         # err_sum += torch.nanmean(err2)
 
-        err_sum = err1 + err2
+        err_sum = err1 + err2 + err3
         
         return err_sum   
     
