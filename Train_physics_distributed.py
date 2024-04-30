@@ -873,10 +873,11 @@ def main() -> None:
 
         t1 = time.time() - t0
         if dist.get_rank() == 0:
-            print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
-                str(epoch).zfill(3), train_loss/train_cnt, t1))
-            print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
-                val_loss[0], val_loss[1], val_loss[2]))
+            if epoch % 2 == 0:
+                print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
+                    str(epoch).zfill(3), train_loss/train_cnt, t1))
+                print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
+                    val_loss[0], val_loss[1], val_loss[2]))
             
             # if epoch % args.checkpoint_freq == 0:
             #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))          
