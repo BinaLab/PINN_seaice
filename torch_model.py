@@ -122,8 +122,8 @@ class ref_loss(nn.Module):
         
         sic_th = 0.0
         
-        sic_p = prd[:, 2, :, :]*10
-        sic_o = obs[:, 2, :, :]*10
+        sic_p = prd[:, 2, :, :]*3
+        sic_o = obs[:, 2, :, :]*3
         u_o = obs[:, 0, :, :]*30; v_o = obs[:, 1, :, :]*30
         u_p = prd[:, 0, :, :]*30; v_p = prd[:, 1, :, :]*30
         
