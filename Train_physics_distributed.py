@@ -516,7 +516,7 @@ def validate(
                 val_loss.update(loss_func(output, target))
 
             for c in range(0, target.shape[1]):
-                rmse[c] += MSE(target[:, c, landmask], output[:, c, landmask]) #*100
+                rmse[c] += MSE(target[:, c, landmask==0], output[:, c, landmask==0]) #*100
 
             # t.update(1)
             # if i + 1 == len(val_loader):
