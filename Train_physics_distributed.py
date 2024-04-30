@@ -255,6 +255,10 @@ def RMSE(prd, obs):
     err = torch.square(obs-prd)
     return torch.nanmean(err)**0.5
 
+def MSE(prd, obs):
+    err = torch.square(obs-prd)
+    return torch.nanmean(err)
+
 # def init_processes(backend):
 #     dist.init_process_group(backend, rank=WORLD_RANK, world_size=WORLD_SIZE)
 #     run(backend)
@@ -490,7 +494,7 @@ def validate(
 ):
     """Test the model."""
     model.eval()
-    rmse = torch.tensor([0, 0, 0])
+    rmse = torch.tensor([0, 0, 0]).cuda()
     val_loss = Metric('val_loss')
 
     with torch.no_grad():
