@@ -481,7 +481,7 @@ def train(
     if args.log_writer is not None:
         args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
 
-    return train_loss.avg.item()
+    return torch.nanmean(train_loss) #train_loss.avg.item()
 
 
 def validate(
