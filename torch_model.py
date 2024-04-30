@@ -132,19 +132,19 @@ class ref_loss(nn.Module):
         err_v = torch.square(v_o - v_p) #[sic > 0]
         # print(err_u_max, err_v_max)
         
-        err1 = self.mse(u_p[:, self.landmask == 0], u_o[:, self.landmask == 0]) #torch.nanmean(err_u, dim=0)[torch.where(self.landmask == 0)]
-        # err1 = torch.nanmean(err1)
+        # err1 = self.mse(u_p[:, self.landmask == 0], u_o[:, self.landmask == 0]) #torch.nanmean(err_u, dim=0)[torch.where(self.landmask == 0)]
+        err1 = torch.nanmean(err_u[:, self.landmask == 0])
         # err_sum = torch.nanmean(err1)
 
-        err2 = self.mse(v_p[:, self.landmask == 0], v_o[:, self.landmask == 0]) #torch.nanmean(err_v, dim=0)[torch.where(self.landmask == 0)]
-        # err2 = torch.nanmean(err2)
+        # err2 = self.mse(v_p[:, self.landmask == 0], v_o[:, self.landmask == 0]) #torch.nanmean(err_v, dim=0)[torch.where(self.landmask == 0)]
+        err2 = torch.nanmean(err_v[:, self.landmask == 0])
         # err_sum = torch.nanmean(err1)
 
         err_sic = torch.square(sic_o - sic_p)
         # err_sic = err_sic / torch.nanmean(err_sic)
         
-        err3 = self.mse(sic_p[:, self.landmask == 0], sic_o[:, self.landmask == 0]) #torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        # err3 = torch.nanmean(err3)
+        # err3 = self.mse(sic_p[:, self.landmask == 0], sic_o[:, self.landmask == 0]) #torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
+        err3 = torch.nanmean(err_sic[:, self.landmask == 0])
         # err_sum += torch.nanmean(err2)
 
         err_sum = err1 + err2 + err3
@@ -1025,8 +1025,8 @@ class AttModule(nn.Module):
     def __init__(self, ch, row, col, k=3, w=0.5):
         super(AttModule,self).__init__()
         self.activation = nn.Tanh()
-        self.a11 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.a12 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
+        self.a11 = torch.nn.Parameter(torch.ones(row, col)*w)
+        self.a12 = torch.nn.Parameter(torch.ones(row, col)*w)
         # self.a13 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
         self.att1 = Cal_Att(ch, row, col, k)        
         self.att2 = Cal_Att(ch, row, col, k)
@@ -1036,8 +1036,8 @@ class AttModule(nn.Module):
         #     nn.Conv2d(ch, ch, kernel_size=k, padding="same"),
         #     nn.Conv2d(ch, ch, kernel_size=k, padding="same")
         # )
-        self.a21 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
-        self.a22 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
+        self.a21 = torch.nn.Parameter(torch.ones(row, col)*0.0)
+        self.a22 = torch.nn.Parameter(torch.ones(row, col)*0.0)
         # self.a23 = torch.nn.Parameter(torch.ones(ch, row, col)*0.0)
 
     def forward(self, x1, x2):
