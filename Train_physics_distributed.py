@@ -736,7 +736,7 @@ def main() -> None:
     # n_samples, in_channels, row, col = train_input.size()
     # _, out_channels, _, _ = train_output.size()
 
-    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = True) 
+    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = False) 
     val_sampler, val_loader = make_sampler_and_loader(args, val_dataset, shuffle = False)
     if args.cuda:
         landmask = landmask.cuda() # Land = 1; Ocean = 0;
