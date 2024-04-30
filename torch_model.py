@@ -1098,7 +1098,7 @@ class WB(nn.Module):
 class encoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(encoder,self).__init__()
-        self.activation = nn.LeakyReLU(0.1) #nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
+        self.activation = nn.Tanh() #nn.LeakyReLU(0.1) #nn.Tanh() #nn.ReLU() #nn.Tanh() #nn.LeakyReLU(0.1)
         self.dropout = nn.Dropout(0.5)
         self.e11 = nn.Conv2d(ch1, ch2, kernel_size=k, padding="same") # output: 320x320x64
         # self.e12 = nn.Conv2d(ch2, ch2, kernel_size=k, padding="same") # output: 320x320x64
@@ -1114,7 +1114,7 @@ class encoder(nn.Module):
 class decoder(nn.Module):
     def __init__(self, ch1, ch2, k=3):
         super(decoder,self).__init__()
-        self.activation = nn.LeakyReLU(0.1) #nn.Tanh() #nn.ReLU()
+        self.activation = nn.Tanh() #nn.LeakyReLU(0.1) #nn.Tanh() #nn.ReLU()
         self.dropout = nn.Dropout(0.5)
         # self.upconv1 = nn.Sequential(
         #     nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
@@ -1633,7 +1633,7 @@ class HIS_UNet(nn.Module):
     def __init__(self, n_inputs, n_outputs, landmask, extent, k=3, phy = "nophy"):
         super().__init__()
         
-        self.activation1 = nn.LeakyReLU(0.1) #nn.Tanh()
+        self.activation1 = nn.Tanh() #nn.LeakyReLU(0.1) #nn.Tanh()
         self.activation2 = nn.ReLU()
         self.dropout = nn.Dropout(0.5)
         self.landmask = landmask
