@@ -434,7 +434,7 @@ def train(
     
     mini_step = 0
     step_loss = torch.tensor(0.0).to('cuda' if args.cuda else 'cpu')
-    train_loss = Metric('train_loss')
+    train_loss = [] #Metric('train_loss')
     t0 = time.time()
 
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -475,13 +475,13 @@ def train(
             optimizer.step()
             optimizer.zero_grad()
             
-            train_loss.update(step_loss / mini_step)
+            train_loss.append(loss.item()) #.update(step_loss / mini_step)
             step_loss.zero_()
 
     if args.log_writer is not None:
         args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
 
-    return torch.nanmean(train_loss) #train_loss.avg.item()
+    return torch.nanmean(torch.tensor(train_loss)) #train_loss.avg.item()
 
 
 def validate(
