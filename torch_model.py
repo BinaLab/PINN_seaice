@@ -1028,8 +1028,8 @@ class AttModule(nn.Module):
         self.a11 = torch.nn.Parameter(torch.ones(row, col)*w) #(ch, row, col)
         self.a12 = torch.nn.Parameter(torch.ones(row, col)*w) #(ch, row, col)
         # self.a13 = torch.nn.Parameter(torch.ones(ch, row, col)*w)
-        self.att1 = nn.LeakyReLU(-1.) #Cal_Att(ch, row, col, k)        
-        self.att2 = nn.LeakyReLU(-1.) #Cal_Att(ch, row, col, k)
+        self.att1 = Cal_Att(ch, row, col, k)        
+        self.att2 = Cal_Att(ch, row, col, k)
         # self.att3 = Cal_Att(ch, row, col, k)
         self.att_share = Cal_Att(ch, row, col, k)
         # nn.Sequential(
@@ -1044,8 +1044,8 @@ class AttModule(nn.Module):
         
         xs = x1*self.a11 + x2*self.a12 # + x3*self.a13 # shared information
         xs_att = self.att_share(xs)
-        x1_att = self.att1(x1)*0
-        x2_att = self.att2(x2)*0
+        x1_att = self.att1(x1)
+        x2_att = self.att2(x2)
         # x3_att = self.att3(x3)
         
         x1 = x1 + (x1_att + xs_att)*self.a21
