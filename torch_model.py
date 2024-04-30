@@ -1738,7 +1738,7 @@ class HIS_UNet(nn.Module):
         ##### Bottom bridge #####
         # SIU
         xe3_siu = self.dropout(xe3_siu)
-        xe41_siu = sself.siu_ec41(wb3_siu)
+        xe41_siu = self.siu_ec41(wb3_siu)
         # xe41_siu = self.activation1(self.siu_ec42(xe41_siu))
         # SIV
         # xe3_siv = self.dropout(xe3_siv)
