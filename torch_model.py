@@ -142,9 +142,7 @@ class ref_loss(nn.Module):
         err2 = torch.nanmean(err2)
         # err_sum += torch.nanmean(err2)
 
-        if err1 > err2:
-            err2 = err2 + ()
-        err_sum += err1 + err2
+        err_sum = err1 + err2
         
         return err_sum   
     
