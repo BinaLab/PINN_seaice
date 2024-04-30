@@ -1044,8 +1044,8 @@ class AttModule(nn.Module):
         
         xs = x1*self.a11 + x2*self.a12 # + x3*self.a13 # shared information
         xs_att = self.att_share(xs)
-        x1_att = self.att1(x1)
-        x2_att = self.att2(x2)
+        x1_att = self.att1(x1)*0
+        x2_att = self.att2(x2)*0
         # x3_att = self.att3(x3)
         
         x1 = x1 + (x1_att + xs_att)*self.a21
