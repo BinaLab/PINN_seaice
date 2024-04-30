@@ -32,6 +32,20 @@ class vel_loss(nn.Module):
         # err_sum = tf.sqrt(tf.reduce_mean(err_u*err_sic)) + tf.sqrt(tf.reduce_mean(err_v*err_sic))
         return err_sum  
     
+# class single_loss(nn.Module):
+#     def __init__(self, landmask):
+#         super(single_loss, self).__init__();
+#         self.landmask = landmask
+
+#     def forward(self, obs, prd):
+#         n_outputs = obs.size()[1]
+#         err_sum = 0
+#         for i in range(0, n_outputs):
+#             err = torch.square(obs[:, i, :, :] - prd[:, i, :, :])
+#             # err = torch.mean(err, dim=0)[self.landmask == 0]
+#             err_sum += torch.mean(err)**0.5*100
+#         return err_sum
+
 class single_loss(nn.Module):
     def __init__(self, landmask):
         super(single_loss, self).__init__();
@@ -118,13 +132,19 @@ class ref_loss(nn.Module):
         # print(err_u_max, err_v_max)
         
         err1 = torch.nanmean(err_u + err_v, dim=0)[torch.where(self.landmask == 0)]
-        err_sum = torch.nanmean(err1)
+        err1 = torch.nanmean(err1)
+        # err_sum = torch.nanmean(err1)
 
         err_sic = torch.square(sic_o - sic_p)
         # err_sic = err_sic / torch.nanmean(err_sic)
         
         err2 = torch.nanmean(err_sic, dim=0)[torch.where(self.landmask == 0)]
-        err_sum += torch.nanmean(err2)
+        err2 = torch.nanmean(err2)
+        # err_sum += torch.nanmean(err2)
+
+        if err1 > err2:
+            err2 = err2 + ()
+        err_sum += err1 + err2
         
         return err_sum   
     

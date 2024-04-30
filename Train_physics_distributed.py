@@ -420,6 +420,7 @@ def train(
     loss_func: torch.nn.Module,
     train_loader: torch.utils.data.DataLoader,
     train_sampler: torch.utils.data.distributed.DistributedSampler,
+    landmask,
     args
 ):
     
@@ -449,6 +450,11 @@ def train(
             loss = loss_func(output, target, data[:, 2*args.day_int, :, :].cuda())
         else:
             loss = loss_func(output, target)
+        
+        # loss_func = single_loss(landmask)
+        # loss0 = loss_func(output[:, 0], target[:, 0])
+        # loss1 = loss_func(output[:, 1], target[:, 1])
+        # loss2 = loss_func(output[:, 2], target[:, 2])            
 
         with torch.no_grad():
             step_loss += loss
@@ -479,11 +485,12 @@ def validate(
     model: torch.nn.Module,
     loss_func: torch.nn.Module,
     val_loader: torch.utils.data.DataLoader,
+    landmask,
     args
 ):
     """Test the model."""
     model.eval()
-    rmse = 0
+    rmse = [0, 0, 0]
     val_loss = Metric('val_loss')
 
     with torch.no_grad():
@@ -504,7 +511,8 @@ def validate(
             else:
                 val_loss.update(loss_func(output, target))
 
-            rmse += RMSE(target, output) #*100
+            for c in range(0, data.shape[1]):
+                rmse[c] += RMSE(target[:, c], output[:, c]) #*100
 
             # t.update(1)
             # if i + 1 == len(val_loader):
@@ -807,11 +815,12 @@ def main() -> None:
             loss_fn,
             train_loader,
             train_sampler,
+            landmask,
             args
         )
         
         scheduler.step()
-        val_loss = validate(epoch, net, loss_fn, val_loader, args)
+        val_loss = validate(epoch, net, loss_fn, val_loader, landmask, args)
         
         # ##### TRAIN ###########################
         # for batch_idx, (data, target) in enumerate(train_loader):
@@ -860,8 +869,10 @@ def main() -> None:
 
         t1 = time.time() - t0
         if dist.get_rank() == 0:
-            print('Epoch {0} >> Train loss: {1:.4f}; Val loss: {2:.4f} [{3:.2f} sec]'.format(
-                str(epoch).zfill(3), train_loss/train_cnt, val_loss/val_cnt, t1))
+            print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
+                str(epoch).zfill(3), train_loss/train_cnt, t1))
+            print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
+                val_loss[0], val_loss[1], val_loss[2]))
             
             # if epoch % args.checkpoint_freq == 0:
             #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))          
