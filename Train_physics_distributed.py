@@ -222,7 +222,7 @@ def make_sampler_and_loader(args, train_dataset, shuffle = True):
     """Create sampler and dataloader for train and val datasets."""
     torch.set_num_threads(4)
     kwargs: dict[str, Any] = (
-        {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
+        {'num_workers': args.world_size, 'pin_memory': True} if args.cuda else {}
     )
     
     if args.cuda:
@@ -584,6 +584,7 @@ def main() -> None:
     
     args.verbose = dist.get_rank() == 0
     world_size = int(os.environ['WORLD_SIZE'])
+    args.world_size = world_size
 
     if args.verbose:
         print('Collecting env info...')
