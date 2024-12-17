@@ -29,7 +29,7 @@ from torch_model import *
 
 import argparse
 import os    
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+# os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 # try:
 #     from torch.cuda.amp import GradScaler
@@ -97,17 +97,6 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=1.0,
         help='Ratio to include in training dataset',
-    )
-    parser.add_argument(
-        '--checkpoint-format',
-        default='checkpoint_unet_{epoch}.pth.tar',
-        help='checkpoint file format',
-    )
-    parser.add_argument(
-        '--checkpoint-freq',
-        type=int,
-        default=10,
-        help='epochs between checkpoints',
     )
     parser.add_argument(
         '--no-cuda',
@@ -212,44 +201,11 @@ def parse_args() -> argparse.Namespace:
     )
     
     args = parser.parse_args()
-    if 'LOCAL_RANK' in os.environ:
-        args.local_rank = int(os.environ['LOCAL_RANK'])
+    # if 'LOCAL_RANK' in os.environ:
+    #     args.local_rank = int(os.environ['LOCAL_RANK'])
     args.cuda = not args.no_cuda and torch.cuda.is_available()
 
     return args
-
-def make_sampler_and_loader(args, train_dataset, shuffle = True):
-    """Create sampler and dataloader for train and val datasets."""
-    torch.set_num_threads(args.world_size)
-    kwargs: dict[str, Any] = (
-        {'num_workers': args.world_size, 'pin_memory': True} if args.cuda else {}
-    )
-    
-    if args.cuda:
-        kwargs['prefetch_factor'] = 8
-        kwargs['persistent_workers'] = True
-        train_sampler = DistributedSampler(
-            train_dataset,
-            num_replicas=dist.get_world_size(),
-            rank=dist.get_rank(),
-            shuffle=shuffle
-        )
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=args.batch_size,
-            sampler=train_sampler,
-            **kwargs,
-        )
-    else:
-        train_sampler = DistributedSampler(train_dataset)
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=args.batch_size,
-            sampler=train_sampler,
-            **kwargs,
-        )
-
-    return train_sampler, train_loader
 
 def RMSE(prd, obs):
     err = torch.square(obs-prd)
@@ -433,9 +389,9 @@ def main() -> None:
     """Main train and eval function."""
     args = parse_args()
     
-    if args.cuda:
+    # if args.cuda:
         # torch.cuda.set_device(args.local_rank)
-        torch.cuda.manual_seed(args.seed)
+        # torch.cuda.manual_seed(args.seed)
         # torch.backends.cudnn.benchmark = False
         # torch.backends.cudnn.deterministic = True
 
@@ -802,10 +758,7 @@ def main() -> None:
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
                 pickle.dump(test_save, file)
 
-    '''
-                        
-    if dist.get_rank() == 0:
-        print("#### Validation done!! ####")     
+    '''   
     # ===============================================================================
 
 if __name__ == '__main__':
