@@ -287,135 +287,6 @@ class Metric:
     def avg(self) -> torch.Tensor:
         """Get average of metric."""
         return self.total / self.n
-    
-# def train(
-#     epoch: int,
-#     model: torch.nn.Module,
-#     optimizer: torch.optim.Optimizer,
-#     loss_func: torch.nn.Module,
-#     train_loader: torch.utils.data.DataLoader,
-#     train_sampler: torch.utils.data.distributed.DistributedSampler,
-#     args
-# ):
-    
-#     """Train model."""
-#     model.train()
-#     train_sampler.set_epoch(epoch)
-    
-#     mini_step = 0
-#     step_loss = torch.tensor(0.0).to('cuda' if args.cuda else 'cpu')
-#     train_loss = Metric('train_loss')
-#     t0 = time.time()
-    
-#     with tqdm(
-#         total=math.ceil(len(train_loader) / args.batches_per_allreduce),
-#         bar_format='{l_bar}{bar:10}{r_bar}',
-#         desc=f'Epoch {epoch:3d}/{args.epochs:3d}',
-#         disable=not args.verbose,
-#     ) as t:
-#         for batch_idx, (data, target) in enumerate(train_loader):
-#             mini_step += 1
-#             ind = torch.sum(data.isnan(), dim=(1,2,3))
-#             data = data[ind==0, :, :, :]
-#             target = target[ind==0, :, :, :]
-#             if args.cuda:
-#                 data, target = data.cuda(), target.cuda()
-            
-#             if args.model_type == "casunet":
-#                 output = model(data, data[:, 2:3])
-#             else:
-#                 output = model(data)
-                
-#             if args.phy == "phy":
-#                 loss = loss_func(output, target, data[:, 2*args.day_int, :, :].cuda())
-#             else:
-#                 loss = loss_func(output, target)
-
-#             with torch.no_grad():
-#                 step_loss += loss
-            
-#             # loss = loss / args.batches_per_allreduce
-
-#             # if (
-#             #     mini_step % args.batches_per_allreduce == 0
-#             #     or batch_idx + 1 == len(train_loader)
-#             # ):
-#             #     loss.backward()
-#             # else:
-#             #     with model.no_sync():  # type: ignore
-#             #         loss.backward()
-
-#             loss.backward()
-
-#             if (
-#                 mini_step % args.batches_per_allreduce == 0
-#                 or batch_idx + 1 == len(train_loader)
-#             ):
-#                 optimizer.zero_grad()
-#                 optimizer.step()
-                
-#                 train_loss.update(step_loss / mini_step)
-#                 step_loss.zero_()
-
-#                 t.set_postfix_str('loss: {:.4f}'.format(train_loss.avg))
-#                 t.update(1)
-#                 mini_step = 0
-
-#     if args.log_writer is not None:
-#         args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
-        
-#     return train_loss.avg
-
-
-# def validate(
-#     epoch: int,
-#     model: torch.nn.Module,
-#     loss_func: torch.nn.Module,
-#     val_loader: torch.utils.data.DataLoader,
-#     args
-# ):
-#     """Test the model."""
-#     model.eval()
-#     rmse = 0
-#     val_loss = Metric('val_loss')
-
-#     with tqdm(
-#         total=len(val_loader),
-#         bar_format='{l_bar}{bar:10}|{postfix}',
-#         desc='             ',
-#         disable=not args.verbose
-#     ) as t:
-#         with torch.no_grad():
-#             for i, (data, target) in enumerate(val_loader):
-#                 ind = torch.sum(data.isnan(), dim=(1,2,3))
-#                 data = data[ind==0, :, :, :]
-#                 target = target[ind==0, :, :, :]
-#                 if args.cuda:
-#                     data, target = data.cuda(), target.cuda()
-                    
-#                 if args.model_type == "casunet":
-#                     output = model(data, data[:, 2:3])
-#                 else:
-#                     output = model(data)
-                
-#                 if args.phy == "phy":
-#                     val_loss.update(loss_func(output, target, data[:, 2*args.day_int, :, :].cuda()))
-#                 else:
-#                     val_loss.update(loss_func(output, target))
-
-#                 rmse += RMSE(target, output)*100
-
-#                 t.update(1)
-#                 if i + 1 == len(val_loader):
-#                     t.set_postfix_str(
-#                         'val_loss: {:.4f}'.format(rmse), #val_loss.avg
-#                         refresh=False,
-#                     )
-
-#     if args.log_writer is not None:
-#         args.log_writer.add_scalar('val/loss', val_loss.avg, epoch)
-        
-#     return val_loss.avg
 
 def train(
     epoch: int,
@@ -568,7 +439,7 @@ def main() -> None:
         # torch.backends.cudnn.benchmark = False
         # torch.backends.cudnn.deterministic = True
 
-    # args.verbose = dist.get_rank() == 0
+    args.verbose = dist.get_rank() == 0
     # world_size = int(os.environ['WORLD_SIZE'])
     # args.world_size = world_size
     
