@@ -522,7 +522,8 @@ def main() -> None:
         with open(data_path + f"landmask_256.pkl", 'rb') as file:
             landmask = pickle.load(file)
             landmask = torch.tensor(landmask)
-        
+
+    '''
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
     elif args.predict == "sit":
@@ -800,6 +801,8 @@ def main() -> None:
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
                 pickle.dump(test_save, file)
+
+    '''
                         
     if dist.get_rank() == 0:
         print("#### Validation done!! ####")     
