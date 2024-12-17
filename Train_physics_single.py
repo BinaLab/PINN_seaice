@@ -181,23 +181,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--model-type',
         type=str,
-        default="unet",
+        default="hisunet",
         help='types of the neural network model (e.g. unet, cnn, fc)',
-    )
-    
-    parser.add_argument(
-        '--backend',
-        type=str,
-        default='nccl',
-        help='backend for distribute training (default: nccl)',
-    )
-
-    # Set automatically by torch distributed launch
-    parser.add_argument(
-        '--local-rank',
-        type=int,
-        default=0,
-        help='local rank for distributed training',
     )
     
     args = parser.parse_args()
@@ -479,7 +464,6 @@ def main() -> None:
             landmask = pickle.load(file)
             landmask = torch.tensor(landmask)
 
-    '''
     if args.predict == "sic":
         cnn_output = cnn_output[:,:,:,2:3]
     elif args.predict == "sit":
@@ -758,7 +742,6 @@ def main() -> None:
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
                 pickle.dump(test_save, file)
 
-    '''   
     # ===============================================================================
 
 if __name__ == '__main__':
