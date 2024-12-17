@@ -439,7 +439,7 @@ def main() -> None:
         # torch.backends.cudnn.benchmark = False
         # torch.backends.cudnn.deterministic = True
 
-    args.verbose = dist.get_rank() == 0
+    # args.verbose = dist.get_rank() == 0
     # world_size = int(os.environ['WORLD_SIZE'])
     # args.world_size = world_size
     
@@ -452,8 +452,8 @@ def main() -> None:
         
     torch.cuda.empty_cache()
 
-    if args.verbose:
-        print('Collecting env info...')
+    # if args.verbose:
+        # print('Collecting env info...')
         # print(collect_env.get_pretty_env_info())
         # print()
 
@@ -471,7 +471,7 @@ def main() -> None:
     os.makedirs(args.log_dir, exist_ok=True)
     args.checkpoint_format = os.path.join(args.log_dir, args.checkpoint_format)
     # args.log_writer = SummaryWriter(args.log_dir) if args.verbose else None  
-    args.log_writer = None if args.verbose else None  
+    args.log_writer = None # if args.verbose else None  
     
     data_path = args.data_dir
     data_file = args.data_file
