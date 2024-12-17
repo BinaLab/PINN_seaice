@@ -235,7 +235,6 @@ def train(
     optimizer: torch.optim.Optimizer,
     loss_func: torch.nn.Module,
     train_loader: torch.utils.data.DataLoader,
-    # train_sampler: torch.utils.data.distributed.DistributedSampler,
     landmask,
     args
 ):
@@ -256,11 +255,6 @@ def train(
         target = target[ind==0, :, :, :]
         if args.cuda:
             data, target = data.cuda(), target.cuda()
-        
-        if args.model_type == "casunet":
-            output = model(data, data[:, 2:3])
-        else:
-            output = model(data)
             
         if args.phy == "phy":
             loss = loss_func(output, target, data[:, 2*args.day_int, :, :].cuda())
@@ -702,46 +696,12 @@ def main() -> None:
     
     del train_dataset, train_loader
     
-    # Test the model with the trained model ========================================
-    val_years = years[mask1][val_dataset.valid]
-    val_months = months[mask1][val_dataset.valid]
-    val_days = days[mask1][val_dataset.valid]
+    # # Test the model with the trained model ========================================
+    # val_years = years[mask1][val_dataset.valid]
+    # val_months = months[mask1][val_dataset.valid]
+    # val_days = days[mask1][val_dataset.valid]
     
     net.eval()
-    
-    if dist.get_rank() == 0:    
-        for m in np.unique(val_years):
-            # if m % world_size == dist.get_rank():
-            
-            idx = np.where(val_years == m)[0]
-            valid = []
-            
-            # data = val_input[val_months==m, :, :, :]
-            data = torch.zeros([len(idx), in_channels, row, col])
-            target = torch.zeros([len(idx), out_channels, row, col]) #val_output[val_months==m, :, :, :]
-            output = torch.zeros([len(idx), out_channels, row, col])
-            
-            with torch.no_grad():
-                for j in range(0, len(idx)): #range(0, target.size()[0]):
-                    data[j, :, :, :] = val_dataset[idx[j]][0]
-                    check = torch.sum(torch.tensor(val_dataset[idx[j]][0]).isnan())
-                    if check == 0:
-                        if args.model_type == "casunet":
-                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
-                        else:
-                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
-                        target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
-                        valid.append(j)              
-            
-            test_save = [data[valid].to('cpu').detach().numpy().astype(np.float16), target[valid].to('cpu').detach().numpy().astype(np.float16), 
-                         output[valid].to('cpu').detach().numpy().astype(np.float16),
-                         val_months[idx[valid]], val_days[idx[valid]]]
-            # print(len(valid), data[valid].shape, target[valid].shape, output[valid].shape)
-
-            # Open a file and use dump()
-            with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
-                pickle.dump(test_save, file)
-
     # ===============================================================================
 
 if __name__ == '__main__':
