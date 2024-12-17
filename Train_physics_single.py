@@ -731,24 +731,6 @@ def main() -> None:
     # n_samples, in_channels, row, col = train_input.size()
     # _, out_channels, _, _ = train_output.size()
 
-    def get_dataloaders(dataset, seed, batch_size=32, shuffle = False, frac_list = [0.7, 0.3, 0.0]):
-    # Use a 80:10:10 train-val-test split
-    train_set, val_set, test_set = split_dataset(dataset,
-                                                 frac_list=frac_list,
-                                                 shuffle=True,
-                                                 random_state=seed)
-    train_loader = GraphDataLoader(train_set, use_ddp=False, batch_size=batch_size, shuffle=shuffle)
-    # val_loader = GraphDataLoader(val_set, use_ddp=False, batch_size=batch_size, shuffle=shuffle)
-    # test_loader = GraphDataLoader(test_set, batch_size=batch_size)
-
-    return train_loader #, test_loader
-
-    DataLoader(dataset, batch_size=1, shuffle=False, sampler=None,
-           batch_sampler=None, num_workers=0, collate_fn=None,
-           pin_memory=False, drop_last=False, timeout=0,
-           worker_init_fn=None, *, prefetch_factor=2,
-           persistent_workers=False)
-
     train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True) 
     val_loader = DataLoader(val_dataset, batch_size = batch_size, shuffle = False)
     if args.cuda:
