@@ -349,8 +349,8 @@ def train(
             train_loss.append(loss.item()) #.update(step_loss / mini_step)
             step_loss.zero_()
 
-    if args.log_writer is not None:
-        args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
+    # if args.log_writer is not None:
+    #     args.log_writer.add_scalar('train/loss', train_loss.avg, epoch)
 
     return torch.nanmean(torch.tensor(train_loss)) #train_loss.avg.item()
 
@@ -396,8 +396,8 @@ def validate(
             #         refresh=False,
             #     )
 
-    if args.log_writer is not None:
-        args.log_writer.add_scalar('val/loss', val_loss.avg, epoch)
+    # if args.log_writer is not None:
+    #     args.log_writer.add_scalar('val/loss', val_loss.avg, epoch)
         
     return rmse / (i+1) * 100 #val_loss.avg.item()
 
@@ -468,10 +468,10 @@ def main() -> None:
     
     # args.global_rank = torch.distributed.get_rank()
 
-    os.makedirs(args.log_dir, exist_ok=True)
-    args.checkpoint_format = os.path.join(args.log_dir, args.checkpoint_format)
+    # os.makedirs(args.log_dir, exist_ok=True)
+    # args.checkpoint_format = os.path.join(args.log_dir, args.checkpoint_format)
     # args.log_writer = SummaryWriter(args.log_dir) if args.verbose else None  
-    args.log_writer = None # if args.verbose else None  
+    # args.log_writer = None # if args.verbose else None  
     
     data_path = args.data_dir
     data_file = args.data_file
