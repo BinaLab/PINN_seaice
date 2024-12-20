@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-dir',
         type=str,
-        default='/projects/yoko2261/data/', #'D:\\PINN\\data\\',
+        default='/scratch/alpine/yoko2261/data/', #'D:\\PINN\\data\\',
         metavar='D',
         help='directory to download dataset to',
     )
@@ -72,7 +72,7 @@ def parse_args() -> argparse.Namespace:
     )    
     parser.add_argument(
         '--model-dir',
-        default='/projects/yoko2261/model/',
+        default='/scratch/alpine/yoko2261/model/',
         help='Model directory',
     )
     
@@ -441,39 +441,20 @@ def main() -> None:
     print("testing")
     
     #### READ DATA ##################################################################    
-    '''
     data_ver = data_file[-6:-4]
     data_type = data_file[6:9]
     
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, cnn_input, cnn_output = pickle.load(file)   
     
-    if data_type == "cic":
-        # CICE data
-        data_type = "cice"
-        cnn_input = cnn_input[:,:,:, [0,1,2,3,4,5,6]]
-        cnn_output = cnn_output[:,:,:, [0,1,3]]
-        # Land mask data
-        with open(data_path + f"landmask_physics_256.pkl", 'rb') as file:
-            landmask = pickle.load(file)
-    elif data_type == "cnn":
         data_type = "sat"
-        # Satellite observation data
-        # cnn_input = cnn_input[:,60:220, 90:250,[0,1,2,3,4,5]]
-        # cnn_output = cnn_output[:,60:220, 90:250,:-1]
-        # Land mask data
-        # with open(data_path + f"landmask_320.pkl", 'rb') as file:
-        #     landmask = pickle.load(file)
-        #     landmask = torch.tensor(landmask)[30:286, 10:266]
-        # with open(data_path + f"CAAmask_256.pkl", 'rb') as file:
-        #     landmask = pickle.load(file)
-        #     landmask = torch.tensor(landmask)[60:220, 90:250]
         
         cnn_input = cnn_input[:, :, :, [0,1,2,3,4,5]]
         cnn_output = cnn_output[:,:,:,:-1]
-        with open(data_path + f"landmask_256.pkl", 'rb') as file:
-            landmask = pickle.load(file)
-            landmask = torch.tensor(landmask)    
+        
+    with open(data_path + f"landmask_256.pkl", 'rb') as file:
+        landmask = pickle.load(file)
+        landmask = torch.tensor(landmask)    
 
     landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
     
@@ -491,7 +472,7 @@ def main() -> None:
 
 
     
-    
+    '''
     ## Convert numpy array into torch tensor
     cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
     cnn_output = torch.tensor(cnn_output, dtype=torch.float32)
