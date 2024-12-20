@@ -76,7 +76,7 @@ def parse_args() -> argparse.Namespace:
         help='Model directory',
     )
 
-    '''
+    
     parser.add_argument(
         '--log-dir',
         default='./logs/torch_unet',
@@ -114,6 +114,7 @@ def parse_args() -> argparse.Namespace:
         help='random seed (default: 42)',
     )
     
+    '''
     # Training settings
     parser.add_argument(
         '--batch-size',
