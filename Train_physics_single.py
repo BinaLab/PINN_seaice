@@ -114,7 +114,7 @@ def parse_args() -> argparse.Namespace:
         help='random seed (default: 42)',
     )
     
-    '''
+    
     # Training settings
     parser.add_argument(
         '--batch-size',
@@ -123,14 +123,14 @@ def parse_args() -> argparse.Namespace:
         metavar='N',
         help='input batch size for training (default: 16)',
     )
-    parser.add_argument(
-        '--batches-per-allreduce',
-        type=int,
-        default=1,
-        help='number of batches processed locally before '
-        'executing allreduce across workers; it multiplies '
-        'total batch size.',
-    )
+    # parser.add_argument(
+    #     '--batches-per-allreduce',
+    #     type=int,
+    #     default=1,
+    #     help='number of batches processed locally before '
+    #     'executing allreduce across workers; it multiplies '
+    #     'total batch size.',
+    # )
     parser.add_argument(
         '--val-batch-size',
         type=int,
@@ -198,7 +198,7 @@ def parse_args() -> argparse.Namespace:
         )
     except:
         pass
-    '''
+    
     args = parser.parse_args()
     if 'LOCAL_RANK' in os.environ:
         args.local_rank = int(os.environ['LOCAL_RANK'])
