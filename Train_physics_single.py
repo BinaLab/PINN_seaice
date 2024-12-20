@@ -437,8 +437,11 @@ def main() -> None:
     # phy_w = args.phy_weight
     # dayint = args.day_int
     # forecast = args.forecast    
+
+    print("testing")
     
     #### READ DATA ##################################################################    
+    '''
     data_ver = data_file[-6:-4]
     data_type = data_file[6:9]
     
@@ -487,7 +490,7 @@ def main() -> None:
 
 
 
-    '''
+    
     
     ## Convert numpy array into torch tensor
     cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
