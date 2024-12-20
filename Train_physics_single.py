@@ -186,8 +186,8 @@ def parse_args() -> argparse.Namespace:
     )
     
     args = parser.parse_args()
-    # if 'LOCAL_RANK' in os.environ:
-    #     args.local_rank = int(os.environ['LOCAL_RANK'])
+    if 'LOCAL_RANK' in os.environ:
+        args.local_rank = int(os.environ['LOCAL_RANK'])
     args.cuda = not args.no_cuda and torch.cuda.is_available()
 
     return args
@@ -365,7 +365,7 @@ def test(
 def main() -> None:    
     
     #### SETTING CUDA ENVIRONMENTS ####
-    # args = parse_args()
+    args = parse_args()
     
     # if args.cuda:
         # torch.cuda.set_device(args.local_rank)
