@@ -21,7 +21,7 @@ import torch.distributed as dist
 from torch.utils import collect_env
 from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader, random_split
-from torch.utils.data.distributed import DistributedSampler
+# from torch.utils.data.distributed import DistributedSampler
  
 # from torch.utils.tensorboard import SummaryWriter
 
@@ -365,8 +365,7 @@ def test(
 def main() -> None:    
     
     #### SETTING CUDA ENVIRONMENTS ####
-    """Main train and eval function."""
-    args = parse_args()
+    # args = parse_args()
     
     # if args.cuda:
         # torch.cuda.set_device(args.local_rank)
