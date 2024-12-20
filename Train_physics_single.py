@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-dir',
         type=str,
-        default='../data/', #'D:\\PINN\\data\\',
+        default='/projects/yoko2261/data/', #'D:\\PINN\\data\\',
         metavar='D',
         help='directory to download dataset to',
     )
@@ -72,10 +72,9 @@ def parse_args() -> argparse.Namespace:
     )    
     parser.add_argument(
         '--model-dir',
-        default='../model',
+        default='/projects/yoko2261/model/',
         help='Model directory',
     )
-
     
     parser.add_argument(
         '--log-dir',
