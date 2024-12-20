@@ -197,12 +197,11 @@ def parse_args() -> argparse.Namespace:
         )
     except:
         pass
-    
+    '''
     args = parser.parse_args()
     if 'LOCAL_RANK' in os.environ:
         args.local_rank = int(os.environ['LOCAL_RANK'])
     args.cuda = not args.no_cuda and torch.cuda.is_available()
-    '''
 
     return args
 
