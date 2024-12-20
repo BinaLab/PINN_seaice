@@ -489,6 +489,11 @@ def main() -> None:
     #     yy_n = (yy - yy.min())/(yy.max() - yy.min()).astype(np.float16)
     #     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(xx_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
     #     cnn_input = np.concatenate((cnn_input, np.repeat(np.array([np.expand_dims(yy_n, 2)]), cnn_input.shape[0], axis = 0).astype(np.float16)), axis = 3)
+
+
+
+
+    '''
     
     ## Convert numpy array into torch tensor
     cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
@@ -712,6 +717,7 @@ def main() -> None:
     # val_days = days[mask1][val_dataset.valid]
     
     net.eval()
+    '''
     # ===============================================================================
 
 if __name__ == '__main__':
