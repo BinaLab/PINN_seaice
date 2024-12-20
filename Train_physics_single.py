@@ -29,7 +29,7 @@ from torch_model import *
 
 import argparse
 import os    
-# os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 # try:
 #     from torch.cuda.amp import GradScaler
