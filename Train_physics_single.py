@@ -75,6 +75,8 @@ def parse_args() -> argparse.Namespace:
         default='../model',
         help='Model directory',
     )
+
+    '''
     parser.add_argument(
         '--log-dir',
         default='./logs/torch_unet',
@@ -200,6 +202,7 @@ def parse_args() -> argparse.Namespace:
     if 'LOCAL_RANK' in os.environ:
         args.local_rank = int(os.environ['LOCAL_RANK'])
     args.cuda = not args.no_cuda and torch.cuda.is_available()
+    '''
 
     return args
 
