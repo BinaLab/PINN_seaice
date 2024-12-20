@@ -114,7 +114,7 @@ def parse_args() -> argparse.Namespace:
         help='random seed (default: 42)',
     )
     
-    
+    '''
     # Training settings
     parser.add_argument(
         '--batch-size',
@@ -163,6 +163,7 @@ def parse_args() -> argparse.Namespace:
         metavar='LR',
         help='base learning rate (default: 0.01)',
     )
+    
     parser.add_argument(
         '--day-int',
         type=int,
@@ -187,6 +188,7 @@ def parse_args() -> argparse.Namespace:
         default="hisunet",
         help='types of the neural network model (e.g. unet, cnn, fc)',
     )
+    '''
 
     try:
         # Set automatically by torch distributed launch
@@ -424,18 +426,18 @@ def main() -> None:
     data_path = args.data_dir
     data_file = args.data_file
     model_dir = args.model_dir
-    date = args.date
-    sdate = args.sdate
+    # date = args.date
+    # sdate = args.sdate
 
-    n_epochs = args.epochs
-    batch_size = args.batch_size  # size of each batch
-    val_batch = args.val_batch_size  # size of validation batch size
-    lr = args.base_lr
+    # n_epochs = args.epochs
+    # batch_size = args.batch_size  # size of each batch
+    # val_batch = args.val_batch_size  # size of validation batch size
+    # lr = args.base_lr
 
-    phy = args.phy ## PHYSICS OR NOT
-    phy_w = args.phy_weight
-    dayint = args.day_int
-    forecast = args.forecast    
+    # phy = args.phy ## PHYSICS OR NOT
+    # phy_w = args.phy_weight
+    # dayint = args.day_int
+    # forecast = args.forecast    
     
     #### READ DATA ##################################################################    
     data_ver = data_file[-6:-4]
@@ -469,17 +471,7 @@ def main() -> None:
         cnn_output = cnn_output[:,:,:,:-1]
         with open(data_path + f"landmask_256.pkl", 'rb') as file:
             landmask = pickle.load(file)
-            landmask = torch.tensor(landmask)
-
-    if args.predict == "sic":
-        cnn_output = cnn_output[:,:,:,2:3]
-    elif args.predict == "sit":
-        if data_ver == 'v4':
-            cnn_output = cnn_output[:,:,:,3:4]
-        else:
-            print(f"SIT prediction is not available with {data_ver} data >>> Proceed with all prediction")
-    elif args.predict == "uv":
-        cnn_output = cnn_output[:,:,:,0:2]        
+            landmask = torch.tensor(landmask)    
 
     landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
     
