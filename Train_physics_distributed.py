@@ -83,7 +83,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--date',
         type=int,
-        default=2022,
+        default=2025,
         help='year to exclude during the training process',
     )
     parser.add_argument(
@@ -154,8 +154,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--phy-weight',
         type=float,
-        default=1.0,
+        default=0.0,
         help='relative weight for physics informed loss function',
+    )
+    parser.add_argument(
+        '--sat-weight',
+        type=float,
+        default=0.0,
+        help='relative weight for physics informed loss function of satellite data',
     )
     parser.add_argument(
         '--epochs',
@@ -566,12 +572,16 @@ def main() -> None:
         backend=args.backend,
         init_method='env://',
     )
-
+    
     if args.cuda:
         torch.cuda.set_device(args.local_rank)
         torch.cuda.manual_seed(args.seed)
         # torch.backends.cudnn.benchmark = False
         # torch.backends.cudnn.deterministic = True
+
+    args.verbose = dist.get_rank() == 0
+    world_size = int(os.environ['WORLD_SIZE'])
+    args.world_size = world_size
     
     if args.no_cuda:
         device = torch.device('cpu')
@@ -581,10 +591,6 @@ def main() -> None:
         device_name = 'gpu'
         
     torch.cuda.empty_cache()
-    
-    args.verbose = dist.get_rank() == 0
-    world_size = int(os.environ['WORLD_SIZE'])
-    args.world_size = world_size
 
     if args.verbose:
         print('Collecting env info...')
@@ -620,6 +626,7 @@ def main() -> None:
 
     phy = args.phy ## PHYSICS OR NOT
     phy_w = args.phy_weight
+    sat_w = args.sat_weight
     dayint = args.day_int
     forecast = args.forecast    
     
@@ -782,7 +789,7 @@ def main() -> None:
         )
 
     if phy == "phy":
-        loss_fn = physics_loss(landmask, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
+        loss_fn = physics_loss(landmask, sat_w, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
     elif phy == "nophy":
         if args.model_type == "fc":
             loss_fn = nn.L1Loss()
@@ -903,7 +910,8 @@ def main() -> None:
     
     net.eval()
     
-    if dist.get_rank() == 0:    
+    if dist.get_rank() == 0:   
+        '''
         for m in np.unique(val_years):
             # if m % world_size == dist.get_rank():
             
@@ -935,8 +943,10 @@ def main() -> None:
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
                 pickle.dump(test_save, file)
+            '''
                         
     if dist.get_rank() == 0:
+        # model save
         print("#### Validation done!! ####")     
     # ===============================================================================
 
