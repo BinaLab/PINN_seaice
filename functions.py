@@ -12,6 +12,8 @@ from tqdm import tqdm
 from pyproj import Proj, transform
 from shapely.geometry import Polygon
 import cartopy.crs as ccrs
+from bs4 import BeautifulSoup
+import requests
 
 from scipy.interpolate import griddata
 
@@ -22,6 +24,7 @@ import xarray as xr
 from urllib.request import urlopen
 
 import pickle
+import fsspec
 
 global data_path
 data_path = "D:\\PINN\\data"
@@ -125,13 +128,32 @@ def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
             print("Filename is NOT correct!")
             
     elif dtype == "noaa":
-        ncfile = data_path + "/{0}/SIC_NOAA/seaice_conc_daily_{0}_{1}_f17_v04r00.nc".format(region, dt.datetime.strftime(t1, "%Y%m%d"))
+
+        ##### REMOTE ACCESS
+        if region.upper() == "NH":
+            year = str(t1.year)
+            datestr = dt.datetime.strftime(t1, "%Y%m%d")
+            url = f"https://noaadata.apps.nsidc.org/NOAA/G02202_V4/north/daily/{year}"
+            page = requests.get(url).text
+            soup = BeautifulSoup(page, 'html.parser')
+            links = [url + '/' + node.get('href') for node in soup.find_all('a') if node.get('href').endswith('nc') and f"nh_{datestr}" in node.get('href')]
+            ncfile = links[0]
+            # ncfile = "{2}/seaice_conc_daily_{0}_{1}_f17_v04r00.nc".format(region.lower(), datestr, url)
         
-        if os.path.exists(ncfile):
-            with netCDF4.Dataset(ncfile, 'r') as nc:
-                xx0 = np.array(nc.variables['xgrid'])
-                yy0 = np.array(nc.variables['ygrid'])
-                sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
+            with fsspec.open(ncfile) as file:
+                data = xr.open_dataset(file)
+                xx0 = np.array(data['xgrid'])
+                yy0 = np.array(data['ygrid'])
+                sic = np.array(data['cdr_seaice_conc'])[0] # CDR SIC
+                del data
+
+        ##### LOCAL ACCESS
+        # ncfile = data_path + "/{0}/SIC_NOAA/seaice_conc_daily_{0}_{1}_f17_v04r00.nc".format(region, dt.datetime.strftime(t1, "%Y%m%d"))
+        # if os.path.exists(ncfile):
+        #     with netCDF4.Dataset(ncfile, 'r') as nc:
+        #         xx0 = np.array(nc.variables['xgrid'])
+        #         yy0 = np.array(nc.variables['ygrid'])
+        #         sic = np.array(nc.variables['cdr_seaice_conc'])[0] # CDR SIC
                 # sic = np.array(nc.variables['nsidc_bt_seaice_conc'])[0] # BT SIC
                 # sic = np.array(nc.variables['nsidc_nt_seaice_conc'])[0] # NT SIC
 
@@ -154,8 +176,10 @@ def get_SIC(t1, xx, yy, dtype = "noaa", region = "NH"):
         else:
             print("Filename is NOT correct!")
 
+def a(*args, **kwargs): return ""
+
 def retrieve_ERA5(year, region = "NH"):
-    c = cdsapi.Client()
+    c = cdsapi.Client(quiet=True, wait_until_complete=False, delete=True, progress=False, warning_callback = a, sleep_max=10)
     # dataset to read
     dataset = 'reanalysis-era5-single-levels'
     # flag to download data
@@ -210,13 +234,15 @@ def retrieve_ERA5(year, region = "NH"):
             }
 
     # retrieves the path to the file
-    fl = c.retrieve(dataset, params)
-
+    fl = c.retrieve(dataset, params).download()
+    ds = xr.open_dataset(fl)
+    
+    # fl = c.retrieve(dataset, params)
     # load into memory
-    with urlopen(fl.location) as f:
-        ds = xr.open_dataset(f.read())
+    # with urlopen(fl.location) as f:
+    #     ds = xr.open_dataset(f.read())
 
-    return ds
+    return ds, fl
 
 def rotate_vector(u, v, lon, ref_lon = 0):
     angle = (lon-ref_lon)*np.pi/180 # rotation angle (radian)

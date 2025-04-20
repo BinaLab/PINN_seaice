@@ -152,12 +152,13 @@ class ref_loss(nn.Module):
         return err_sum   
     
 class physics_loss(nn.Module):
-    def __init__(self, landmask, w):
+    def __init__(self, landmask, w1, w2):
         super(physics_loss, self).__init__();
         self.landmask = landmask
         self.data_loss = ref_loss(landmask)
         # self.mse = nn.MSELoss()
-        self.w = w
+        self.w1 = w1
+        self.w2 = w2
 
     def forward(self, obs, prd, sic0):
         err_sum = self.data_loss(obs, prd)
@@ -181,7 +182,7 @@ class physics_loss(nn.Module):
         ## Valid SID
         valid_sic = torch.where(sic_p <= 1., 0, 1)
         err4 = torch.nanmean(torch.where(sic_p <= 1., torch.square(u_p)+torch.square(v_p), 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err4)
+        err_phy += self.w1 * torch.nanmean(err4)
         
         # advection
         
@@ -204,7 +205,7 @@ class physics_loss(nn.Module):
         
         # SIC change
         err_res = torch.nanmean(torch.where(abs(residual) > 100, abs(residual)-100, 0), dim = 0)[torch.where(self.landmask == 0)]
-        err_phy += torch.nanmean(err_res) 
+        err_phy += self.w2 * torch.nanmean(err_res) 
         
         N = dsic.shape[0]
         # for n in range(0, N):
@@ -214,7 +215,7 @@ class physics_loss(nn.Module):
         # err_phy = torch.mean(torch.where((div > 0) & (d_sic > 0), err_u + err_v + err_sic, 0))
         
         w = torch.tensor(self.w)
-        err_sum += w*err_phy
+        err_sum += err_phy
         
         return err_sum
     
@@ -306,7 +307,11 @@ class physics_loss_cice(nn.Module):
         err_sum += w*err_phy
         
         return err_sum
-    
+
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        nn.init.xavier_uniform(m.weight.data)
+        nn.init.xavier_uniform(m.bias.data)    
     
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num):
@@ -1711,6 +1716,9 @@ class HIS_UNet(nn.Module):
             self.sic_conv = nn.Sequential(nn.Conv2d(n2, 1, kernel_size=k, padding="same"), nn.Sigmoid())
         else:
             self.sic_conv = nn.Conv2d(n2, 1, kernel_size=k, padding="same")
+
+        nn.init.xavier_normal_(self.fc1.weight)
+        nn.init.zeros_(self.fc1.bias)
         
     def forward(self, x):
         # First convolution
