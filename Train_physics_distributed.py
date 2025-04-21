@@ -562,7 +562,7 @@ def test(
     
 ##########################################################################################
 
-def main(phy_w = 1, sat_w = 1) -> None:    
+def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:    
     
     #### SETTING CUDA ENVIRONMENTS ####
     """Main train and eval function."""
@@ -731,9 +731,9 @@ def main(phy_w = 1, sat_w = 1) -> None:
     # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
     val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
     
-    if args.ratio < 1:
+    if ratio < 1:
         generator = torch.Generator().manual_seed(0)
-        train_dataset, _ = random_split(train_dataset, [args.ratio, 1-args.ratio], generator)
+        train_dataset, _ = random_split(train_dataset, [ratio, 1-ratio], generator)
     
     n_samples = len(train_dataset) #.length
     val_samples = len(val_dataset) #.length
@@ -776,7 +776,7 @@ def main(phy_w = 1, sat_w = 1) -> None:
     else:
         net = UNet(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{args.ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}"  
     print(model_name)
     
     # print(device)
@@ -881,7 +881,7 @@ def main(phy_w = 1, sat_w = 1) -> None:
 
         t1 = time.time() - t0
         if dist.get_rank() == 0:
-            if epoch % 2 == 0:
+            if (epoch % 5 == 0) or (epoch == n_epochs-1):
                 print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
                     str(epoch).zfill(3), train_loss/train_cnt, t1))
                 print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
@@ -949,6 +949,7 @@ def main(phy_w = 1, sat_w = 1) -> None:
     # ===============================================================================
 
 if __name__ == '__main__':
-    for phy_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
-        for sat_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
-            main(phy_w, sat_w)
+    for ratio in [0.2, 0.5, 1.0]:
+        for phy_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
+            for sat_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
+                main(ratio, phy_w, sat_w)
