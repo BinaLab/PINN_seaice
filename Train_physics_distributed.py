@@ -777,8 +777,9 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
                 else:
                     net = UNet(in_channels, out_channels)
             
-                model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}"  
-                print(model_name)
+                model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}" 
+                if dist.get_rank() == 0:
+                    print("THE MODEL IS SAVED AS - ", model_name)
                 
                 # print(device)
                 net.to(device)
@@ -828,9 +829,9 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
                     t1 = time.time() - t0
                     if dist.get_rank() == 0:
                         if (epoch % 5 == 0) or (epoch == n_epochs-1):
-                            print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
+                            print('** Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
                                 str(epoch).zfill(3), train_loss/train_cnt, t1))
-                            print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
+                            print('             >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
                                 val_loss[0], val_loss[1], val_loss[2]))
                         
                         # if epoch % args.checkpoint_freq == 0:
