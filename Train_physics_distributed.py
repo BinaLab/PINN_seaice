@@ -701,14 +701,14 @@ def main(phy_w = 1, sat_w = 1) -> None:
     val_input = cnn_input[val_mask] #cnn_input[(~mask1)&(mask2), :, :, :]
     val_output = cnn_output[val_mask] #cnn_output[(~mask1)&(mask2), :, :, :]
     # test_input = cnn_input[mask1, :, :, :]
-    # test_output = cnn_output[mask1, :, :, :]    
+    # test_output = cnn_output[mask1, :, :, :]
 
     train_input = torch.permute(train_input, (0, 3, 1, 2)) * (landmask == 0)
     train_output = torch.permute(train_output, (0, 3, 1, 2)) * (landmask == 0)
     val_input = torch.permute(val_input, (0, 3, 1, 2)) * (landmask == 0)
     val_output = torch.permute(val_output, (0, 3, 1, 2)) * (landmask == 0)
     
-    # print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
+    print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     
     # train_dataset = TensorDataset(train_input, train_output)
     # val_dataset = TensorDataset(val_input, val_output)
