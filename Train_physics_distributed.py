@@ -693,8 +693,8 @@ def main(phy_w = 1, sat_w = 1) -> None:
     mask1 = (days % 7 == 2) #(years == date) # Test samples
     mask2 = (years >= sdate) # (days % 7 != 2) # Validation samples
     
-    train_mask = (days % 7 != 2) #(~mask1)&(mask2)
-    val_mask = (days % 7 == 2) #mask1
+    train_mask = (years != date) #(days % 7 != 2) #(~mask1)&(mask2)
+    val_mask = (years == date) #mask1
     
     train_input = cnn_input[train_mask] #cnn_input[(~mask1)&(~mask2), :, :, :]
     train_output = cnn_output[train_mask] #cnn_output[(~mask1)&(~mask2), :, :, :]
@@ -708,7 +708,7 @@ def main(phy_w = 1, sat_w = 1) -> None:
     val_input = torch.permute(val_input, (0, 3, 1, 2)) * (landmask == 0)
     val_output = torch.permute(val_output, (0, 3, 1, 2)) * (landmask == 0)
     
-    print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
+    # print(train_input.size(), train_output.size(), val_input.size(), val_output.size()) 
     
     # train_dataset = TensorDataset(train_input, train_output)
     # val_dataset = TensorDataset(val_input, val_output)
