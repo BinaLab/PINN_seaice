@@ -562,7 +562,7 @@ def test(
     
 ##########################################################################################
 
-def main() -> None:    
+def main(phy_w = 1, sat_w = 1) -> None:    
     
     #### SETTING CUDA ENVIRONMENTS ####
     """Main train and eval function."""
@@ -625,8 +625,8 @@ def main() -> None:
     lr = args.base_lr
 
     phy = args.phy ## PHYSICS OR NOT
-    phy_w = args.phy_weight
-    sat_w = args.sat_weight
+    # phy_w = args.phy_weight
+    # sat_w = args.sat_weight
     dayint = args.day_int
     forecast = args.forecast    
     
@@ -690,7 +690,7 @@ def main() -> None:
     cnn_input = torch.tensor(cnn_input, dtype=torch.float32)
     cnn_output = torch.tensor(cnn_output, dtype=torch.float32)
     
-    mask1 = (years == date) # Test samples
+    mask1 = (days % 7 == 2) #(years == date) # Test samples
     mask2 = (years >= sdate) # (days % 7 != 2) # Validation samples
     
     train_mask = (~mask1)&(mask2)
@@ -776,7 +776,7 @@ def main() -> None:
     else:
         net = UNet(in_channels, out_channels)
 
-    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{args.ratio}_pw{phy_w}_{phy}_d{dayint}f{forecast}_gpu{world_size}"  
+    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{args.ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}"  
     print(model_name)
     
     # print(device)
@@ -904,14 +904,14 @@ def main() -> None:
     del train_dataset, train_loader, train_sampler
     
     # Test the model with the trained model ========================================
+    '''
     val_years = years[mask1][val_dataset.valid]
     val_months = months[mask1][val_dataset.valid]
     val_days = days[mask1][val_dataset.valid]
     
     net.eval()
     
-    if dist.get_rank() == 0:   
-        '''
+    if dist.get_rank() == 0:           
         for m in np.unique(val_years):
             # if m % world_size == dist.get_rank():
             
@@ -943,12 +943,12 @@ def main() -> None:
             # Open a file and use dump()
             with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
                 pickle.dump(test_save, file)
-            '''
-                        
-    if dist.get_rank() == 0:
-        # model save
+            
         print("#### Validation done!! ####")     
+    '''
     # ===============================================================================
 
 if __name__ == '__main__':
-    main()
+    for phy_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
+        for sat_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
+            main()
