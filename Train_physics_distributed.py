@@ -676,9 +676,6 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
 
     landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
     
-    if args.cuda:
-        landmask = landmask.cuda() # Land = 1; Ocean = 0;
-    
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
@@ -728,6 +725,9 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
     seq_days = np.array(seq_days)
     train_days = seq_days[train_mask]
     val_days = seq_days[val_mask]
+        
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
     # -------------------------------------------------------------
 
     ##### LOOP FOR VARIOUS CONDITIONS ###################################################
