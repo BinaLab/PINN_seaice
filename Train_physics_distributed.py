@@ -676,6 +676,9 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
 
     landmask = torch.tensor(landmask) #[30:286, 10:266] # Land = 1; Ocean = 0;
     
+    if args.cuda:
+        landmask = landmask.cuda() # Land = 1; Ocean = 0;
+    
     # cnn_input = cnn_input[:, :, :, :4] # Only U, V, SIC, SIT as input
     # cnn_input, cnn_output, days, months, years = convert_cnn_input2D(cnn_input, cnn_output, days, months, years, dayint, forecast)
     
@@ -726,230 +729,127 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
     train_days = seq_days[train_mask]
     val_days = seq_days[val_mask]
     # -------------------------------------------------------------
-    
-    train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
-    # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
-    val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
-    
-    if ratio < 1:
-        generator = torch.Generator().manual_seed(0)
-        train_dataset, _ = random_split(train_dataset, [ratio, 1-ratio], generator)
-    
-    n_samples = len(train_dataset) #.length
-    val_samples = len(val_dataset) #.length
-    in_channels, row, col = train_dataset[0][0].shape
-    out_channels, _, _ = train_dataset[0][1].shape
-    
-    # n_samples, in_channels, row, col = train_input.size()
-    # _, out_channels, _, _ = train_output.size()
 
-    train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = True) 
-    val_sampler, val_loader = make_sampler_and_loader(args, val_dataset, shuffle = False)
-    if args.cuda:
-        landmask = landmask.cuda() # Land = 1; Ocean = 0;
-    
-    # del cnn_input, cnn_output, train_input, train_output
-    
-    #############################################################################   
-    if args.model_type == "unet":
-        net = UNet(in_channels, out_channels)
-    elif args.model_type == "mtunet":
-        net = HF_UNet(in_channels, out_channels)
-    elif args.model_type == "tsunet":
-        net = TS_UNet(in_channels, out_channels, landmask, row) # Triple sharing
-    elif args.model_type == "isunet":
-        net = IS_UNet(in_channels, out_channels, landmask, row) # information sharing
-    elif args.model_type == "hisunet":
-        net = HIS_UNet(in_channels, out_channels, landmask, row, 3, phy) # hierarchical information sharing (attention blocks)
-    elif args.model_type == "lbunet":
-        net = LB_UNet(in_channels, out_channels, landmask)
-    elif args.model_type == "ebunet":
-        net = EB_UNet(in_channels, out_channels, landmask)
-    elif args.model_type == "casunet":
-        net = Cascade_UNet(in_channels, out_channels, landmask)
-    elif args.model_type == "cnn":
-        net = Net(in_channels, out_channels)
-    elif args.model_type == "fc":
-        net = FC(in_channels, out_channels)
-    elif args.model_type == "lg": # linear regression
-        net = linear_regression(in_channels, out_channels, row, col)
-    else:
-        net = UNet(in_channels, out_channels)
-
-    model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}"  
-    print(model_name)
-    
-    # print(device)
-    net.to(device)
-    
-    if args.no_cuda == False:
-        net = torch.nn.parallel.DistributedDataParallel(
-            net,
-            device_ids=[args.local_rank],
-        )
-
-    if phy == "phy":
-        loss_fn = physics_loss(landmask, sat_w, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
-    elif phy == "nophy":
-        if args.model_type == "fc":
-            loss_fn = nn.L1Loss()
-        else:
-            if args.predict== "all":
-                loss_fn = ref_loss(landmask) #custom_loss(landmask, args.forecast) #nn.MSELoss() #ref_loss(landmask) # nn.L1Loss() #nn.CrossEntropyLoss()            
-            else:
-                loss_fn = single_loss(landmask)
-
-    optimizer = optim.Adam(net.parameters(), lr=lr)
-    scheduler = ExponentialLR(optimizer, gamma=0.98)
-
-    history = {'loss': [], 'val_loss': [], 'time': []}
-
-    total_params = sum(p.numel() for p in net.parameters())
-    if dist.get_rank() == 0:
-        print(f"Number of parameters: {total_params}")
-        print(f"Train sample: {n_samples}, Val sample: {val_samples}; IN: {in_channels} OUT: {out_channels} ({row} x {col})") 
-    
-    
-    for epoch in range(n_epochs):
-
-        t0 = time.time()
-        
-        train_loss = 0.0
-        train_cnt = 1
-        val_cnt = 1
-        
-        net.train()
-        
-        train_loss = train(
-            epoch,
-            net,
-            optimizer,
-            loss_fn,
-            train_loader,
-            train_sampler,
-            landmask,
-            args
-        )
-        
-        scheduler.step()
-        val_loss = validate(epoch, net, loss_fn, val_loader, landmask, args)
-        
-        # ##### TRAIN ###########################
-        # for batch_idx, (data, target) in enumerate(train_loader):
-
-        #     ind = torch.sum(data.isnan(), dim=(1,2,3))
-        #     data = data[ind==0, :, :, :]
-        #     target = target[ind==0, :, :, :]
-        #     if args.cuda:
-        #         data, target = data.cuda(), target.cuda()
-
-        #     output = net(data)
-                
-        #     if args.phy == "phy":
-        #         loss = loss_fn(output, target, data[:, 2*args.day_int, :, :].cuda())
-        #     else:
-        #         loss = loss_fn(output, target)
-
-        #     train_loss += loss.cpu().item()
-        #     optimizer.zero_grad()
-        #     loss.backward()
-        #     optimizer.step()
-        #     train_cnt += 1
-
-        # ##### Validation ###########################
-        # val_loss = 0
-        # val_cnt = 0
-        # net.eval()
-        # with torch.no_grad():
-        #     for i, (data, target) in enumerate(val_loader):
-        #         ind = torch.sum(data.isnan(), dim=(1,2,3))
-        #         data = data[ind==0, :, :, :]
-        #         target = target[ind==0, :, :, :]
-        #         if args.cuda:
-        #             data, target = data.cuda(), target.cuda()
-                    
-        #         output = net(data)
-    
-        #         val_loss += RMSE(target, output)*100
-        #         val_cnt += 1
-
-        torch.cuda.empty_cache()
-
-        history['loss'].append(train_loss/train_cnt)
-        history['val_loss'].append(val_loss/val_cnt)
-        history['time'].append(time.time() - t0)
-
-        t1 = time.time() - t0
-        if dist.get_rank() == 0:
-            if (epoch % 5 == 0) or (epoch == n_epochs-1):
-                print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
-                    str(epoch).zfill(3), train_loss/train_cnt, t1))
-                print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
-                    val_loss[0], val_loss[1], val_loss[2]))
-            
-            # if epoch % args.checkpoint_freq == 0:
-            #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))          
-            
-            if epoch == n_epochs-1:
-                torch.save(net.state_dict(), f'{model_dir}/{model_name}.pth')
-
-                with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
-                    pickle.dump(history, file)
-                    
-        # if epoch > 100 and torch.nanmedian(torch.tensor(history['val_loss'][-10:])) >= torch.nanmedian(torch.tensor(history['val_loss'][-20:-10])):
-        #     break # over-fitting
-    
-    torch.cuda.empty_cache()
-    
-    del train_dataset, train_loader, train_sampler
-    
-    # Test the model with the trained model ========================================
-    '''
-    val_years = years[mask1][val_dataset.valid]
-    val_months = months[mask1][val_dataset.valid]
-    val_days = days[mask1][val_dataset.valid]
-    
-    net.eval()
-    
-    if dist.get_rank() == 0:           
-        for m in np.unique(val_years):
-            # if m % world_size == dist.get_rank():
-            
-            idx = np.where(val_years == m)[0]
-            valid = []
-            
-            # data = val_input[val_months==m, :, :, :]
-            data = torch.zeros([len(idx), in_channels, row, col])
-            target = torch.zeros([len(idx), out_channels, row, col]) #val_output[val_months==m, :, :, :]
-            output = torch.zeros([len(idx), out_channels, row, col])
-            
-            with torch.no_grad():
-                for j in range(0, len(idx)): #range(0, target.size()[0]):
-                    data[j, :, :, :] = val_dataset[idx[j]][0]
-                    check = torch.sum(torch.tensor(val_dataset[idx[j]][0]).isnan())
-                    if check == 0:
-                        if args.model_type == "casunet":
-                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :], val_dataset[idx[j]][0][None, :][:, 2:3])
-                        else:
-                            output[j, :, :, :] = net(val_dataset[idx[j]][0][None, :])                        
-                        target[j, :, :, :] = val_dataset[idx[j]][1][None, :]
-                        valid.append(j)              
-            
-            test_save = [data[valid].to('cpu').detach().numpy().astype(np.float16), target[valid].to('cpu').detach().numpy().astype(np.float16), 
-                         output[valid].to('cpu').detach().numpy().astype(np.float16),
-                         val_months[idx[valid]], val_days[idx[valid]]]
-            # print(len(valid), data[valid].shape, target[valid].shape, output[valid].shape)
-
-            # Open a file and use dump()
-            with open(f'../results/test_{model_name}_{str(int(m)).zfill(2)}.pkl', 'wb') as file:
-                pickle.dump(test_save, file)
-            
-        print("#### Validation done!! ####")     
-    '''
-    # ===============================================================================
-
-if __name__ == '__main__':
+    ##### LOOP FOR VARIOUS CONDITIONS ###################################################
     for ratio in [0.2, 0.5, 1.0]:
         for phy_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
             for sat_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
-                main(ratio, phy_w, sat_w)
+    
+                train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
+                # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+                val_dataset = SeaiceDataset(val_input, val_output, val_days, dayint, forecast, exact = True)
+                
+                if ratio < 1:
+                    generator = torch.Generator().manual_seed(0)
+                    train_dataset, _ = random_split(train_dataset, [ratio, 1-ratio], generator)
+                
+                n_samples = len(train_dataset) #.length
+                val_samples = len(val_dataset) #.length
+                in_channels, row, col = train_dataset[0][0].shape
+                out_channels, _, _ = train_dataset[0][1].shape
+            
+                train_sampler, train_loader = make_sampler_and_loader(args, train_dataset, shuffle = True) 
+                val_sampler, val_loader = make_sampler_and_loader(args, val_dataset, shuffle = False)
+                
+                #############################################################################   
+                if args.model_type == "unet":
+                    net = UNet(in_channels, out_channels)
+                elif args.model_type == "mtunet":
+                    net = HF_UNet(in_channels, out_channels)
+                elif args.model_type == "tsunet":
+                    net = TS_UNet(in_channels, out_channels, landmask, row) # Triple sharing
+                elif args.model_type == "isunet":
+                    net = IS_UNet(in_channels, out_channels, landmask, row) # information sharing
+                elif args.model_type == "hisunet":
+                    net = HIS_UNet(in_channels, out_channels, landmask, row, 3, phy) # hierarchical information sharing (attention blocks)
+                elif args.model_type == "lbunet":
+                    net = LB_UNet(in_channels, out_channels, landmask)
+                elif args.model_type == "ebunet":
+                    net = EB_UNet(in_channels, out_channels, landmask)
+                elif args.model_type == "casunet":
+                    net = Cascade_UNet(in_channels, out_channels, landmask)
+                elif args.model_type == "cnn":
+                    net = Net(in_channels, out_channels)
+                elif args.model_type == "fc":
+                    net = FC(in_channels, out_channels)
+                elif args.model_type == "lg": # linear regression
+                    net = linear_regression(in_channels, out_channels, row, col)
+                else:
+                    net = UNet(in_channels, out_channels)
+            
+                model_name = f"torch_{args.model_type}_{data_type}{data_ver}_{args.predict}_{sdate}_{date}_r{ratio}_pw{phy_w}_sw{sat_w}_d{dayint}f{forecast}_gpu{world_size}"  
+                print(model_name)
+                
+                # print(device)
+                net.to(device)
+                
+                if args.no_cuda == False:
+                    net = torch.nn.parallel.DistributedDataParallel(
+                        net,
+                        device_ids=[args.local_rank],
+                    )
+            
+                if phy == "phy":
+                    loss_fn = physics_loss(landmask, sat_w, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
+                elif phy == "nophy":
+                    loss_fn = ref_loss(landmask)
+            
+                optimizer = optim.Adam(net.parameters(), lr=lr)
+                scheduler = ExponentialLR(optimizer, gamma=0.98)
+            
+                history = {'loss': [], 'val_loss': [], 'time': []}
+            
+                total_params = sum(p.numel() for p in net.parameters())
+                if dist.get_rank() == 0:
+                    print(f"Number of parameters: {total_params}")
+                    print(f"Train sample: {n_samples}, Val sample: {val_samples}; IN: {in_channels} OUT: {out_channels} ({row} x {col})")     
+                
+                for epoch in range(n_epochs):
+            
+                    t0 = time.time()
+                    
+                    train_loss = 0.0
+                    train_cnt = 1
+                    val_cnt = 1
+                    
+                    net.train()
+                    
+                    train_loss = train(epoch, net, optimizer, loss_fn, train_loader, train_sampler, landmask, args)
+                    
+                    scheduler.step()
+                    val_loss = validate(epoch, net, loss_fn, val_loader, landmask, args)
+            
+                    torch.cuda.empty_cache()
+            
+                    history['loss'].append(train_loss/train_cnt)
+                    history['val_loss'].append(val_loss/val_cnt)
+                    history['time'].append(time.time() - t0)
+            
+                    t1 = time.time() - t0
+                    if dist.get_rank() == 0:
+                        if (epoch % 5 == 0) or (epoch == n_epochs-1):
+                            print('Epoch {0} >> Train loss: {1:.4f} [{2:.2f} sec]'.format(
+                                str(epoch).zfill(3), train_loss/train_cnt, t1))
+                            print('          >> Val loss: {0:.4f}, {1:.4f}, {2:.4f}'.format(
+                                val_loss[0], val_loss[1], val_loss[2]))
+                        
+                        # if epoch % args.checkpoint_freq == 0:
+                        #     save_checkpoint(net.module, optimizer, args.checkpoint_format.format(epoch=epoch))          
+                        
+                        if epoch == n_epochs-1:
+                            torch.save(net.state_dict(), f'{model_dir}/{model_name}.pth')
+                            
+            
+                            with open(f'{model_dir}/history_{model_name}.pkl', 'wb') as file:
+                                pickle.dump(history, file)
+                                
+                    # if epoch > 100 and torch.nanmedian(torch.tensor(history['val_loss'][-10:])) >= torch.nanmedian(torch.tensor(history['val_loss'][-20:-10])):
+                    #     break # over-fitting
+                
+                torch.cuda.empty_cache()
+                
+                del train_dataset, train_loader, train_sampler, net, history
+
+
+if __name__ == '__main__':
+    main()
