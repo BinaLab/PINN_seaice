@@ -1717,8 +1717,8 @@ class HIS_UNet(nn.Module):
         else:
             self.sic_conv = nn.Conv2d(n2, 1, kernel_size=k, padding="same")
 
-        nn.init.xavier_normal_(self.fc1.weight)
-        nn.init.zeros_(self.fc1.bias)
+        # nn.init.xavier_normal_(self.fc1.weight)
+        # nn.init.zeros_(self.fc1.bias)
         
     def forward(self, x):
         # First convolution
