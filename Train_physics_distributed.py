@@ -693,8 +693,8 @@ def main(phy_w = 1, sat_w = 1) -> None:
     mask1 = (days % 7 == 2) #(years == date) # Test samples
     mask2 = (years >= sdate) # (days % 7 != 2) # Validation samples
     
-    train_mask = (~mask1)&(mask2)
-    val_mask = mask1
+    train_mask = (days % 7 != 2) #(~mask1)&(mask2)
+    val_mask = (days % 7 == 2) #mask1
     
     train_input = cnn_input[train_mask] #cnn_input[(~mask1)&(~mask2), :, :, :]
     train_output = cnn_output[train_mask] #cnn_output[(~mask1)&(~mask2), :, :, :]
@@ -807,7 +807,7 @@ def main(phy_w = 1, sat_w = 1) -> None:
     total_params = sum(p.numel() for p in net.parameters())
     if dist.get_rank() == 0:
         print(f"Number of parameters: {total_params}")
-        print("Train sample: {0}, Val sample: {1}; IN: {2} OUT: {3} ({4} x {5})".format(n_samples, val_samples, in_channels, out_channels, row, col)) 
+        print(f"Train sample: {n_samples}, Val sample: {val_samples}; IN: {in_channels} OUT: {out_channels} ({row} x {col})") 
     
     
     for epoch in range(n_epochs):
