@@ -951,4 +951,4 @@ def main(phy_w = 1, sat_w = 1) -> None:
 if __name__ == '__main__':
     for phy_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
         for sat_w in [0, 0.1, 0.5, 1.0, 2.0, 10.0]:
-            main()
+            main(phy_w, sat_w)
