@@ -733,7 +733,7 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
     ##### LOOP FOR VARIOUS CONDITIONS ###################################################
     for ratio in [0.2, 0.5, 1.0]:
         for phy_w in [0.5, 2.0]: #[0, 0.2, 1.0, 5.0]:
-            for sat_w in [0.5, 2.0] #[0, 0.2, 1.0, 5.0]:
+            for sat_w in [0.5, 2.0]: #[0, 0.2, 1.0, 5.0]:
     
                 train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
                 # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
