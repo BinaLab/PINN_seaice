@@ -49,7 +49,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--result-dir',
-        default='../result',
+        default='../result_phy',
         help='Model directory',
     )
     parser.add_argument(
@@ -134,6 +134,7 @@ def main() -> None:
         r_total = {}   
     
     year = int(data_file[-11:-7])
+    row, col = 256, 256
     
     for ratio in [0.2, 0.5, 1.0]:
         for phy_w in [0, 0.2, 0.5, 1.0, 2.0, 5.0]:        
