@@ -111,7 +111,7 @@ def main() -> None:
         device = torch.device('cuda')
         device_name = 'gpu'
     
-    data_file = "\\train_cnn_2009_2015_v7.pkl"
+    data_file = "/train_cnn_2009_2015_v7.pkl"
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, data0, target0 = pickle.load(file)  
     
@@ -122,7 +122,7 @@ def main() -> None:
     target0 = torch.tensor(target0, dtype=torch.float32)
     pred0 = target0.clone()
     
-    with open(data_path + "\\landmask_256.pkl", 'rb') as file:
+    with open(data_path + "/landmask_256.pkl", 'rb') as file:
         landmask = pickle.load(file)
 
     # Unet
@@ -252,7 +252,7 @@ def main() -> None:
     
     results_save = [rmse_total, r_total, df]
     
-    with open(result_path + '\\physics_EMS_results.pkl', 'wb') as file:
+    with open(result_path + '/physics_EMS_results.pkl', 'wb') as file:
         pickle.dump(train_save, file)
         
     print("DONE! LET's MOVE ON TO THE NEXT STEP!")
