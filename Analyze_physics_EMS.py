@@ -162,6 +162,7 @@ def main() -> None:
                     model_name = model_path + f"/torch_{model_type}_satv7_all_2009_2015_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
     
                 keyname = f"{model_type}_{ratio}_{phy_w}_{sat_w}"
+                print(keyname)
     
                 device = "cpu"
                 if device == "cuda":
@@ -206,13 +207,11 @@ def main() -> None:
                     
                     lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
     
-                    id_start += pred.shape[0]
+                    id_start += pred.shape[0]     
     
-                    n_samples, channels, row, col = np.shape(pred)       
-    
-                    sic_prd = pred[:, 2, :, :]*100
-                    sic_obs = target[:, 2, :, :]*100
-                    # sic_max = np.nanmax(sic_obs, axis=0)
+                    sic_prd = pred[:, :, :, 2]*100
+                    sic_obs = target[:, :, :, 2]*100
+                    sic_max = np.nanmax(sic_obs, axis=0)
                     sic_th1 = -100 # observation threshold
                     sic_th2 = -100 # prediction threshold
     
@@ -228,8 +227,8 @@ def main() -> None:
     
                     for c in range(0, channels):
     
-                        obs = ((target[:, c, :, :]) + offset[c]) *scaling[c]
-                        prd = ((pred[:, c, :, :]) + offset[c]) *scaling[c] 
+                        obs = ((target[:, :, :, c]) + offset[c]) *scaling[c]
+                        prd = ((pred[:, :, :, c]) + offset[c]) *scaling[c] 
     
                         prd[(lm==0)==0] = np.nan
                         obs[(lm==0)==0] = np.nan
