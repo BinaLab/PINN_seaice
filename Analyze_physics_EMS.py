@@ -223,12 +223,13 @@ def main() -> None:
         
                         val_dataset = SeaiceDataset(data, target, val_days, 3, 1, exact = True)
                         val_loader = DataLoader(val_dataset, batch_size = 32)
+                        n_sample = target.shape[0]
         
                         for i, (inputs, _) in enumerate(val_loader):
                             if device == "cuda":
                                 inputs = inputs.cuda()        
                             outputs = model(inputs)
-                            pred[i] = outputs.cpu()
+                            pred = outputs[:n_sample].cpu()
     
                         target = target.detach().numpy()
                         pred = pred.detach().numpy()
