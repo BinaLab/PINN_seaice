@@ -202,83 +202,86 @@ def main() -> None:
     
                 id_start = 0
                 umonths = np.unique(months)
+                uyears = np.unique(years)
     
                 mdf = pd.DataFrame({'year': np.ones(len(umonths))*year})
     
-                rmse_all = np.zeros([out_channels, len(umonths), row, col]) * np.nan
-                r_all = np.zeros([out_channels, len(umonths), row, col]) * np.nan
-    
-                for m in tqdm(umonths):    
-    
-                    idx = (months == m)
-                    val_days = days[idx]
-                    data = data0[idx, :, :, :] #.astype(np.float32)
-                    target = target0[idx, :, :, :] #.astype(np.float32)
-    
-                    data = torch.permute(data, (0, 3, 1, 2)) * (landmask == 0)
-                    target = torch.permute(target, (0, 3, 1, 2)) * (landmask == 0)
-                    pred = target.clone() * 0
-    
-                    val_dataset = SeaiceDataset(data, target, val_days, 3, 1, exact = True)
-                    val_loader = DataLoader(val_dataset, batch_size = 1)
-    
-                    for i, (inputs, _) in enumerate(val_loader):
-                        if device == "cuda":
-                            inputs = inputs.cuda()        
-                        outputs = model(inputs)
-                        pred[i] = outputs.cpu()
+                rmse_all = np.zeros([out_channels, len(uyears), len(umonths), row, col]) * np.nan
+                r_all = np.zeros([out_channels, len(uyears), len(umonths), row, col]) * np.nan
 
-                    target = target.detach().numpy()
-                    pred = pred.detach().numpy()
-                    
-                    lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
+                for i, y in tqdm(enumerate(uyears)):
+                    for j, m in enumerate(umonths):    
+        
+                        idx = (months == m) & (years == y)
+                        val_days = days[idx]
+                        data = data0[idx, :, :, :] #.astype(np.float32)
+                        target = target0[idx, :, :, :] #.astype(np.float32)
+        
+                        data = torch.permute(data, (0, 3, 1, 2)) * (landmask == 0)
+                        target = torch.permute(target, (0, 3, 1, 2)) * (landmask == 0)
+                        pred = target.clone() * 0
+        
+                        val_dataset = SeaiceDataset(data, target, val_days, 3, 1, exact = True)
+                        val_loader = DataLoader(val_dataset, batch_size = 32)
+        
+                        for i, (inputs, _) in enumerate(val_loader):
+                            if device == "cuda":
+                                inputs = inputs.cuda()        
+                            outputs = model(inputs)
+                            pred[i] = outputs.cpu()
     
-                    id_start += pred.shape[0]     
-    
-                    sic_prd = pred[:, 2, :, :]*100
-                    sic_obs = target[:, 2, :, :]*100
-                    sic_max = np.nanmax(sic_obs, axis=0)
-                    sic_th1 = -100 # observation threshold
-                    sic_th2 = -100 # prediction threshold
-    
-                    vmax = [12, 12, 100, 24, 4]
-                    vmin = [-12, -12, 0, 0, 0]
-    
-                    scaling = [30, 30, 100, 30, 8]
-                    offset = [0, 0, 0, 0, 0]
-                    cm = ['Spectral', 'Spectral', 'Blues', 'Reds', 'Blues']
-                    titles = ["$U_{ice}$ (km/d)", "$V_{ice}$ (km/d)", "$SIC$ (%)", "$Velocity$ (km/day)", "$SIT$ (m)"]
-    
-                    df_region = []
-    
-                    for c in range(0, out_channels):
-    
-                        obs = ((target[:, c, :, :]) + offset[c]) *scaling[c]
-                        prd = ((pred[:, c, :, :]) + offset[c]) *scaling[c] 
-    
-                        prd[(lm==0)==0] = np.nan
-                        obs[(lm==0)==0] = np.nan
-    
-                        prd[:, sic_max <= 0] = np.nan
-                        obs[:, sic_max <= 0] = np.nan
-    
-                        v_rmse = 0
-                        v_r = 0
-                        v_mbe = 0
-                        v_mae = 0
-                        v_skill = 0                   
-               
-                        mdf.loc[int(m-1), "Month"] = m
-                        mdf.loc[int(m-1), f"RMSE{c}"] = RMSE(prd, obs) #v_rmse/n_samples #RMSE(prd, obs)
-                        mdf.loc[int(m-1), f"R{c}"] = corr(prd, obs) #v_r/n_samples #corr(prd, obs
+                        target = target.detach().numpy()
+                        pred = pred.detach().numpy()
                         
-                        rmse_all[c, int(m-1)] = RMSE_grid(prd, obs)
-                        r_all[c, int(m-1)] = corr_grid(prd, obs)   
-    
-                    id_start += pred.shape[0]
+                        lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
+        
+                        id_start += pred.shape[0]     
+        
+                        sic_prd = pred[:, 2, :, :]*100
+                        sic_obs = target[:, 2, :, :]*100
+                        sic_max = np.nanmax(sic_obs, axis=0)
+                        sic_th1 = -100 # observation threshold
+                        sic_th2 = -100 # prediction threshold
+        
+                        vmax = [12, 12, 100, 24, 4]
+                        vmin = [-12, -12, 0, 0, 0]
+        
+                        scaling = [30, 30, 100, 30, 8]
+                        offset = [0, 0, 0, 0, 0]
+                        cm = ['Spectral', 'Spectral', 'Blues', 'Reds', 'Blues']
+                        titles = ["$U_{ice}$ (km/d)", "$V_{ice}$ (km/d)", "$SIC$ (%)", "$Velocity$ (km/day)", "$SIT$ (m)"]
+        
+                        df_region = []
+        
+                        for c in range(0, out_channels):
+        
+                            obs = ((target[:, c, :, :]) + offset[c]) *scaling[c]
+                            prd = ((pred[:, c, :, :]) + offset[c]) *scaling[c] 
+        
+                            prd[(lm==0)==0] = np.nan
+                            obs[(lm==0)==0] = np.nan
+        
+                            prd[:, sic_max <= 0] = np.nan
+                            obs[:, sic_max <= 0] = np.nan
+        
+                            v_rmse = 0
+                            v_r = 0
+                            v_mbe = 0
+                            v_mae = 0
+                            v_skill = 0                   
+                   
+                            mdf.loc[id_start, "Month"] = m
+                            mdf.loc[id_start, f"RMSE{c}"] = RMSE(prd, obs) #v_rmse/n_samples #RMSE(prd, obs)
+                            mdf.loc[id_start, f"R{c}"] = corr(prd, obs) #v_r/n_samples #corr(prd, obs
+                            
+                            rmse_all[c, i, j] = RMSE_grid(prd, obs)
+                            r_all[c, i, j] = corr_grid(prd, obs)   
+        
+                        id_start += 1
     
                 rmse_total[keyname]= np.nanmean(rmse_all, axis=1) #RMSE_grid(prd_all, obs_all) #np.nanmean(rmse_all, axis=1)
-                r_total[keyname] = np.nanmean(r_all, axis=1) #corr_grid(prd_all, obs_all) #np.nanmean(r_all, axis=1)    
+                r_total[keyname] = np.nanmean(r_all, axis=1) #corr_grid(prd_all, obs_all) #np.nanmean(r_all, axis=1)               
+                rmse_all_mat[keyname] = rmse_all
                 df[keyname] = mdf
     
                 results_save = [rmse_total, r_total, df]
