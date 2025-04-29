@@ -276,8 +276,8 @@ def main() -> None:
                         mdf.loc[int(m-1), f"RMSE{c}"] = RMSE(prd, obs) #v_rmse/n_samples #RMSE(prd, obs)
                         mdf.loc[int(m-1), f"R{c}"] = corr(prd, obs) #v_r/n_samples #corr(prd, obs
                         
-                        rmse_all[c, m-1] = RMSE_grid(prd, obs)
-                        r_all[c, m-1] = corr_grid(prd, obs)   
+                        rmse_all[c, int(m-1)] = RMSE_grid(prd, obs)
+                        r_all[c, int(m-1)] = corr_grid(prd, obs)   
     
                     id_start += pred.shape[0]
     
