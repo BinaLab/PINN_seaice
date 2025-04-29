@@ -125,6 +125,8 @@ def main() -> None:
     with open(data_path + "/landmask_256.pkl", 'rb') as file:
         landmask = pickle.load(file)
 
+    print("#### DATA IS LOADED ####)
+
     # Unet
     if 'df' not in locals():
         df = {}
@@ -150,7 +152,7 @@ def main() -> None:
                 elif data_file == "train_cnn_2016_2022_v7.pkl":
                     model_name = model_path + f"torch_{model_type}_satv7_all_2009_2015_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
     
-                keyname = f"{model_type}_{ratio}_{pw}_{sw}"
+                keyname = f"{model_type}_{ratio}_{phy_w}_{sat_w}"
     
                 device = "cpu"
                 if device == "cuda":
