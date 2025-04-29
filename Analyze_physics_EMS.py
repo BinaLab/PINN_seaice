@@ -45,12 +45,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--data-dir',
         default='../data',
-        help='Model directory',
+        help='Data directory',
+    )
+    parser.add_argument(
+        '--data-file',
+        default="/train_cnn_2009_2015_v7.pkl"
+        help='Data file',
     )
     parser.add_argument(
         '--result-dir',
         default='../result_phy',
-        help='Model directory',
+        help='Result directory',
     )
     parser.add_argument(
         '--no-cuda',
@@ -102,6 +107,8 @@ def main() -> None:
     model_path = args.model_dir #"D:\\PINN\\model"
     data_path = args.data_dir # "D:\\PINN\\data"
     result_path = args.result_dir # "D:\\PINN\\results_phy"
+    data_file = args.data_file
+    
     phy = args.phy    
     model_type = args.model_type
     if args.no_cuda:
@@ -111,7 +118,6 @@ def main() -> None:
         device = torch.device('cuda')
         device_name = 'gpu'
     
-    data_file = "/train_cnn_2009_2015_v7.pkl"
     with open(data_path + data_file, 'rb') as file:
         xx, yy, days, months, years, data0, target0 = pickle.load(file)  
     
@@ -147,9 +153,9 @@ def main() -> None:
                 in_channels, out_channels = 18, 3
                 model = HIS_UNet(in_channels, out_channels, landmask, row, 3, phy)
                 # res = f"{result_dir}\\test_torch_hisunet_satv7_all_2016_2022_r{ratio}_pw{pw}_{phy}_d3f1_gpu8_{year}.pkl"
-                if data_file == "train_cnn_2009_2015_v7.pkl":
+                if year == 2015:
                     model_name = model_path + f"torch_{model_type}_satv7_all_2016_2022_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
-                elif data_file == "train_cnn_2016_2022_v7.pkl":
+                elif year == 2022:
                     model_name = model_path + f"torch_{model_type}_satv7_all_2009_2015_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
     
                 keyname = f"{model_type}_{ratio}_{phy_w}_{sat_w}"
