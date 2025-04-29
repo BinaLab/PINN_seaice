@@ -173,6 +173,7 @@ def main() -> None:
                 df = {}
                 rmse_total = {}
                 r_total = {} 
+                rmse_all_mat = {}
     
                 torch.cuda.empty_cache()
     
@@ -207,10 +208,13 @@ def main() -> None:
                 mdf = pd.DataFrame({'year': np.ones(len(umonths))*year})
     
                 rmse_all = np.zeros([out_channels, len(uyears), len(umonths), row, col]) * np.nan
-                r_all = np.zeros([out_channels, len(uyears), len(umonths), row, col]) * np.nan
+                # r_all = np.zeros([out_channels, len(uyears), len(umonths), row, col]) * np.nan
 
                 for i, y in tqdm(enumerate(uyears)):
-                    for j, m in enumerate(umonths):    
+                    for j, m in enumerate(umonths): 
+
+                        mdf.loc[id_start, "year"] = y
+                        mdf.loc[id_start, "month"] = m
         
                         idx = (months == m) & (years == y)
                         val_days = days[idx]
@@ -270,23 +274,22 @@ def main() -> None:
                             v_r = 0
                             v_mbe = 0
                             v_mae = 0
-                            v_skill = 0                   
-                   
-                            mdf.loc[id_start, "Month"] = m
+                            v_skill = 0
+                            
                             mdf.loc[id_start, f"RMSE{c}"] = RMSE(prd, obs) #v_rmse/n_samples #RMSE(prd, obs)
                             mdf.loc[id_start, f"R{c}"] = corr(prd, obs) #v_r/n_samples #corr(prd, obs
                             
                             rmse_all[c, i, j] = RMSE_grid(prd, obs)
-                            r_all[c, i, j] = corr_grid(prd, obs)   
+                            # r_all[c, i, j] = corr_grid(prd, obs)   
         
                         id_start += 1
     
                 rmse_total[keyname]= np.nanmean(rmse_all, axis=1) #RMSE_grid(prd_all, obs_all) #np.nanmean(rmse_all, axis=1)
-                r_total[keyname] = np.nanmean(r_all, axis=1) #corr_grid(prd_all, obs_all) #np.nanmean(r_all, axis=1)               
+                # r_total[keyname] = np.nanmean(r_all, axis=1) #corr_grid(prd_all, obs_all) #np.nanmean(r_all, axis=1)               
                 rmse_all_mat[keyname] = rmse_all
                 df[keyname] = mdf
     
-                results_save = [rmse_total, r_total, df]
+                results_save = [rmse_total, rmse_all_mat, df]
                 
                 with open(result_path + f'/EMS_results_{keyname}.pkl', 'wb') as file:
                     pickle.dump(results_save, file)
