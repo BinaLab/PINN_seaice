@@ -125,7 +125,7 @@ def main() -> None:
     with open(data_path + "/landmask_256.pkl", 'rb') as file:
         landmask = pickle.load(file)
 
-    print("#### DATA IS LOADED ####)
+    print("#### DATA IS LOADED ####")
 
     # Unet
     if 'df' not in locals():
