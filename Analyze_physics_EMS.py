@@ -233,7 +233,7 @@ def main() -> None:
 
                         target = target.detach().numpy()
                         pred = pred.detach().numpy()
-                        print(target.shape, pred.shape)
+                        # print(target.shape, pred.shape)
                         
                         lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
         
