@@ -291,7 +291,7 @@ def main() -> None:
     results_save = [rmse_total, r_total, df]
     
     with open(result_path + '/physics_EMS_results.pkl', 'wb') as file:
-        pickle.dump(train_save, file)
+        pickle.dump(results_save, file)
         
     print("DONE! LET's MOVE ON TO THE NEXT STEP!")
     
