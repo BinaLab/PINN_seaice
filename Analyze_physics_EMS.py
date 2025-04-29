@@ -4,6 +4,7 @@
 import warnings
 warnings.filterwarnings("ignore")
 import numpy as np
+import numpy.ma as ma
 import math
 from datetime import datetime
 from tqdm import tqdm
@@ -29,11 +30,36 @@ import glob, os
 # from torch.utils.tensorboard import SummaryWriter
 
 from torch_model import *
-from functions import *
 
 import argparse
-import os    
+import os 
 
+def MAE(prd, obs):
+    return np.nanmean(abs(obs-prd))
+
+def MAE_grid(prd, obs):
+    err = abs(obs-prd)
+    return np.nanmean(err, axis=0)
+
+def RMSE(prd, obs):
+    err = np.square(obs-prd)
+    return np.nanmean(err)**0.5
+
+def RMSE_grid(prd, obs):
+    err = np.square(obs-prd)
+    return np.nanmean(err, axis=0)**0.5
+
+def corr(prd, obs):
+    prd = prd.flatten()
+    obs = obs.flatten()    
+    r = ma.corrcoef(ma.masked_invalid(prd), ma.masked_invalid(obs))[0, 1]
+    return r
+
+def corr_grid(prd, obs):
+    r1 = np.nansum((prd-np.nanmean(prd))*(obs-np.nanmean(obs)),axis=0)
+    r2 = np.nansum(np.square(prd-np.nanmean(prd)), axis=0)*np.nansum(np.square(obs-np.nanmean(obs)),axis=0)
+    r = r1/r2**0.5
+    return r
 
 def parse_args() -> argparse.Namespace:
     """Get cmd line args."""
