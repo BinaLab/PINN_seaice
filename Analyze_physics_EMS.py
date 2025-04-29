@@ -219,20 +219,21 @@ def main() -> None:
         
                         data = torch.permute(data, (0, 3, 1, 2)) * (landmask == 0)
                         target = torch.permute(target, (0, 3, 1, 2)) * (landmask == 0)
-                        pred = target.clone() * 0
+                        # pred = target.clone() * 0
         
                         val_dataset = SeaiceDataset(data, target, val_days, 3, 1, exact = True)
                         val_loader = DataLoader(val_dataset, batch_size = 32)
-                        n_sample = target.shape[0]
+                        n_sample = len(val_dataset)
         
-                        for i, (inputs, _) in enumerate(val_loader):
+                        for i, (inputs, target) in enumerate(val_loader):
                             if device == "cuda":
                                 inputs = inputs.cuda()        
                             outputs = model(inputs)
-                            pred = outputs[:n_sample].cpu()
-    
+                            pred = outputs.cpu()
+
                         target = target.detach().numpy()
                         pred = pred.detach().numpy()
+                        print(target.shape, pred.shape)
                         
                         lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
         
