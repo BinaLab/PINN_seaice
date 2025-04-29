@@ -154,9 +154,9 @@ def main() -> None:
                 model = HIS_UNet(in_channels, out_channels, landmask, row, 3, phy)
                 # res = f"{result_dir}\\test_torch_hisunet_satv7_all_2016_2022_r{ratio}_pw{pw}_{phy}_d3f1_gpu8_{year}.pkl"
                 if year == 2015:
-                    model_name = model_path + f"torch_{model_type}_satv7_all_2016_2022_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
+                    model_name = model_path + f"/torch_{model_type}_satv7_all_2016_2022_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
                 elif year == 2022:
-                    model_name = model_path + f"torch_{model_type}_satv7_all_2009_2015_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
+                    model_name = model_path + f"/torch_{model_type}_satv7_all_2009_2015_r{ratio}_pw{phy_w}_sw{sat_w}_d3f1_gpu4.pth"
     
                 keyname = f"{model_type}_{ratio}_{phy_w}_{sat_w}"
     
