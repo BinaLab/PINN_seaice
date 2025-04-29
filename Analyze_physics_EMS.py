@@ -96,6 +96,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
 
+    args = parse_args()
+
     ### Read data
     model_path = args.model_dir #"D:\\PINN\\model"
     data_path = args.data_dir # "D:\\PINN\\data"
