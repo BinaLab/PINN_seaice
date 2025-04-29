@@ -242,12 +242,9 @@ def main() -> None:
                         v_mae = 0
                         v_skill = 0                   
                
-                        mdf.loc[int(m-1), "Month"] = valmonths[0]
-                        # mdf.loc[int(m-1), "MAE{0}".format(c)] = v_mae/n_samples #MAE(prd, obs)
-                        mdf.loc[int(m-1), "RMSE{0}".format(c)] = RMSE(prd, obs) #v_rmse/n_samples #RMSE(prd, obs)
-                        # mdf.loc[int(m-1), "MBE{0}".format(c)] =  MBE(prd, obs) # v_mbe/n_samples #MBE(prd, obs)
-                        mdf.loc[int(m-1), "R{0}".format(c)] = corr(prd, obs) #v_r/n_samples #corr(prd, obs
-                        # mdf.loc[int(m-1), "Skill{0}".format(c)] =v_skill/n_samples  #skill(prd, obs)
+                        mdf.loc[int(m-1), "Month"] = m
+                        mdf.loc[int(m-1), f"RMSE{c}"] = RMSE(prd, obs) #v_rmse/n_samples #RMSE(prd, obs)
+                        mdf.loc[int(m-1), f"R{c}"] = corr(prd, obs) #v_r/n_samples #corr(prd, obs
                         
                         rmse_all[c, m-1] = RMSE_grid(prd, obs)
                         r_all[c, m-1] = corr_grid(prd, obs)   
