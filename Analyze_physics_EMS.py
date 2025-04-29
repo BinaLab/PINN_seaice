@@ -225,7 +225,7 @@ def main() -> None:
     
                     df_region = []
     
-                    for c in range(0, channels):
+                    for c in range(0, out_channels):
     
                         obs = ((target[:, :, :, c]) + offset[c]) *scaling[c]
                         prd = ((pred[:, :, :, c]) + offset[c]) *scaling[c] 
