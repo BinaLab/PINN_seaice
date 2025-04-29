@@ -231,6 +231,9 @@ def main() -> None:
                             inputs = inputs.cuda()        
                         outputs = model(inputs)
                         pred[i] = outputs.cpu()
+
+                    target = target.detach().numpy()
+                    pred = pred.detach().numpy()
                     
                     lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
     
