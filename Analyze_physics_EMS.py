@@ -161,22 +161,18 @@ def main() -> None:
     with open(data_path + "/landmask_256.pkl", 'rb') as file:
         landmask = pickle.load(file)
 
-    print("#### DATA IS LOADED ####")
-
-    # Unet
-    if 'df' not in locals():
-        df = {}
-    if 'rmse_total' not in locals():
-        rmse_total = {}
-    if 'r_total' not in locals():
-        r_total = {}   
+    print("#### DATA IS LOADED ####")  
     
     year = int(data_file[-11:-7])
     row, col = 256, 256
     
-    for ratio in [0.2]: # [0.2, 0.5, 1.0]:
-        for phy_w in [0]: #[0, 0.2, 0.5, 1.0, 2.0, 5.0]:        
-            for sat_w in [0]: # [0, 0.2, 0.5, 1.0, 2.0, 5.0]: #, "lbunet", "ebunet", "unet", "cnn", "lg", "hycom"]:
+    for ratio in [0.2, 0.5, 1.0]:
+        for phy_w in [0, 0.2, 0.5, 1.0, 2.0, 5.0]:        
+            for sat_w in [0, 0.2, 0.5, 1.0, 2.0, 5.0]: #, "lbunet", "ebunet", "unet", "cnn", "lg", "hycom"]:
+
+                df = {}
+                rmse_total = {}
+                r_total = {} 
     
                 torch.cuda.empty_cache()
     
@@ -282,16 +278,13 @@ def main() -> None:
                     id_start += pred.shape[0]
     
                 rmse_total[keyname]= np.nanmean(rmse_all, axis=1) #RMSE_grid(prd_all, obs_all) #np.nanmean(rmse_all, axis=1)
-                r_total[keyname] = np.nanmean(r_all, axis=1) #corr_grid(prd_all, obs_all) #np.nanmean(r_all, axis=1)
-    
+                r_total[keyname] = np.nanmean(r_all, axis=1) #corr_grid(prd_all, obs_all) #np.nanmean(r_all, axis=1)    
                 df[keyname] = mdf
     
-                # mdf.to_csv(res.replace(".pkl", ".csv"))
-    
-    results_save = [rmse_total, r_total, df]
-    
-    with open(result_path + '/physics_EMS_results.pkl', 'wb') as file:
-        pickle.dump(results_save, file)
+                results_save = [rmse_total, r_total, df]
+                
+                with open(result_path + f'/EMS_results_{keyname}.pkl', 'wb') as file:
+                    pickle.dump(results_save, file)
         
     print("DONE! LET's MOVE ON TO THE NEXT STEP!")
     
