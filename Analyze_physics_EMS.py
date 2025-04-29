@@ -182,8 +182,8 @@ def main() -> None:
     
                 mdf = pd.DataFrame({'year': np.ones(len(umonths))*year})
     
-                rmse_all = np.zeros([pred0.shape[1], len(umonths), data0.shape[2], data0.shape[3]]) * np.nan
-                r_all = np.zeros([pred0.shape[1], len(umonths), data0.shape[2], data0.shape[3]]) * np.nan
+                rmse_all = np.zeros([out_channels, len(umonths), row, col]) * np.nan
+                r_all = np.zeros([out_channels, len(umonths), row, col]) * np.nan
     
                 for m in tqdm(umonths):    
     
@@ -209,8 +209,8 @@ def main() -> None:
     
                     id_start += pred.shape[0]     
     
-                    sic_prd = pred[:, :, :, 2]*100
-                    sic_obs = target[:, :, :, 2]*100
+                    sic_prd = pred[:, 2, :, :]*100
+                    sic_obs = target[:, 2, :, :]*100
                     sic_max = np.nanmax(sic_obs, axis=0)
                     sic_th1 = -100 # observation threshold
                     sic_th2 = -100 # prediction threshold
@@ -227,8 +227,8 @@ def main() -> None:
     
                     for c in range(0, out_channels):
     
-                        obs = ((target[:, :, :, c]) + offset[c]) *scaling[c]
-                        prd = ((pred[:, :, :, c]) + offset[c]) *scaling[c] 
+                        obs = ((target[:, c, :, :]) + offset[c]) *scaling[c]
+                        prd = ((pred[:, c, :, :]) + offset[c]) *scaling[c] 
     
                         prd[(lm==0)==0] = np.nan
                         obs[(lm==0)==0] = np.nan
