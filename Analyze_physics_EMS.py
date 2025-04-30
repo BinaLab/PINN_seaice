@@ -287,7 +287,7 @@ def main() -> None:
                 rmse_all_mat[keyname] = rmse_all
                 df[keyname] = mdf
     
-                results_save = [rmse_total, rmse_all_mat, df]
+                results_save = [rmse_total, rmse_all_mat, df, xx, yy]
                 
                 with open(result_path + f'/EMS_results_{keyname}.pkl', 'wb') as file:
                     pickle.dump(results_save, file)
