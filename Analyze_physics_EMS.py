@@ -161,10 +161,10 @@ def main() -> None:
     with open(data_path + "/landmask_256.pkl", 'rb') as file:
         landmask = pickle.load(file)
 
-    print("#### DATA IS LOADED ####")  
-    
     year = int(data_file[-11:-7])
     row, col = 256, 256
+
+    print(f"#### DATA IS LOADED: {year} ####")    
     
     for ratio in [0.2, 0.5, 1.0]:
         for phy_w in [0, 0.2, 1.0, 5.0]: #[0, 0.2, 0.5, 1.0, 2.0, 5.0]:        
@@ -289,7 +289,7 @@ def main() -> None:
     
                 results_save = [rmse_total, rmse_all_mat, df, xx, yy]
                 
-                with open(result_path + f'/EMS_results_{keyname}.pkl', 'wb') as file:
+                with open(result_path + f'/EMS_results_{year}_{keyname}.pkl', 'wb') as file:
                     pickle.dump(results_save, file)
         
     print("DONE! LET's MOVE ON TO THE NEXT STEP!")
