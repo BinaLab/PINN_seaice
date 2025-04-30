@@ -167,8 +167,8 @@ def main() -> None:
     row, col = 256, 256
     
     for ratio in [0.2, 0.5, 1.0]:
-        for phy_w in [0, 0.2, 0.5, 1.0, 2.0, 5.0]:        
-            for sat_w in [0, 0.2, 0.5, 1.0, 2.0, 5.0]: #, "lbunet", "ebunet", "unet", "cnn", "lg", "hycom"]:
+        for phy_w in [0, 0.2, 1.0, 5.0]: #[0, 0.2, 0.5, 1.0, 2.0, 5.0]:        
+            for sat_w in [0, 0.2, 1.0, 5.0]: #[0, 0.2, 0.5, 1.0, 2.0, 5.0]:
 
                 df = {}
                 rmse_total = {}
