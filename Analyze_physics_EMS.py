@@ -179,6 +179,8 @@ def main() -> None:
 
                 if phy_w == 0 and sat_w == 0:
                     phy = "nophy"
+                else:
+                    phy = "phy"
     
                 in_channels, out_channels = 18, 3
                 model = HIS_UNet(in_channels, out_channels, landmask, row, 3, phy)
