@@ -1,4 +1,4 @@
- ### PREDICT ONLY SEA ICE U & V
+### PREDICT ONLY SEA ICE U & V
 
 # Ignore warning
 import warnings
@@ -562,7 +562,7 @@ def test(
     
 ##########################################################################################
 
-def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:    
+def main() -> None:    
     
     #### SETTING CUDA ENVIRONMENTS ####
     """Main train and eval function."""
@@ -732,8 +732,11 @@ def main(ratio = 1.0, phy_w = 1, sat_w = 1) -> None:
 
     ##### LOOP FOR VARIOUS CONDITIONS ###################################################
     for ratio in [0.2, 0.5, 1.0]:
-        for phy_w in [0.5, 2.0]: #[0, 0.2, 1.0, 5.0]:
-            for sat_w in [0.5, 2.0]: #[0, 0.2, 1.0, 5.0]:
+        for phy_w in [0]: #[0.5, 2.0]: #[0, 0.2, 1.0, 5.0]:
+            for sat_w in [0]: #[0.5, 2.0]: #[0, 0.2, 1.0, 5.0]:
+
+                if phy_w == 0 and sat_w == 0:
+                    phy = "nophy"
     
                 train_dataset = SeaiceDataset(train_input, train_output, train_days, dayint, forecast, exact = True)
                 # train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
