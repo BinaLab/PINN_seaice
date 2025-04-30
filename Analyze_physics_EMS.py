@@ -239,9 +239,7 @@ def main() -> None:
                         pred = pred.detach().numpy()
                         # print(target.shape, pred.shape)
                         
-                        lm = np.array([landmask]).repeat(target.shape[0], axis = 0)
-        
-                        id_start += pred.shape[0]     
+                        lm = np.array([landmask]).repeat(target.shape[0], axis = 0)    
         
                         sic_prd = pred[:, 2, :, :]*100
                         sic_obs = target[:, 2, :, :]*100
