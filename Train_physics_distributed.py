@@ -792,11 +792,13 @@ def main() -> None:
                         net,
                         device_ids=[args.local_rank],
                     )
-            
-                if phy == "phy":
-                    loss_fn = physics_loss(landmask, sat_w, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
-                elif phy == "nophy":
-                    loss_fn = ref_loss(landmask)
+
+                loss_fn = physics_loss(landmask, sat_w, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
+                
+                # if phy == "phy":
+                #     loss_fn = physics_loss(landmask, sat_w, phy_w) # nn.L1Loss() #nn.CrossEntropyLoss()
+                # elif phy == "nophy":
+                #     loss_fn = ref_loss(landmask)
             
                 optimizer = optim.Adam(net.parameters(), lr=lr)
                 scheduler = ExponentialLR(optimizer, gamma=0.98)
