@@ -229,6 +229,7 @@ def main() -> None:
                         val_days = days[idx]
                         data = data0[idx, :, :, :] #.astype(np.float32)
                         target = target0[idx, :, :, :] #.astype(np.float32)
+                        # print(y, m, len(val_days))
         
                         data = torch.permute(data, (0, 3, 1, 2)) * (landmask == 0)
                         target = torch.permute(target, (0, 3, 1, 2)) * (landmask == 0)
@@ -238,7 +239,7 @@ def main() -> None:
                         val_loader = DataLoader(val_dataset, batch_size = 32)
                         n_sample = len(val_dataset)
         
-                        for i, (inputs, target) in enumerate(val_loader):
+                        for (inputs, target) in val_loader:
                             if device == "cuda":
                                 inputs = inputs.cuda()        
                             outputs = model(inputs)
